@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Env (never commit secrets)
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build / cache
+.next/
+out/
+build/
+dist/
+.vercel/
+*.tsbuildinfo
+
+# Debug / IDE
+.idea/
+.vscode/
+*.log
+.DS_Store

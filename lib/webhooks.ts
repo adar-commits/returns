@@ -9,13 +9,21 @@ export function isOtpBypass(code: string): boolean {
   return code === OTP_BYPASS_CODE;
 }
 
-/** We generate OTP and pass it so the external system can deliver it (e.g. WhatsApp). */
+/**
+ * POST to OTP webhook with generated code and phone.
+ * Body: { phone, code, otp } — "otp" is alias for "code" for consumers that expect it.
+ */
 export async function sendOtp(phone: string, sendUrl: string, code: string): Promise<{ ok: boolean; error?: string }> {
   try {
+    const body = {
+      phone: phone.trim(),
+      code,
+      otp: code,
+    };
     const res = await fetch(sendUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, code }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) return { ok: false, error: await res.text() };
     return { ok: true };

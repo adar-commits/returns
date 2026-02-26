@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { createReturnRequest, updateReturnRequestReplacementOrderId } from "@/lib/return-request";
 import { createServerClient } from "@/lib/supabase-server";
 import type { ReturnRequestItem } from "@/lib/db-types";
+import { DEFAULT_WEBHOOK_URL } from "@/lib/constants";
 
 export async function POST(request: Request) {
   const session = await getCustomerSession();
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
     });
 
     const settings = await getSettings();
-    const finalUrl = settings?.final_webhook_url || process.env.FINAL_WEBHOOK_URL;
+    const finalUrl = settings?.final_webhook_url || process.env.FINAL_WEBHOOK_URL || DEFAULT_WEBHOOK_URL;
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     const confirmUrl = `${baseUrl}/confirm-return?token=${confirm_token}`;
 

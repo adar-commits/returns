@@ -32,18 +32,22 @@ export default function PhoneForm() {
 
   return (
     <form onSubmit={onSubmit}>
-      <p style={{ marginBottom: 8 }}>הקלד/י את מספר הטלפון של המזמינ/ה</p>
-      <input
-        type="tel"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        placeholder="טלפון"
-        required
-        dir="ltr"
-        style={{ width: "100%", padding: 12, marginBottom: 12, fontSize: 16 }}
-      />
-      {error && <p style={{ color: "crimson", marginBottom: 8 }}>{error}</p>}
-      <button type="submit" disabled={loading} style={{ width: "100%", padding: 12, backgroundColor: "#8B4513", color: "white", border: "none", borderRadius: 6 }}>
+      <div className="input-wrap">
+        <label className="input-label" htmlFor="phone">מספר טלפון</label>
+        <input
+          id="phone"
+          type="tel"
+          className="input"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="05X-XXXXXXX"
+          required
+          dir="ltr"
+          autoComplete="tel"
+        />
+      </div>
+      {error && <div className="msg-error">{error}</div>}
+      <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? "שולח…" : "שלח קוד"}
       </button>
     </form>

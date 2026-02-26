@@ -29,30 +29,22 @@ export default function MyReturnsList() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p>טוען…</p>;
-  if (list.length === 0) return <p>אין בקשות.</p>;
+  if (loading) return <div className="loading-block"><div className="loader" /><span>טוען…</span></div>;
+  if (list.length === 0) return <div className="card"><p style={{ margin: 0, color: "var(--color-text-muted)" }}>אין בקשות.</p></div>;
 
   return (
-    <ul style={{ listStyle: "none", padding: 0, marginTop: 16 }}>
+    <ul className="list-plain" style={{ marginTop: "var(--space-4)" }}>
       {list.map((r) => (
-        <li
-          key={r.return_id}
-          style={{
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 12,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
-            <strong>{r.return_id}</strong>
-            <span>{r.status_label}</span>
+        <li key={r.return_id} className="list-item-card">
+          <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
+            <strong style={{ fontFamily: "monospace", fontSize: "var(--text-body)" }}>{r.return_id}</strong>
+            <span style={{ fontSize: "var(--text-caption)", fontWeight: 600, color: "var(--color-primary)" }}>{r.status_label}</span>
           </div>
-          <p style={{ margin: "8px 0 0", fontSize: 14, color: "#666" }}>
+          <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
             הזמנה {r.order_id} · {r.type === "return" ? "החזרה" : r.type === "replacement" ? "החלפה" : "מעורב"}
           </p>
           {r.replacement_order_id && (
-            <p style={{ margin: 4, fontSize: 14 }}>הזמנת החלפה: {r.replacement_order_id}</p>
+            <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--text-caption)" }}>הזמנת החלפה: {r.replacement_order_id}</p>
           )}
         </li>
       ))}

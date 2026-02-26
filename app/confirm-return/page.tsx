@@ -9,24 +9,31 @@ export default async function ConfirmReturnPage({
   const { token } = await searchParams;
   if (!token) {
     return (
-      <main style={{ padding: "2rem", textAlign: "center" }}>
-        <p>קישור לא תקין.</p>
+      <main className="page-wrap">
+        <div className="card" style={{ textAlign: "center", padding: "var(--space-8)" }}>
+          <p style={{ margin: 0, color: "var(--color-text-muted)" }}>קישור לא תקין.</p>
+        </div>
       </main>
     );
   }
   const result = await confirmByToken(token);
   if (!result) {
     return (
-      <main style={{ padding: "2rem", textAlign: "center" }}>
-        <p>הבקשה לא נמצאה או כבר אושרה.</p>
+      <main className="page-wrap">
+        <div className="card" style={{ textAlign: "center", padding: "var(--space-8)" }}>
+          <p style={{ margin: 0, color: "var(--color-text-muted)" }}>הבקשה לא נמצאה או כבר אושרה.</p>
+        </div>
       </main>
     );
   }
   return (
-    <main style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>אושר</h1>
-      <p>בקשת ההחזרה אושרה בהצלחה.</p>
-      <p>מזהה: {result.return_id}</p>
+    <main className="page-wrap">
+      <div className="card" style={{ textAlign: "center", padding: "var(--space-8)" }}>
+        <div style={{ fontSize: "3rem", marginBottom: "var(--space-4)" }} aria-hidden>✓</div>
+        <h1 className="page-title">אושר</h1>
+        <p className="page-subtitle">בקשת ההחזרה אושרה בהצלחה.</p>
+        <p style={{ fontFamily: "monospace", background: "var(--color-surface)", padding: "var(--space-3)", borderRadius: "var(--radius-sm)", margin: 0 }}>מזהה: {result.return_id}</p>
+      </div>
     </main>
   );
 }

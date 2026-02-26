@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";
 import { sendOtp } from "@/lib/webhooks";
 import { createAndStoreOtp } from "@/lib/otp";
-
-const DEFAULT_OTP_SEND_URL = "https://hook.eu2.make.com/3xduhbghhg9crv3m8yo9gh8rfsnt61kj";
+import { DEFAULT_WEBHOOK_URL } from "@/lib/constants";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Phone required" }, { status: 400 });
     }
     const settings = await getSettings();
-    const sendUrl = settings?.otp_send_url || process.env.OTP_SEND_URL || DEFAULT_OTP_SEND_URL;
+    const sendUrl = settings?.otp_send_url || process.env.OTP_SEND_URL || DEFAULT_WEBHOOK_URL;
     const code = await createAndStoreOtp(phone.trim());
     const { ok, error } = await sendOtp(phone.trim(), sendUrl, code);
     if (!ok) {

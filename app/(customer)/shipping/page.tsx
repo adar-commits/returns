@@ -7,10 +7,10 @@ export default async function ShippingPage() {
   const session = await getCustomerSession();
   if (!session) redirect("/");
   return (
-    <main style={{ padding: "2rem", maxWidth: 600, margin: "0 auto" }}>
+    <main className="page-wrap-wide">
       <ProgressBar currentStep={2} />
-      <h1>בחירת משלוח / החזרה לסניף</h1>
-      <p>איך תרצה להחזיר / להחליף את המוצרים?</p>
+      <h1 className="page-title">משלוח ואיסוף</h1>
+      <p className="page-subtitle">איך תרצ/י להחזיר או להחליף את המוצרים?</p>
       <ShippingForm />
     </main>
   );

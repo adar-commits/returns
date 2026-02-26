@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";
 import { fetchSizes } from "@/lib/webhooks";
+import { DEFAULT_WEBHOOK_URL } from "@/lib/constants";
 
 export async function POST(request: Request) {
   try {
@@ -9,10 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "sku required" }, { status: 400 });
     }
     const settings = await getSettings();
-    const sizesUrl = settings?.sizes_webhook_url || process.env.SIZES_WEBHOOK_URL;
-    if (!sizesUrl) {
-      return NextResponse.json({ error: "Sizes API not configured" }, { status: 503 });
-    }
+    const sizesUrl = settings?.sizes_webhook_url || process.env.SIZES_WEBHOOK_URL || DEFAULT_WEBHOOK_URL;
     const sizes = await fetchSizes(sku, sizesUrl);
     return NextResponse.json({ sizes });
   } catch (e) {

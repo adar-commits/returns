@@ -11,7 +11,7 @@ export default async function SuccessPage({
   if (!session) redirect("/");
   const { returnId } = await searchParams;
   return (
-    <main style={{ padding: "2rem", maxWidth: 500, margin: "0 auto", textAlign: "center" }}>
+    <main className="page-wrap">
       <SuccessView returnId={returnId || ""} />
     </main>
   );

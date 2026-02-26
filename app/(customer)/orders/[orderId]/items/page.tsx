@@ -12,11 +12,11 @@ export default async function OrderItemsPage({
   if (!session) redirect("/");
   const { orderId } = await params;
   return (
-    <main style={{ padding: "2rem", maxWidth: 600, margin: "0 auto" }}>
+    <main className="page-wrap-wide">
       <ProgressBar currentStep={1} />
-      <p><a href="/orders" style={{ color: "#8B4513" }}>← חזרה</a></p>
-      <h1>הזמנה {orderId}</h1>
-      <p>בחר/י את הפריטים להחלפה או החזרה</p>
+      <p style={{ marginBottom: "var(--space-4)" }}><a href="/orders" className="link">← חזרה להזמנות</a></p>
+      <h1 className="page-title">הזמנה {orderId}</h1>
+      <p className="page-subtitle">בחר/י החזרה או החלפה לכל פריט</p>
       <ItemSelection orderId={orderId} />
     </main>
   );

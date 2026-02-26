@@ -1,34 +1,32 @@
 import { getSettings } from "@/lib/settings";
+import { DEFAULT_LOGO_URL } from "@/lib/constants";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
   const helpBanner = settings?.content_help_banner as { text?: string; href?: string } | null;
   const banner = settings?.content_banner as string | null;
   const footer = settings?.content_footer as string | null;
+  const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || DEFAULT_LOGO_URL;
 
   return (
-    <div className="customer-flow">
-      {banner && (
-        <div className="content-banner" style={{ padding: "8px 16px", background: "#f5f0eb", textAlign: "center", fontSize: 14 }}>
-          {banner}
-        </div>
-      )}
-      {children}
+    <div className="customer-flow" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <header style={{ padding: "var(--space-4) var(--space-4) var(--space-2)", textAlign: "center", borderBottom: "1px solid var(--color-border)", background: "var(--color-surface-elevated)" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoUrl} alt="Logo" style={{ maxHeight: 48, height: "auto", objectFit: "contain" }} />
+      </header>
+      {banner && <div className="content-banner">{banner}</div>}
+      <div style={{ flex: 1 }}>{children}</div>
       {helpBanner?.text && (
-        <div style={{ padding: 24, background: "#f5f0eb", marginTop: 32, textAlign: "center" }}>
-          <p style={{ marginBottom: 8 }}>{helpBanner.text}</p>
+        <div className="help-block">
+          <p>{helpBanner.text}</p>
           {helpBanner.href && (
-            <a href={helpBanner.href} target="_blank" rel="noopener noreferrer" style={{ color: "#8B4513", fontWeight: 600 }}>
+            <a href={helpBanner.href} target="_blank" rel="noopener noreferrer" className="link">
               צור קשר
             </a>
           )}
         </div>
       )}
-      {footer && (
-        <footer style={{ padding: 16, textAlign: "center", fontSize: 12, color: "#666" }}>
-          {footer}
-        </footer>
-      )}
+      {footer && <footer className="footer-block">{footer}</footer>}
     </div>
   );
 }

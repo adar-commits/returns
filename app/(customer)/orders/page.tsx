@@ -7,9 +7,10 @@ export default async function OrdersPage() {
   const session = await getCustomerSession();
   if (!session) redirect("/");
   return (
-    <main style={{ padding: "2rem", maxWidth: 600, margin: "0 auto" }}>
+    <main className="page-wrap-wide">
       <ProgressBar currentStep={0} />
-      <h1>ההזמנות שלי</h1>
+      <h1 className="page-title">ההזמנות שלי</h1>
+      <p className="page-subtitle">בחר/י הזמנה להחלפה או החזרה</p>
       <OrdersList />
     </main>
   );

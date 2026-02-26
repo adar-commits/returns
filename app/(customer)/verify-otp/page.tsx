@@ -35,21 +35,27 @@ function VerifyForm() {
 
   return (
     <form onSubmit={onSubmit}>
-      <p style={{ marginBottom: 8 }}>רק עוד רגע..</p>
-      <p style={{ marginBottom: 8 }}>ברגעים אלה נשלחת לך הודעת WhatsApp עם קוד התחברות. נא להקליד את הקוד להמשך התהליך.</p>
-      <input
-        type="text"
-        inputMode="numeric"
-        maxLength={4}
-        value={code}
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-        placeholder="קוד"
-        required
-        dir="ltr"
-        style={{ width: "100%", padding: 12, marginBottom: 12, fontSize: 18, letterSpacing: 4 }}
-      />
-      {error && <p style={{ color: "crimson", marginBottom: 8 }}>{error}</p>}
-      <button type="submit" disabled={loading} style={{ width: "100%", padding: 12, backgroundColor: "#8B4513", color: "white", border: "none", borderRadius: 6 }}>
+      <p className="page-subtitle" style={{ marginBottom: 8 }}>
+        נשלחה אליך הודעת WhatsApp עם קוד. הזן/י את הקוד להמשך.
+      </p>
+      <div className="input-wrap">
+        <label className="input-label" htmlFor="otp-code">קוד</label>
+        <input
+          id="otp-code"
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          className="input"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+          placeholder="••••••"
+          required
+          dir="ltr"
+          style={{ fontSize: "1.25rem", letterSpacing: "0.4em", textAlign: "center" }}
+        />
+      </div>
+      {error && <div className="msg-error">{error}</div>}
+      <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? "בודק…" : "אשר קוד"}
       </button>
     </form>
@@ -58,10 +64,10 @@ function VerifyForm() {
 
 export default function VerifyOtpPage() {
   return (
-    <main style={{ padding: "2rem", maxWidth: 400, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: "1rem" }}>מרכז ההחלפות וההחזרות</h1>
-      <Suspense fallback={<p>טוען…</p>}>
-        <VerifyForm />
+    <main className="page-wrap">
+      <h1 className="page-title">אימות קוד</h1>
+      <Suspense fallback={<div className="loading-block"><div className="loader" /><span>טוען…</span></div>}>
+        <div className="card"><VerifyForm /></div>
       </Suspense>
     </main>
   );

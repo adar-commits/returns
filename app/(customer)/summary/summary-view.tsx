@@ -97,33 +97,43 @@ export default function SummaryView() {
     }
   };
 
-  if (!wizard) return <p>טוען…</p>;
+  if (!wizard) return <div className="loading-block"><div className="loader" /><span>טוען…</span></div>;
 
   return (
-    <div style={{ marginTop: "1rem" }}>
-      <p><a href="/shipping" style={{ color: "#8B4513" }}>← חזרה</a></p>
-      <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, marginTop: 16 }}>
-        <p>סיכום חיוב</p>
-        {refund > 0 && <p>זיכוי: ₪{refund}</p>}
-        {toPay > 0 && <p>הפרש לתשלום: ₪{toPay}</p>}
-        {wizard.shipping?.fee > 0 && <p>עלות משלוח: ₪{wizard.shipping.fee}</p>}
-        <p><strong>סה״כ לתשלום: ₪{totalToPay}</strong></p>
-        {totalRefund > 0 && <p>הזיכוי יוחזר לאמצעי התשלום איתו שולמה ההזמנה בכפוף לבדיקה</p>}
+    <div>
+      <p style={{ marginBottom: "var(--space-4)" }}><a href="/shipping" className="link">← חזרה</a></p>
+      <div className="card">
+        <p className="card-title">סיכום חיוב</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", fontSize: "var(--text-body)" }}>
+          {refund > 0 && <p>זיכוי: <strong>₪{refund}</strong></p>}
+          {toPay > 0 && <p>הפרש לתשלום: <strong>₪{toPay}</strong></p>}
+          {wizard.shipping?.fee > 0 && <p>עלות משלוח: <strong>₪{wizard.shipping.fee}</strong></p>}
+          <p style={{ marginTop: "var(--space-2)", paddingTop: "var(--space-3)", borderTop: "1px solid var(--color-border)", fontSize: "var(--text-subtitle)" }}>
+            <strong>סה״כ לתשלום: ₪{totalToPay}</strong>
+          </p>
+          {totalRefund > 0 && <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>הזיכוי יוחזר לאמצעי התשלום בכפוף לבדיקה</p>}
+        </div>
       </div>
       {needsAddress && (
-        <div style={{ marginTop: 24 }}>
-          <p><strong>מילוי כתובת</strong></p>
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="שם מלא" required={needsAddress} style={{ width: "100%", padding: 8, marginTop: 8 }} />
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון" required={needsAddress} style={{ width: "100%", padding: 8, marginTop: 8 }} />
-          <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="כתובת" required={needsAddress} style={{ width: "100%", padding: 8, marginTop: 8 }} />
+        <div className="card" style={{ marginBottom: "var(--space-4)" }}>
+          <p className="card-title">פרטי משלוח</p>
+          <div className="input-wrap">
+            <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="שם מלא" required={needsAddress} />
+          </div>
+          <div className="input-wrap">
+            <input className="input" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="טלפון" required={needsAddress} dir="ltr" />
+          </div>
+          <div className="input-wrap">
+            <input className="input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="כתובת מלאה" required={needsAddress} />
+          </div>
         </div>
       )}
-      {error && <p style={{ color: "crimson", marginTop: 8 }}>{error}</p>}
+      {error && <div className="msg-error">{error}</div>}
       <button
         type="button"
+        className="btn btn-primary"
         onClick={handleSubmit}
         disabled={submitting || (needsAddress && (!fullName || !phone || !address))}
-        style={{ marginTop: 24, padding: 12, width: "100%", backgroundColor: "#8B4513", color: "white", border: "none", borderRadius: 6 }}
       >
         {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום"}
       </button>

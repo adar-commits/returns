@@ -33,59 +33,46 @@ export default function OrdersList() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p>טוען הזמנות…</p>;
-  if (error) return <p style={{ color: "crimson" }}>{error}</p>;
-  if (orders.length === 0) return <p>לא נמצאו הזמנות.</p>;
+  if (loading) return <div className="loading-block"><div className="loader" /><span>טוען הזמנות…</span></div>;
+  if (error) return <div className="msg-error">{error}</div>;
+  if (orders.length === 0) return <div className="card"><p style={{ color: "var(--color-text-muted)", margin: 0 }}>לא נמצאו הזמנות.</p></div>;
 
   return (
-    <div style={{ marginTop: "1rem" }}>
-      {customerName && <p>היי, {customerName}</p>}
-      <ul style={{ listStyle: "none", padding: 0 }}>
+    <div style={{ marginTop: "var(--space-2)" }}>
+      {customerName && <p style={{ marginBottom: "var(--space-4)", fontSize: "var(--text-body)", color: "var(--color-text-muted)" }}>היי, {customerName}</p>}
+      <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
           const eligible = order.eligible === true;
           return (
-            <li
-              key={id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 16,
-                marginBottom: 12,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                <span>הזמנה {id}</span>
-                {order.IVDATE || order.ivdate && <span>{String(order.IVDATE ?? order.ivdate)}</span>}
+            <li key={id} className="list-item-card">
+              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+                <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
+                {(order.IVDATE || order.ivdate) && <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{String(order.IVDATE ?? order.ivdate)}</span>}
               </div>
-              <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
                 <button
                   type="button"
+                  className="btn btn-secondary"
+                  style={{ width: "auto", minWidth: 0 }}
                   onClick={async () => {
                     const href = order.receipt_href ?? order.invoice_link ?? order.receipt_link;
-                    if (href) {
-                      window.open(String(href), "_blank");
-                      return;
-                    }
+                    if (href) { window.open(String(href), "_blank"); return; }
                     const ivnum = order.IVNUM ?? order.ivnum;
                     if (!ivnum) return;
                     const r = await fetch(`/api/invoice-link?ivnum=${encodeURIComponent(String(ivnum))}`);
                     const d = await r.json().catch(() => ({}));
                     if (d.href) window.open(d.href, "_blank");
                   }}
-                  style={{ padding: "8px 12px", border: "1px solid #8B4513", borderRadius: 6, color: "#8B4513", background: "white", cursor: "pointer" }}
                 >
                   צפה בקבלה
                 </button>
                 {eligible ? (
-                  <Link
-                    href={`/orders/${id}/items`}
-                    style={{ padding: "8px 12px", backgroundColor: "#8B4513", color: "white", borderRadius: 6, textDecoration: "none" }}
-                  >
+                  <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
                     החלפה / החזרה
                   </Link>
                 ) : (
-                  <span style={{ padding: "8px 12px", color: "#888", cursor: "not-allowed" }}>החלפה / החזרה (לא זמין)</span>
+                  <span style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)", fontSize: "var(--text-caption)", cursor: "not-allowed" }}>החלפה / החזרה (לא זמין)</span>
                 )}
               </div>
             </li>

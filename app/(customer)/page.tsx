@@ -6,10 +6,15 @@ export default async function CustomerHome() {
   const session = await getCustomerSession();
   if (session) redirect("/orders");
   return (
-    <main style={{ padding: "2rem", maxWidth: 400, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: "1rem" }}>מרכז ההחלפות וההחזרות</h1>
-      <p style={{ marginBottom: "1.5rem" }}>שלום לך</p>
-      <PhoneForm />
+    <main className="page-wrap">
+      <div className="hero">
+        <span className="hero-badge">החלפות והחזרות</span>
+        <h1 className="hero-title">מרכז ההחלפות וההחזרות</h1>
+        <p className="hero-subtitle">שלום לך. הזן/י את מספר הטלפון כדי להמשיך</p>
+      </div>
+      <div className="card">
+        <PhoneForm />
+      </div>
     </main>
   );
 }

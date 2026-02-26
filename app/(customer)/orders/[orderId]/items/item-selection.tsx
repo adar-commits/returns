@@ -58,50 +58,51 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     setSending(false);
   };
 
-  if (loading || !order) return <p>טוען…</p>;
+  if (loading || !order) return <div className="loading-block"><div className="loader" /><span>טוען…</span></div>;
 
   const items = (order.items || order.line_items || []) as LineItem[];
-  if (items.length === 0) return <p>לא נמצאו פריטים.</p>;
+  if (items.length === 0) return <div className="card"><p style={{ margin: 0, color: "var(--color-text-muted)" }}>לא נמצאו פריטים.</p></div>;
 
   return (
-    <div style={{ marginTop: "1rem" }}>
+    <div>
       {items.map((item, i) => (
-        <div key={i} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16, marginBottom: 12 }}>
-          <p><strong>{item.product_name || item.sku || "פריט"}</strong> {item.price != null && `מחיר: ${item.price} ₪`}</p>
-          <label style={{ display: "block", marginTop: 8 }}>
-            בחרו החזרה או החלפה
+        <div key={i} className="card">
+          <p style={{ marginBottom: "var(--space-3)", fontSize: "var(--text-body)" }}><strong>{item.product_name || item.sku || "פריט"}</strong> {item.price != null && <span style={{ color: "var(--color-text-muted)" }}>— {item.price} ₪</span>}</p>
+          <div className="input-wrap">
+            <label className="input-label">החזרה או החלפה</label>
             <select
+              className="input"
               value={choices[i]?.action || "return"}
               onChange={(e) => {
                 const action = e.target.value as "return" | "replace";
                 setChoice(i, { action, reason_id: undefined, selected_size_id: undefined });
                 if (action === "replace") fetchSizes(item.sku || "");
               }}
-              style={{ display: "block", marginTop: 4, padding: 8, width: "100%" }}
             >
               <option value="return">החזרה</option>
               <option value="replace">החלפה</option>
             </select>
-          </label>
+          </div>
           {choices[i]?.action === "return" && (
-            <label style={{ display: "block", marginTop: 8 }}>
-              סיבת ההחזרה
+            <div className="input-wrap">
+              <label className="input-label">סיבת ההחזרה</label>
               <select
+                className="input"
                 value={choices[i].reason_id ?? ""}
                 onChange={(e) => setChoice(i, { reason_id: e.target.value })}
-                style={{ display: "block", marginTop: 4, padding: 8, width: "100%" }}
               >
                 <option value="">בחר סיבה</option>
                 {returnReasons.map((r, j) => (
                   <option key={j} value={String(j)}>{r}</option>
                 ))}
               </select>
-            </label>
+            </div>
           )}
           {choices[i]?.action === "replace" && (
-            <label style={{ display: "block", marginTop: 8 }}>
-              גודל / אפשרות
+            <div className="input-wrap">
+              <label className="input-label">גודל / אפשרות</label>
               <select
+                className="input"
                 value={choices[i].selected_size_id ?? ""}
                 onChange={(e) => {
                   const opt = sizesCache[item.sku || ""]?.find((s) => s.id === e.target.value);
@@ -112,24 +113,18 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   });
                 }}
                 onFocus={() => fetchSizes(item.sku || "")}
-                style={{ display: "block", marginTop: 4, padding: 8, width: "100%" }}
               >
                 <option value="">בחר גודל</option>
                 {(sizesCache[item.sku || ""] || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.label || s.id} {s.price != null ? `- ${s.price} ₪` : ""}</option>
+                  <option key={s.id} value={s.id}>{s.label || s.id} {s.price != null ? `— ${s.price} ₪` : ""}</option>
                 ))}
               </select>
-            </label>
+            </div>
           )}
         </div>
       ))}
-      <button
-        type="button"
-        onClick={handleContinue}
-        disabled={sending}
-        style={{ marginTop: 16, padding: 12, width: "100%", backgroundColor: "#8B4513", color: "white", border: "none", borderRadius: 6 }}
-      >
-        {sending ? "שולח…" : "המשך לכתובת משלוח / איסוף"}
+      <button type="button" className="btn btn-primary" onClick={handleContinue} disabled={sending}>
+        {sending ? "שולח…" : "המשך למשלוח ואיסוף"}
       </button>
     </div>
   );

@@ -7,10 +7,10 @@ export default async function SummaryPage() {
   const session = await getCustomerSession();
   if (!session) redirect("/");
   return (
-    <main style={{ padding: "2rem", maxWidth: 600, margin: "0 auto" }}>
+    <main className="page-wrap-wide">
       <ProgressBar currentStep={3} />
-      <h1>סיכום ותשלום</h1>
-      <p>כמעט סיימנו - יש לוודא את הפרטים מטה</p>
+      <h1 className="page-title">סיכום ותשלום</h1>
+      <p className="page-subtitle">כמעט סיימנו — וודא/י את הפרטים מטה</p>
       <SummaryView />
     </main>
   );

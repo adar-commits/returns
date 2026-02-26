@@ -6,8 +6,9 @@ export default async function MyReturnsPage() {
   const session = await getCustomerSession();
   if (!session) redirect("/");
   return (
-    <main style={{ padding: "2rem", maxWidth: 600, margin: "0 auto" }}>
-      <h1>הבקשות שלי</h1>
+    <main className="page-wrap-wide">
+      <h1 className="page-title">הבקשות שלי</h1>
+      <p className="page-subtitle">מעקב אחרי בקשת החלפה והחזרה</p>
       <MyReturnsList />
     </main>
   );

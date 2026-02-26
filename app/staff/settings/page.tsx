@@ -95,120 +95,78 @@ export default function StaffSettingsPage() {
     setShippingTiers((prev) => prev.filter((_, idx) => idx !== i));
   };
 
-  if (loading) return <p>Loading settings…</p>;
+  if (loading) return <div className="loading-block"><div className="loader" /><span>Loading settings…</span></div>;
 
   return (
-    <div style={{ maxWidth: 600 }}>
-      <h1>Settings</h1>
-      {message && <p style={{ color: message.startsWith("Failed") ? "crimson" : "green" }}>{message}</p>}
+    <div className="staff-layout">
+      <h1 className="page-title">Settings</h1>
+      {message && <div className={message.startsWith("Failed") ? "msg-error" : "msg-success"} style={{ marginBottom: "var(--space-4)" }}>{message}</div>}
 
-      <section style={{ marginTop: "1.5rem" }}>
-        <label>
-          <strong>Eligibility (days from order date)</strong>
-          <input
-            type="number"
-            min={1}
-            value={eligibilityDays}
-            onChange={(e) => setEligibilityDays(Number(e.target.value))}
-            style={{ display: "block", marginTop: 4, padding: 6 }}
-          />
-        </label>
-      </section>
+      <div className="card">
+        <p className="card-title">Eligibility</p>
+        <div className="input-wrap">
+          <label className="input-label">Days from order date (eligible for return)</label>
+          <input type="number" min={1} className="input" value={eligibilityDays} onChange={(e) => setEligibilityDays(Number(e.target.value))} style={{ maxWidth: 120 }} />
+        </div>
+      </div>
 
-      <section style={{ marginTop: "1.5rem" }}>
-        <strong>Return reasons (Hebrew)</strong>
-        <ul style={{ listStyle: "none", padding: 0 }}>
+      <div className="card">
+        <p className="card-title">Return reasons (Hebrew)</p>
+        <ul className="list-plain">
           {returnReasons.map((r, i) => (
-            <li key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <li key={i} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
               <span>{r}</span>
-              <button type="button" onClick={() => removeReason(i)}>Remove</button>
+              <button type="button" className="btn btn-ghost" style={{ width: "auto", minWidth: 0, padding: "var(--space-2)" }} onClick={() => removeReason(i)}>Remove</button>
             </li>
           ))}
         </ul>
-        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <input
-            value={reasonInput}
-            onChange={(e) => setReasonInput(e.target.value)}
-            placeholder="New reason"
-            style={{ flex: 1, padding: 6 }}
-          />
-          <button type="button" onClick={addReason}>Add</button>
+        <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
+          <input className="input" value={reasonInput} onChange={(e) => setReasonInput(e.target.value)} placeholder="New reason" style={{ flex: 1 }} />
+          <button type="button" className="btn btn-secondary" style={{ width: "auto", minWidth: 0 }} onClick={addReason}>Add</button>
         </div>
-      </section>
-
-      <section style={{ marginTop: "1.5rem" }}>
-        <strong>Shipping tiers (₪ min – max → fee)</strong>
-        {shippingTiers.map((t, i) => (
-          <div key={i} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-            <input
-              type="number"
-              value={t.min}
-              onChange={(e) => updateTier(i, "min", Number(e.target.value))}
-              style={{ width: 80, padding: 6 }}
-            />
-            <span>–</span>
-            <input
-              type="number"
-              value={t.max}
-              onChange={(e) => updateTier(i, "max", Number(e.target.value))}
-              style={{ width: 80, padding: 6 }}
-            />
-            <span>→ ₪</span>
-            <input
-              type="number"
-              value={t.fee}
-              onChange={(e) => updateTier(i, "fee", Number(e.target.value))}
-              style={{ width: 80, padding: 6 }}
-            />
-            <button type="button" onClick={() => removeTier(i)}>Remove</button>
-          </div>
-        ))}
-        <button type="button" onClick={addTier} style={{ marginTop: 8 }}>Add tier</button>
-      </section>
-
-      <section style={{ marginTop: "1.5rem" }}>
-        <strong>Webhook URLs (per action type)</strong>
-        <p style={{ fontSize: 14, color: "#666", marginTop: 4 }}>
-          Set the URL for each request type. Leave empty to use environment variables.
-        </p>
-        {WEBHOOK_KEYS.map(({ key, label, description }) => (
-          <div key={key} style={{ marginTop: 12 }}>
-            <label style={{ fontWeight: 600, display: "block" }}>{label}</label>
-            <p style={{ fontSize: 12, color: "#666", margin: "2px 0 4px" }}>{description}</p>
-            <input
-              type="url"
-              value={webhooks[key] ?? ""}
-              onChange={(e) => setWebhooks((prev) => ({ ...prev, [key]: e.target.value }))}
-              placeholder={`${key}`}
-              style={{ display: "block", width: "100%", padding: 8, fontFamily: "monospace", fontSize: 13 }}
-            />
-          </div>
-        ))}
-      </section>
-
-      <section style={{ marginTop: "1.5rem" }}>
-        <strong>Help banner (“Need Help?”)</strong>
-        <div style={{ marginTop: 8 }}>
-          <input
-            value={helpBanner.text}
-            onChange={(e) => setHelpBanner((p) => ({ ...p, text: e.target.value }))}
-            placeholder="Text"
-            style={{ display: "block", width: "100%", padding: 6, marginBottom: 8 }}
-          />
-          <input
-            value={helpBanner.href}
-            onChange={(e) => setHelpBanner((p) => ({ ...p, href: e.target.value }))}
-            placeholder="Link (e.g. WhatsApp)"
-            style={{ display: "block", width: "100%", padding: 6 }}
-          />
-        </div>
-      </section>
-
-      <div style={{ marginTop: "2rem" }}>
-        <button type="button" onClick={save} disabled={saving}>
-          {saving ? "Saving…" : "Save settings"}
-        </button>
       </div>
+
+      <div className="card">
+        <p className="card-title">Shipping tiers (₪ min – max → fee)</p>
+        {shippingTiers.map((t, i) => (
+          <div key={i} style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", marginBottom: "var(--space-2)", flexWrap: "wrap" }}>
+            <input type="number" className="input" value={t.min} onChange={(e) => updateTier(i, "min", Number(e.target.value))} style={{ width: 80 }} />
+            <span>–</span>
+            <input type="number" className="input" value={t.max} onChange={(e) => updateTier(i, "max", Number(e.target.value))} style={{ width: 80 }} />
+            <span>→ ₪</span>
+            <input type="number" className="input" value={t.fee} onChange={(e) => updateTier(i, "fee", Number(e.target.value))} style={{ width: 80 }} />
+            <button type="button" className="btn btn-ghost" style={{ width: "auto", minWidth: 0, padding: "var(--space-2)" }} onClick={() => removeTier(i)}>Remove</button>
+          </div>
+        ))}
+        <button type="button" className="btn btn-secondary" style={{ width: "auto", marginTop: "var(--space-2)" }} onClick={addTier}>Add tier</button>
+      </div>
+
+      <div className="card">
+        <p className="card-title">Webhook URLs</p>
+        <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-4)" }}>Per action type. Empty = use env.</p>
+        {WEBHOOK_KEYS.map(({ key, label, description }) => (
+          <div key={key} className="input-wrap">
+            <label className="input-label">{label}</label>
+            <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", margin: "var(--space-1) 0 var(--space-2)" }}>{description}</p>
+            <input type="url" className="input" value={webhooks[key] ?? ""} onChange={(e) => setWebhooks((prev) => ({ ...prev, [key]: e.target.value }))} placeholder={key} style={{ fontFamily: "monospace" }} />
+          </div>
+        ))}
+      </div>
+
+      <div className="card">
+        <p className="card-title">Help banner (“Need Help?”)</p>
+        <div className="input-wrap">
+          <input className="input" value={helpBanner.text} onChange={(e) => setHelpBanner((p) => ({ ...p, text: e.target.value }))} placeholder="Text" />
+        </div>
+        <div className="input-wrap">
+          <input className="input" value={helpBanner.href} onChange={(e) => setHelpBanner((p) => ({ ...p, href: e.target.value }))} placeholder="Link (e.g. WhatsApp)" />
+        </div>
+      </div>
+
+      <button
+        type="button" className="btn btn-primary" onClick={save} disabled={saving} style={{ marginTop: "var(--space-4)" }}>
+        {saving ? "Saving…" : "Save settings"}
+      </button>
     </div>
   );
 }

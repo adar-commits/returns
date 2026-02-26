@@ -38,52 +38,58 @@ export default function StaffDashboard({
   }, []);
 
   return (
-    <div>
-      <p style={{ marginBottom: 16 }}>Role: {role} {branchId && `· Branch: ${branchId}`}</p>
-      <h2>Requests (by branch)</h2>
+    <div className="staff-layout">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
+        <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{role}{branchId ? ` · Branch: ${branchId}` : ""}</p>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          style={{ width: "auto", minWidth: 0 }}
+          onClick={async () => {
+            await fetch("/api/staff/logout", { method: "POST" });
+            router.push("/staff/login");
+            router.refresh();
+          }}
+        >
+          Log out
+        </button>
+      </div>
+      <h2 className="page-title" style={{ marginBottom: "var(--space-2)" }}>Return requests</h2>
+      <p className="page-subtitle" style={{ marginBottom: "var(--space-6)" }}>By branch</p>
       {loading ? (
-        <p>Loading…</p>
+        <div className="loading-block"><div className="loader" /><span>Loading…</span></div>
       ) : returns.length === 0 ? (
-        <p>No return requests.</p>
+        <div className="card"><p style={{ margin: 0, color: "var(--color-text-muted)" }}>No return requests.</p></div>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #ddd" }}>
-              <th style={{ textAlign: "left", padding: 8 }}>Return ID</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Order</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Phone</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Branch</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Status</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Type</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {returns.map((r) => (
-              <tr key={r.return_id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: 8 }}>{r.return_id}</td>
-                <td style={{ padding: 8 }}>{r.order_id}</td>
-                <td style={{ padding: 8 }}>{r.phone}</td>
-                <td style={{ padding: 8 }}>{r.branch_id || "—"}</td>
-                <td style={{ padding: 8 }}>{r.status}</td>
-                <td style={{ padding: 8 }}>{r.type}</td>
-                <td style={{ padding: 8 }}>{new Date(r.created_at).toLocaleDateString()}</td>
+        <div className="card" style={{ overflowX: "auto", padding: 0 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "var(--text-caption)" }}>
+            <thead>
+              <tr style={{ borderBottom: "2px solid var(--color-border)", background: "var(--color-surface)" }}>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Return ID</th>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Order</th>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Phone</th>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Branch</th>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Status</th>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Type</th>
+                <th style={{ textAlign: "left", padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>Created</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {returns.map((r) => (
+                <tr key={r.return_id} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                  <td style={{ padding: "var(--space-3) var(--space-4)", fontFamily: "monospace" }}>{r.return_id}</td>
+                  <td style={{ padding: "var(--space-3) var(--space-4)" }}>{r.order_id}</td>
+                  <td style={{ padding: "var(--space-3) var(--space-4)" }} dir="ltr">{r.phone}</td>
+                  <td style={{ padding: "var(--space-3) var(--space-4)" }}>{r.branch_id || "—"}</td>
+                  <td style={{ padding: "var(--space-3) var(--space-4)", fontWeight: 600 }}>{r.status}</td>
+                  <td style={{ padding: "var(--space-3) var(--space-4)" }}>{r.type}</td>
+                  <td style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)" }}>{new Date(r.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      <button
-        type="button"
-        onClick={async () => {
-          await fetch("/api/staff/logout", { method: "POST" });
-          router.push("/staff/login");
-          router.refresh();
-        }}
-        style={{ marginTop: 24, padding: "8px 16px" }}
-      >
-        Log out
-      </button>
     </div>
   );
 }

@@ -62,6 +62,11 @@ export default function OrdersList() {
                 <button
                   type="button"
                   onClick={async () => {
+                    const href = order.receipt_href ?? order.invoice_link ?? order.receipt_link;
+                    if (href) {
+                      window.open(String(href), "_blank");
+                      return;
+                    }
                     const ivnum = order.IVNUM ?? order.ivnum;
                     if (!ivnum) return;
                     const r = await fetch(`/api/invoice-link?ivnum=${encodeURIComponent(String(ivnum))}`);

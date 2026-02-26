@@ -9,12 +9,13 @@ export function isOtpBypass(code: string): boolean {
   return code === OTP_BYPASS_CODE;
 }
 
-export async function sendOtp(phone: string, sendUrl: string): Promise<{ ok: boolean; error?: string }> {
+/** We generate OTP and pass it so the external system can deliver it (e.g. WhatsApp). */
+export async function sendOtp(phone: string, sendUrl: string, code: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(sendUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, code }),
     });
     if (!res.ok) return { ok: false, error: await res.text() };
     return { ok: true };
@@ -23,20 +24,9 @@ export async function sendOtp(phone: string, sendUrl: string): Promise<{ ok: boo
   }
 }
 
-export async function verifyOtp(phone: string, code: string, verifyUrl: string): Promise<{ valid: boolean; error?: string }> {
-  if (isOtpBypass(code)) return { valid: true };
-  try {
-    const res = await fetch(verifyUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, code }),
-    });
-    const data = await res.json().catch(() => ({}));
-    const valid = res.ok && (data.valid === true || data.success === true);
-    return { valid, error: valid ? undefined : (data.error || data.message || "Invalid code") };
-  } catch (e) {
-    return { valid: false, error: String(e) };
-  }
+/** Legacy: verification is now done locally in verify-otp route (we store OTP when sending). */
+export async function verifyOtp(_phone: string, _code: string, _verifyUrl: string): Promise<{ valid: boolean; error?: string }> {
+  return { valid: false, error: "Use local verification" };
 }
 
 export async function fetchOrders(phone: string, ordersUrl: string): Promise<{

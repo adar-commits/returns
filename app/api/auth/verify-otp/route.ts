@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSettings } from "@/lib/settings";
-import { verifyOtp } from "@/lib/webhooks";
+import { isOtpBypass } from "@/lib/webhooks";
+import { verifyAndConsumeOtp } from "@/lib/otp";
 import { createCustomerSession } from "@/lib/customer-session";
 
 export async function POST(request: Request) {
@@ -9,14 +9,14 @@ export async function POST(request: Request) {
     if (!phone || typeof phone !== "string" || !code || typeof code !== "string") {
       return NextResponse.json({ error: "Phone and code required" }, { status: 400 });
     }
-    const settings = await getSettings();
-    const verifyUrl = settings?.otp_verify_url || process.env.OTP_VERIFY_URL;
-    if (!verifyUrl && code.trim() !== "0000") {
-      return NextResponse.json({ error: "OTP verify URL not configured" }, { status: 503 });
+    const trimmed = code.trim();
+    if (isOtpBypass(trimmed)) {
+      await createCustomerSession(phone.trim());
+      return NextResponse.json({ success: true });
     }
-    const { valid, error } = await verifyOtp(phone.trim(), code.trim(), verifyUrl || "https://placeholder.invalid");
+    const valid = await verifyAndConsumeOtp(phone.trim(), trimmed);
     if (!valid) {
-      return NextResponse.json({ error: error || "Invalid code" }, { status: 401 });
+      return NextResponse.json({ error: "Invalid or expired code" }, { status: 401 });
     }
     await createCustomerSession(phone.trim());
     return NextResponse.json({ success: true });

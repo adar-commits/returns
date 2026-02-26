@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";
 import { sendOtp } from "@/lib/webhooks";
+import { createAndStoreOtp } from "@/lib/otp";
+
+const DEFAULT_OTP_SEND_URL = "https://hook.eu2.make.com/3xduhbghhg9crv3m8yo9gh8rfsnt61kj";
 
 export async function POST(request: Request) {
   try {
@@ -9,11 +12,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Phone required" }, { status: 400 });
     }
     const settings = await getSettings();
-    const sendUrl = settings?.otp_send_url || process.env.OTP_SEND_URL;
-    if (!sendUrl) {
-      return NextResponse.json({ error: "OTP send URL not configured" }, { status: 503 });
-    }
-    const { ok, error } = await sendOtp(phone.trim(), sendUrl);
+    const sendUrl = settings?.otp_send_url || process.env.OTP_SEND_URL || DEFAULT_OTP_SEND_URL;
+    const code = await createAndStoreOtp(phone.trim());
+    const { ok, error } = await sendOtp(phone.trim(), sendUrl, code);
     if (!ok) {
       return NextResponse.json({ error: error || "Failed to send code" }, { status: 502 });
     }

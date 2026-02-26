@@ -5,6 +5,16 @@ import { useEffect, useState } from "react";
 type ShippingTier = { min: number; max: number; fee: number };
 type ContentHelpBanner = { text: string; href: string };
 
+const WEBHOOK_KEYS = [
+  { key: "otp_send_url", label: "OTP Send", description: "We POST { phone }; you send the code (e.g. via WhatsApp)." },
+  { key: "otp_verify_url", label: "OTP Verify", description: "We POST { phone, code }; you return valid/invalid." },
+  { key: "orders_webhook_url", label: "Orders", description: "We POST { phone }; you return { orders, customerDetails }." },
+  { key: "sizes_webhook_url", label: "Sizes", description: "We POST { sku }; you return { sizes } (replacement options)." },
+  { key: "branches_webhook_url", label: "Branches", description: "We GET; you return { branches } (id, name, address, phone, etc.)." },
+  { key: "invoices_webhook_url", label: "Invoices", description: "We GET ?ivnum=...; you return { href } (view receipt link)." },
+  { key: "final_webhook_url", label: "Final (request filed)", description: "We POST full return request + confirm_url when request is created." },
+] as const;
+
 export default function StaffSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -14,6 +24,7 @@ export default function StaffSettingsPage() {
   const [shippingTiers, setShippingTiers] = useState<ShippingTier[]>([]);
   const [helpBanner, setHelpBanner] = useState<ContentHelpBanner>({ text: "צריכים עזרה?", href: "" });
   const [headlines, setHeadlines] = useState<Record<string, string>>({});
+  const [webhooks, setWebhooks] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,6 +36,11 @@ export default function StaffSettingsPage() {
         if (Array.isArray(data.shipping_tiers)) setShippingTiers(data.shipping_tiers);
         if (data.content_help_banner) setHelpBanner(data.content_help_banner);
         if (data.content_headlines) setHeadlines(data.content_headlines);
+        const wh: Record<string, string> = {};
+        WEBHOOK_KEYS.forEach(({ key }) => {
+          if (data[key] != null) wh[key] = data[key];
+        });
+        setWebhooks(wh);
       })
       .catch(() => setMessage("Failed to load settings"))
       .finally(() => setLoading(false));
@@ -43,6 +59,7 @@ export default function StaffSettingsPage() {
           shipping_tiers: shippingTiers,
           content_help_banner: helpBanner,
           content_headlines: Object.keys(headlines).length ? headlines : null,
+          ...webhooks,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -150,6 +167,26 @@ export default function StaffSettingsPage() {
           </div>
         ))}
         <button type="button" onClick={addTier} style={{ marginTop: 8 }}>Add tier</button>
+      </section>
+
+      <section style={{ marginTop: "1.5rem" }}>
+        <strong>Webhook URLs (per action type)</strong>
+        <p style={{ fontSize: 14, color: "#666", marginTop: 4 }}>
+          Set the URL for each request type. Leave empty to use environment variables.
+        </p>
+        {WEBHOOK_KEYS.map(({ key, label, description }) => (
+          <div key={key} style={{ marginTop: 12 }}>
+            <label style={{ fontWeight: 600, display: "block" }}>{label}</label>
+            <p style={{ fontSize: 12, color: "#666", margin: "2px 0 4px" }}>{description}</p>
+            <input
+              type="url"
+              value={webhooks[key] ?? ""}
+              onChange={(e) => setWebhooks((prev) => ({ ...prev, [key]: e.target.value }))}
+              placeholder={`${key}`}
+              style={{ display: "block", width: "100%", padding: 8, fontFamily: "monospace", fontSize: 13 }}
+            />
+          </div>
+        ))}
       </section>
 
       <section style={{ marginTop: "1.5rem" }}>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function StaffLoginPage() {
+function StaffLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -112,5 +112,13 @@ export default function StaffLoginPage() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function StaffLoginPage() {
+  return (
+    <Suspense fallback={<main style={{ padding: "2rem", maxWidth: 400, margin: "0 auto" }}><p>Loading…</p></main>}>
+      <StaffLoginForm />
+    </Suspense>
   );
 }

@@ -10,7 +10,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
 
   return (
     <div className="customer-flow" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      <header style={{ padding: "var(--space-4) var(--space-4) var(--space-2)", textAlign: "center", borderBottom: "1px solid var(--color-border)", background: "var(--color-surface-elevated)" }}>
+      <header style={{ padding: "var(--space-4) var(--space-4) var(--space-2)", textAlign: "center", borderBottom: "1px solid var(--color-border)", background: "var(--color-surface-elevated)", boxShadow: "0 1px 0 var(--color-border)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logoUrl} alt="Logo" style={{ maxHeight: 48, height: "auto", objectFit: "contain" }} />
       </header>

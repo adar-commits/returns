@@ -37,10 +37,8 @@ export async function verifyOtp(_phone: string, _code: string, _verifyUrl: strin
   return { valid: false, error: "Use local verification" };
 }
 
-export async function fetchOrders(phone: string, ordersUrl: string): Promise<{
-  orders: Array<Record<string, unknown>>;
-  customerDetails?: Record<string, unknown>;
-} | null> {
+/** Raw webhook response (use normalizeOrdersResponse in API to get app shape). */
+export async function fetchOrders(phone: string, ordersUrl: string): Promise<Record<string, unknown> | null> {
   try {
     const res = await fetch(ordersUrl, {
       method: "POST",
@@ -49,10 +47,7 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<{
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return {
-      orders: Array.isArray(data.orders) ? data.orders : [],
-      customerDetails: data.customerDetails ?? data.customer_details,
-    };
+    return data as Record<string, unknown>;
   } catch {
     return null;
   }

@@ -1,4 +1,4 @@
-/* ========== Design system: Returns Hub ========== */
+/* ========== Design system: Returns Hub — Carpetshop / השטיח האדום ========== */
 * {
   box-sizing: border-box;
   padding: 0;
@@ -6,20 +6,20 @@
 }
 
 :root {
-  /* Warm, premium palette */
-  --color-primary: #b45309;
-  --color-primary-hover: #92400e;
-  --color-primary-muted: #fef3c7;
-  --color-surface: #fafaf9;
-  --color-surface-elevated: #ffffff;
-  --color-border: #e7e5e4;
-  --color-border-strong: #d6d3d1;
-  --color-text: #1c1917;
-  --color-text-muted: #78716c;
-  --color-text-inverse: #fafaf9;
+  /* Carpetshop brand: red carpet, cream, warm earth — alive & rug-oriented */
+  --color-primary: #9b2d30;
+  --color-primary-hover: #7a2326;
+  --color-primary-muted: #fce8e9;
+  --color-surface: #f7f4f0;
+  --color-surface-elevated: #fefdfb;
+  --color-border: #e8e2db;
+  --color-border-strong: #d4ccc2;
+  --color-text: #2c2520;
+  --color-text-muted: #6b5f55;
+  --color-text-inverse: #fefdfb;
   --color-error: #b91c1c;
   --color-error-bg: #fef2f2;
-  --color-success: #15803d;
+  --color-success: #166534;
   --color-success-bg: #f0fdf4;
 
   --radius-sm: 8px;
@@ -39,9 +39,9 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.06);
-  --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
-  --shadow-lg: 0 12px 32px rgba(28, 25, 23, 0.1);
+  --shadow-sm: 0 1px 3px rgba(44, 37, 32, 0.08);
+  --shadow-md: 0 4px 14px rgba(44, 37, 32, 0.1);
+  --shadow-lg: 0 12px 36px rgba(44, 37, 32, 0.12);
   --shadow-focus: 0 0 0 3px var(--color-primary-muted);
 
   --font-sans: var(--font-noto-hebrew), system-ui, sans-serif;
@@ -50,7 +50,7 @@
   --text-body: 1rem;
   --text-caption: 0.875rem;
   --text-small: 0.8125rem;
-  --transition: 0.2s ease;
+  --transition: 0.22s ease;
 }
 
 html,
@@ -60,7 +60,7 @@ body {
   font-family: var(--font-sans);
   background: var(--color-surface);
   color: var(--color-text);
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -198,6 +198,11 @@ body {
   margin-bottom: var(--space-4);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .card-title {
@@ -255,12 +260,13 @@ body {
   margin-bottom: var(--space-3);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition), border-color var(--transition);
+  transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
 }
 
 .list-item-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--color-border-strong);
+  transform: translateY(-1px);
 }
 
 /* ========== Messages ========== */
@@ -350,7 +356,7 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(28, 25, 23, 0.4);
+  background: rgba(44, 37, 32, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -404,6 +410,9 @@ body {
 .hero {
   text-align: center;
   padding: var(--space-8) 0 var(--space-6);
+  background: linear-gradient(180deg, var(--color-surface-elevated) 0%, var(--color-surface) 100%);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-4);
 }
 
 .hero-badge {

@@ -10,10 +10,14 @@ export async function POST(request: Request) {
     if (!phone || typeof phone !== "string") {
       return NextResponse.json({ error: "Phone required" }, { status: 400 });
     }
+    const digits = phone.replace(/\D/g, "");
+    if (!digits.startsWith("05") || digits.length < 10 || digits.length > 11) {
+      return NextResponse.json({ error: "מספר טלפון לא תקין. יש להזין מספר שמתחיל ב-05" }, { status: 400 });
+    }
     const settings = await getSettings();
     const sendUrl = settings?.otp_send_url || process.env.OTP_SEND_URL || DEFAULT_WEBHOOK_URL;
-    const code = await createAndStoreOtp(phone.trim());
-    const { ok, error } = await sendOtp(phone.trim(), sendUrl, code);
+    const code = await createAndStoreOtp(digits);
+    const { ok, error } = await sendOtp(digits, sendUrl, code);
     if (!ok) {
       return NextResponse.json({ error: error || "Failed to send code" }, { status: 502 });
     }

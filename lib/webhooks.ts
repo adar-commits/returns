@@ -3,10 +3,10 @@
  * URLs from app_settings or env.
  */
 
-const OTP_BYPASS_CODE = "0000";
+const OTP_BYPASS_CODES = ["0000", "000000"];
 
 export function isOtpBypass(code: string): boolean {
-  return code === OTP_BYPASS_CODE;
+  return OTP_BYPASS_CODES.includes(code.trim());
 }
 
 /**

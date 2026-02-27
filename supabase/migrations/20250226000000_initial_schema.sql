@@ -20,7 +20,7 @@ CREATE TYPE return_request_type AS ENUM ('return', 'replacement', 'mixed');
 -- Singleton app settings (business + content + webhook URLs)
 CREATE TABLE app_settings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  eligibility_days int NOT NULL DEFAULT 30,
+  eligibility_days int NOT NULL DEFAULT 900,
   return_reasons jsonb NOT NULL DEFAULT '[]'::jsonb,
   shipping_tiers jsonb NOT NULL DEFAULT '[]'::jsonb,
   -- Webhook URLs (optional; can use env instead)
@@ -43,7 +43,7 @@ CREATE TABLE app_settings (
 INSERT INTO app_settings (id, eligibility_days, return_reasons, shipping_tiers)
 VALUES (
   '00000000-0000-0000-0000-000000000001'::uuid,
-  30,
+  900,
   '["פגם במוצר","גודל לא מתאים","שונה את דעתי","אחר"]'::jsonb,
   '[{"min":0,"max":100,"fee":30},{"min":100,"max":250,"fee":50},{"min":250,"max":500,"fee":85}]'::jsonb
 )

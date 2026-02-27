@@ -17,7 +17,7 @@ const WEBHOOK_KEYS = [
 export default function StaffSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [eligibilityDays, setEligibilityDays] = useState(30);
+  const [eligibilityDays, setEligibilityDays] = useState(900);
   const [returnReasons, setReturnReasons] = useState<string[]>([]);
   const [reasonInput, setReasonInput] = useState("");
   const [shippingTiers, setShippingTiers] = useState<ShippingTier[]>([]);

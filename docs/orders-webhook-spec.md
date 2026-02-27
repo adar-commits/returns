@@ -90,8 +90,22 @@ The app **POST**s `{ "phone": "05XXXXXXXX" }` to your Orders webhook URL. You mu
 }
 ```
 
+## Array response (alternative)
+
+If your API returns an **array** of `{ customer, orders }` objects (e.g. one element per order), the app accepts that too:
+
+```json
+[
+  { "customer": { "custid": "...", "name": "...", "phone": "...", "address": "..." }, "orders": [ { "ivdate": "...", "ivnum": "OV255001193", ... } ] },
+  { "customer": { ... }, "orders": [ { "ivdate": "...", "ivnum": "OV255001192", ... } ] }
+]
+```
+
+The app will use the **first** element’s `customer` and **merge all** `orders` from every element into one list. Only orders with **total_price > 0** are shown as “my orders” (credit/return documents with negative totals are excluded).
+
 ## Notes
 
 - **customer** can be omitted if you don't have it; the app will still show orders.
 - **orders** must be an array (can be empty).
 - **Items** can be named `Items` or `items`; **partname** can be **product_name**; **price_amount** can be **price**. The app normalizes these for compatibility.
+- **Credit notes / returns**: Documents with `total_price <= 0` (e.g. `IK...` credit notes) are filtered out and do not appear in the customer’s order list.

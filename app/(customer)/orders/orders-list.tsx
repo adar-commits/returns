@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { formatOrderDate } from "@/lib/format";
 
 type Order = {
   order_id?: string;
@@ -48,7 +49,7 @@ export default function OrdersList() {
             <li key={id} className="list-item-card">
               <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
                 <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
-                {(order.IVDATE || order.ivdate) && <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{String(order.IVDATE ?? order.ivdate)}</span>}
+                {(order.IVDATE || order.ivdate) && <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{formatOrderDate(String(order.IVDATE ?? order.ivdate))}</span>}
               </div>
               <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
                 <button

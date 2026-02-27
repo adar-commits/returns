@@ -3,9 +3,33 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+function SizeImageGallery({ urls }: { urls: string[] }) {
+  const [index, setIndex] = useState(0);
+  const n = urls.length;
+  useEffect(() => setIndex(0), [urls.length]);
+  if (n === 0) return null;
+  if (n === 1) return <img src={urls[0]} alt="" style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 6 }} />;
+  const prev = () => setIndex((i) => (i - 1 + n) % n);
+  const next = () => setIndex((i) => (i + 1) % n);
+  return (
+    <div style={{ position: "relative", width: 96, height: 96 }}>
+      <img src={urls[index]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }} />
+      <button type="button" aria-label="Previous" onClick={prev} style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 14 }}>‹</button>
+      <button type="button" aria-label="Next" onClick={next} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 14 }}>›</button>
+      <div style={{ position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, alignItems: "center" }}>
+        {n <= 8
+          ? urls.map((_, i) => (
+              <span key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: i === index ? "var(--color-primary)" : "rgba(255,255,255,0.6)" }} />
+            ))
+          : <span style={{ fontSize: 10, color: "#fff", textShadow: "0 0 2px #000" }}>{index + 1}/{n}</span>}
+      </div>
+    </div>
+  );
+}
+
 type LineItem = { sku: string; product_name?: string; price?: number; [key: string]: unknown };
 type ItemChoice = { sku: string; action: "return" | "replace"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
-type SizeOption = { id: string; label?: string; price?: number; image?: string };
+type SizeOption = { id: string; label?: string; price?: number; image?: string; images?: string[] };
 
 export default function ItemSelection({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -134,9 +158,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                           minWidth: 80,
                         }}
                       >
-                        {s.image && (
-                          <img src={s.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />
-                        )}
+                        {s.image || (s.images && s.images.length > 0) ? (
+                          <SizeImageGallery urls={s.images && s.images.length > 0 ? s.images : s.image ? [s.image] : []} />
+                        ) : null}
                         <span style={{ fontSize: "var(--text-caption)" }}>{s.label || s.id}</span>
                         {s.price != null && <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>{s.price} ₪</span>}
                         <input

@@ -13,6 +13,9 @@ export default async function CustomerLayout({ children }: { children: React.Rea
       <header style={{ padding: "var(--space-4) var(--space-4) var(--space-2)", textAlign: "center", borderBottom: "1px solid var(--color-border)", background: "var(--color-surface-elevated)", boxShadow: "0 1px 0 var(--color-border)" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logoUrl} alt="Logo" style={{ maxHeight: 48, height: "auto", objectFit: "contain" }} />
+        <p style={{ margin: "var(--space-2) 0 0", fontSize: "var(--text-subtitle)", fontWeight: 600, color: "var(--color-text)" }}>
+          פורטל החלפות והחזרות לשירותכם
+        </p>
       </header>
       {banner && <div className="content-banner">{banner}</div>}
       <div style={{ flex: 1 }}>{children}</div>

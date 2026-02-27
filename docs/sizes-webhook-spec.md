@@ -58,9 +58,13 @@ Return a JSON object with a **sizes** array. Each element is one replacement opt
 | **sizes[].label** | string | no  | Display name (e.g. size or variant). Shown in the dropdown. |
 | **sizes[].price** | number | no  | Price in ₪. Shown next to the option. |
 | **sizes[].image** | string | no  | Full URL of the option image. We show it next to the size selector when present. |
+| **sizes[].images** | string[] | no  | Multiple image URLs; we show a gallery slider (prev/next + dots or counter) per size. |
+
+**n8n / array wrapper:** If your webhook returns an array with one object containing `sizes`, we accept that too: `[ { "sizes": [ ... ] } ]`. We also map: `name` → label, `compare_at_price` or `price` → price, and `image` (array) → first URL for thumbnail + full array for gallery.
 
 - You can use **Sizes** (capital S) instead of **sizes**; we accept both.
-- **image** is optional; if you send it, we display the image next to the size options.
+- **image** is optional; if you send it, we display the image next to the size options. If **image** is an array of URLs, we use the first for the thumbnail and show a gallery slider for all.
+- We accept **name** instead of **id**/label (we use it as both id and label) and **compare_at_price** if **price** is missing.
 
 ---
 

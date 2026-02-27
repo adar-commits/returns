@@ -53,7 +53,35 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
   }
 }
 
-export type SizeOption = { id: string; label?: string; price?: number; image?: string };
+export type SizeOption = { id: string; label?: string; price?: number; image?: string; images?: string[] };
+
+/** Normalize n8n/Shopify-style response: array wrapper [ { sizes: [...] } ] or direct { sizes }. Map name→label, image[]→image+images. */
+function normalizeSizesResponse(data: unknown): SizeOption[] {
+  let list: unknown[] = [];
+  if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0] === "object" && "sizes" in (data[0] as Record<string, unknown>)) {
+    list = ((data[0] as Record<string, unknown>).sizes as unknown[]) ?? [];
+  } else if (data && typeof data === "object" && ("sizes" in (data as Record<string, unknown>) || "Sizes" in (data as Record<string, unknown>))) {
+    const d = data as Record<string, unknown>;
+    list = (d.sizes ?? d.Sizes) as unknown[] ?? [];
+  }
+  if (!Array.isArray(list)) return [];
+  return list.map((item, index) => {
+    const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+    const name = o.name ?? o.label ?? o.id ?? String(index);
+    const id = typeof name === "string" ? name : String(index);
+    const price = o.price != null ? Number(o.price) : (o.compare_at_price != null ? Number(o.compare_at_price) : undefined);
+    const img = o.image;
+    const imageUrls = Array.isArray(img) ? img.filter((u): u is string => typeof u === "string") : typeof img === "string" ? [img] : [];
+    const image = imageUrls[0] ?? undefined;
+    return {
+      id,
+      label: String(name),
+      price: Number.isFinite(price) ? price : undefined,
+      image,
+      images: imageUrls.length > 0 ? imageUrls : undefined,
+    };
+  });
+}
 
 export async function fetchSizes(sku: string, sizesUrl: string): Promise<SizeOption[]> {
   try {
@@ -64,8 +92,7 @@ export async function fetchSizes(sku: string, sizesUrl: string): Promise<SizeOpt
     });
     if (!res.ok) return [];
     const data = await res.json();
-    const list = data.sizes ?? data.Sizes ?? [];
-    return Array.isArray(list) ? list : [];
+    return normalizeSizesResponse(data);
   } catch {
     return [];
   }

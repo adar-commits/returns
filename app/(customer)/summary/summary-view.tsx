@@ -136,7 +136,7 @@ export default function SummaryView() {
   return (
     <div>
       <p style={{ marginBottom: "var(--space-4)" }}>
-        <a href="/shipping" className="link">← חזרה</a>
+        <a href="/shipping" className="link">חזרה →</a>
       </p>
 
       {/* ── Per-product breakdown ── */}
@@ -150,7 +150,7 @@ export default function SummaryView() {
             {i > 0 && <Divider />}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-2)" }}>
               {/* Right: product info */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0, overflowWrap: "break-word", wordBreak: "break-word" }}>
                 <p style={{ fontWeight: 600, fontSize: "var(--text-body)", marginBottom: 4 }}>{row.name}</p>
                 {row.action === "return" && (
                   <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>החזרה</p>

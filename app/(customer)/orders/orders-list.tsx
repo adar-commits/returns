@@ -83,11 +83,24 @@ export default function OrdersList() {
 
   return (
     <div style={{ marginTop: "var(--space-2)" }}>
-      {customerName && <p style={{ marginBottom: "var(--space-4)", fontSize: "var(--text-body)", color: "var(--color-text-muted)" }}>היי, {customerName}</p>}
+      {/* Combined greeting + instruction in one sentence */}
+      <p style={{ marginBottom: "var(--space-5)", fontSize: "var(--text-body)", color: "var(--color-text-muted)", lineHeight: 1.5 }}>
+        {customerName
+          ? <>היי, <strong style={{ color: "var(--color-text)" }}>{customerName}</strong> — בחר/י הזמנה להחלפה או החזרה</>
+          : "בחר/י הזמנה להחלפה או החזרה"}
+      </p>
+
       <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
           const eligible = order.eligible === true;
+          const branch = orderBranchName(order);
+
+          const raw = order.total_price ?? order.total;
+          const totalNum = raw != null ? Number(raw) : NaN;
+          const hasTotal = Number.isFinite(totalNum) && totalNum > 0;
+          const exVat = hasTotal ? Math.round(totalNum / ISRAEL_VAT) : 0;
+
           return (
             <li key={id} className="list-item-card">
               {/* Row 1: order ID (right) + date (left) */}
@@ -100,67 +113,64 @@ export default function OrdersList() {
                 )}
               </div>
 
-              {/* Items — directly below headline */}
+              {/* Branch — below date row */}
+              {branch && (
+                <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>
+                  סניף: {branch}
+                </div>
+              )}
+
+              {/* Items */}
               {orderProductLines(order).length > 0 && (
-                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)", lineHeight: 1.6 }}>
+                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)", lineHeight: 1.6, overflowWrap: "break-word", wordBreak: "break-word" }}>
                   {orderProductLines(order).map((line, idx) => (
                     <div key={idx}>{line}</div>
                   ))}
                 </div>
               )}
 
-              {/* Branch name */}
-              {orderBranchName(order) && (
-                <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)" }}>
-                  סניף: {orderBranchName(order)}
+              {/* Bottom row: price (left/end) inline with buttons (right/start) */}
+              <div className="order-bottom-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
+                {/* Buttons */}
+                <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+                  {eligible ? (
+                    <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
+                      החלפה / החזרה
+                    </Link>
+                  ) : (
+                    <span style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)", fontSize: "var(--text-caption)", cursor: "not-allowed" }}>
+                      החלפה / החזרה (לא זמין)
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ width: "auto", minWidth: 0 }}
+                    onClick={async () => {
+                      const href = order.receipt_href ?? order.invoice_link ?? order.receipt_link;
+                      if (href) { window.open(String(href), "_blank"); return; }
+                      const ivnum = order.IVNUM ?? order.ivnum;
+                      if (!ivnum) return;
+                      const r = await fetch(`/api/invoice-link?ivnum=${encodeURIComponent(String(ivnum))}`);
+                      const d = await r.json().catch(() => ({}));
+                      if (d.href) window.open(d.href, "_blank");
+                    }}
+                  >
+                    צפה בחשבונית
+                  </button>
                 </div>
-              )}
 
-              {/* Price — bottom-left (end side in RTL), just above buttons */}
-              {(() => {
-                const raw = order.total_price ?? order.total;
-                const total = raw != null ? Number(raw) : NaN;
-                if (!Number.isFinite(total) || total <= 0) return null;
-                const exVat = Math.round(total / ISRAEL_VAT);
-                return (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: "var(--space-3)", gap: 2 }}>
+                {/* Price — same row as buttons, on the left (RTL end) */}
+                {hasTotal && (
+                  <div className="order-price" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
                     <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary)", lineHeight: 1.2 }}>
-                      ₪ {total.toLocaleString("he-IL")}
+                      ₪{totalNum.toLocaleString("he-IL")}
                     </span>
                     <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
                       ללא מע״מ: {exVat.toLocaleString("he-IL")} ₪
                     </span>
                   </div>
-                );
-              })()}
-
-              {/* Buttons: החלפה/החזרה first (primary), חשבונית second (secondary) */}
-              <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-                {eligible ? (
-                  <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
-                    החלפה / החזרה
-                  </Link>
-                ) : (
-                  <span style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)", fontSize: "var(--text-caption)", cursor: "not-allowed" }}>
-                    החלפה / החזרה (לא זמין)
-                  </span>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ width: "auto", minWidth: 0 }}
-                  onClick={async () => {
-                    const href = order.receipt_href ?? order.invoice_link ?? order.receipt_link;
-                    if (href) { window.open(String(href), "_blank"); return; }
-                    const ivnum = order.IVNUM ?? order.ivnum;
-                    if (!ivnum) return;
-                    const r = await fetch(`/api/invoice-link?ivnum=${encodeURIComponent(String(ivnum))}`);
-                    const d = await r.json().catch(() => ({}));
-                    if (d.href) window.open(d.href, "_blank");
-                  }}
-                >
-                  צפה בחשבונית
-                </button>
               </div>
             </li>
           );

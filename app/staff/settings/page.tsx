@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 type ShippingTier = { min: number; max: number; fee: number };
 type ContentHelpBanner = { text: string; href: string };
+type BranchItem = { id: string; name: string; address?: string; state?: string };
 
 const WEBHOOK_KEYS = [
   { key: "otp_send_url", label: "OTP Send", description: "We POST { phone, code }; you deliver the code (e.g. via WhatsApp). We verify locally." },
@@ -25,8 +26,13 @@ export default function StaffSettingsPage() {
   const [headlines, setHeadlines] = useState<Record<string, string>>({});
   const [webhooks, setWebhooks] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
 
   useEffect(() => {
+    fetch("/api/branches")
+      .then((r) => r.json())
+      .then((d) => setBranches(d.branches || []))
+      .catch(() => {});
     fetch("/api/settings")
       .then((r) => r.json())
       .then((data) => {
@@ -164,6 +170,33 @@ export default function StaffSettingsPage() {
           <input className="input" value={helpBanner.href} onChange={(e) => setHelpBanner((p) => ({ ...p, href: e.target.value }))} placeholder="Link (e.g. WhatsApp)" />
         </div>
       </div>
+
+      {branches.length > 0 && (
+        <div className="card">
+          <p className="card-title">Waze links per branch</p>
+          <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-4)" }}>
+            Paste a Waze deep-link for each branch. Shown as a navigation icon on the customer shipping page.
+          </p>
+          {branches.map((b) => (
+            <div key={b.id} className="input-wrap">
+              <label className="input-label">{b.name}{b.address ? ` — ${b.address}` : ""}</label>
+              <input
+                type="url"
+                className="input"
+                value={headlines[`waze_${b.id}`] ?? ""}
+                onChange={(e) =>
+                  setHeadlines((prev) => ({
+                    ...prev,
+                    [`waze_${b.id}`]: e.target.value,
+                  }))
+                }
+                placeholder="https://waze.com/ul?ll=..."
+                style={{ fontFamily: "monospace" }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       <button
         type="button" className="btn btn-primary" onClick={save} disabled={saving} style={{ marginTop: "var(--space-4)" }}>

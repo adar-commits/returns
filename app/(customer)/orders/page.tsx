@@ -9,8 +9,6 @@ export default async function OrdersPage() {
   return (
     <main className="page-wrap-wide">
       <ProgressBar currentStep={0} />
-      <h1 className="page-title">ההזמנות שלי</h1>
-      <p className="page-subtitle">בחר/י הזמנה להחלפה או החזרה</p>
       <OrdersList />
     </main>
   );

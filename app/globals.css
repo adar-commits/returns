@@ -108,7 +108,10 @@ body {
   cursor: pointer;
   transition: background-color var(--transition), color var(--transition), box-shadow var(--transition), transform var(--transition);
   width: 100%;
-  min-height: 48px;
+  min-height: 52px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .btn:disabled {
@@ -199,6 +202,8 @@ body {
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
   transition: box-shadow var(--transition), border-color var(--transition);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .card:hover {
@@ -237,8 +242,8 @@ body {
 
 .choice-option[data-selected="true"] {
   border-color: var(--color-primary);
-  background: var(--color-primary-muted);
-  box-shadow: var(--shadow-focus);
+  background: #f5f0e8;
+  box-shadow: 0 0 0 3px rgba(155, 45, 48, 0.10);
 }
 
 .choice-option input {
@@ -261,6 +266,8 @@ body {
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .list-item-card:hover {
@@ -294,6 +301,7 @@ body {
   font-weight: 600;
   text-decoration: none;
   transition: color var(--transition);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .link:hover {
@@ -303,6 +311,11 @@ body {
 
 /* ========== Customer flow: RTL; Staff LTR ========== */
 .staff-layout { direction: ltr; }
+
+/* ========== Customer flow safe-area + RTL ========== */
+.customer-flow {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
 /* ========== Loading spinner ========== */
 @keyframes spin {
@@ -461,9 +474,14 @@ body {
 .stepper {
   display: flex;
   gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-6);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-bottom: var(--space-5);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
 }
+.stepper::-webkit-scrollbar { display: none; }
 
 .stepper-step {
   display: flex;
@@ -471,6 +489,8 @@ body {
   gap: var(--space-2);
   font-size: var(--text-caption);
   color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stepper-step[data-active="true"] { color: var(--color-text); font-weight: 600; }
@@ -488,6 +508,7 @@ body {
   justify-content: center;
   font-size: 12px;
   font-weight: 600;
+  flex-shrink: 0;
   transition: background var(--transition), color var(--transition);
 }
 
@@ -499,4 +520,54 @@ body {
 .stepper-step[data-done="true"] .stepper-dot {
   background: var(--color-primary);
   color: var(--color-text-inverse);
+}
+
+/* ========== Responsive: header ========== */
+.customer-header-logo {
+  max-height: 120px;
+  height: auto;
+  object-fit: contain;
+}
+.customer-header-title {
+  margin: var(--space-3) 0 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.25;
+}
+@media (max-width: 480px) {
+  .customer-header-logo { max-height: 64px; }
+  .customer-header-title { font-size: 1.2rem; }
+}
+
+/* ========== Responsive: inputs — prevent iOS auto-zoom ========== */
+@media (max-width: 768px) {
+  .input, select.input {
+    font-size: 16px;
+  }
+}
+
+/* ========== Responsive: item card ========== */
+@media (max-width: 520px) {
+  .item-card { flex-direction: column; }
+  .item-card-gallery { width: 100%; display: flex; justify-content: center; }
+  .item-card-gallery img,
+  .item-card-gallery > div { width: 100% !important; max-width: 100% !important; }
+}
+
+/* ========== Responsive: order card bottom row ========== */
+@media (max-width: 420px) {
+  .order-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .order-bottom-row .order-price {
+    align-self: flex-end;
+  }
+}
+
+/* ========== choice-option touch ========== */
+.choice-option {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }

@@ -137,13 +137,53 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
   }
 }
 
-export async function fetchBranches(branchesUrl: string): Promise<Array<Record<string, unknown>>> {
+export type Branch = {
+  id: string;
+  name: string;
+  address?: string;
+  state?: string;
+  phone?: string;
+  email?: string;
+  map_url?: string;
+  opening_hours?: string;
+};
+
+/** Normalise Priority OData shape [ { value: [...] } ] or direct { value } or { branches }. */
+function normalizeBranchesResponse(data: unknown): Branch[] {
+  let rows: Record<string, unknown>[] = [];
+
+  if (Array.isArray(data) && data.length > 0) {
+    const first = data[0] as Record<string, unknown>;
+    if ("value" in first && Array.isArray(first.value)) {
+      rows = first.value as Record<string, unknown>[];
+    } else if ("BRANCHNAME" in first || "id" in first || "branch_id" in first) {
+      rows = data as Record<string, unknown>[];
+    }
+  } else if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    if (Array.isArray(d.value)) rows = d.value as Record<string, unknown>[];
+    else if (Array.isArray(d.branches)) rows = d.branches as Record<string, unknown>[];
+    else if (Array.isArray(d.Branches)) rows = d.Branches as Record<string, unknown>[];
+  }
+
+  return rows.map((r) => ({
+    id: String(r.BRANCHNAME ?? r.id ?? r.branch_id ?? ""),
+    name: String(r.BRANCHDES ?? r.name ?? r.branch_desc ?? r.BRANCHNAME ?? ""),
+    address: (r.ADDRESS ?? r.address) != null ? String(r.ADDRESS ?? r.address) : undefined,
+    state: (r.STATE ?? r.state) != null ? String(r.STATE ?? r.state) : undefined,
+    phone: (r.PHONE ?? r.phone) != null ? String(r.PHONE ?? r.phone) : undefined,
+    email: (r.EMAIL ?? r.email) != null ? String(r.EMAIL ?? r.email) : undefined,
+    map_url: (r.map_url ?? r.waze_link) != null ? String(r.map_url ?? r.waze_link) : undefined,
+    opening_hours: (r.opening_hours ?? r.OPENING_HOURS) != null ? String(r.opening_hours ?? r.OPENING_HOURS) : undefined,
+  })).filter((b) => b.id);
+}
+
+export async function fetchBranches(branchesUrl: string): Promise<Branch[]> {
   try {
-    const res = await fetch(branchesUrl, { method: "GET" });
+    const res = await fetch(branchesUrl, { method: "GET", next: { revalidate: 300 } } as RequestInit);
     if (!res.ok) return [];
     const data = await res.json();
-    const list = data.branches ?? data.Branches ?? [];
-    return Array.isArray(list) ? list : [];
+    return normalizeBranchesResponse(data);
   } catch {
     return [];
   }

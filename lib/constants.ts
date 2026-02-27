@@ -12,3 +12,7 @@ export const DEFAULT_ORDERS_WEBHOOK_URL =
 /** Default webhook URL for GetSizes (replacement options per SKU). */
 export const DEFAULT_SIZES_WEBHOOK_URL =
   "https://redcarpet.app.n8n.cloud/webhook/0ce18bc2-3479-499e-91ad-a176e00464d8";
+
+/** Default webhook URL for Branches (store list). */
+export const DEFAULT_BRANCHES_WEBHOOK_URL =
+  "https://redcarpet.app.n8n.cloud/webhook/1afacfcf-bdb5-455a-a84a-8475352b7479";

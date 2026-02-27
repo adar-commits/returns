@@ -1,25 +1,16 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase-server";
+import { getSettings } from "@/lib/settings";
+import { fetchBranches } from "@/lib/webhooks";
+import { DEFAULT_BRANCHES_WEBHOOK_URL } from "@/lib/constants";
 
-/** Branches from DB (branch_id, branch_desc, address, phone, waze_link). */
 export async function GET() {
   try {
-    const supabase = createServerClient();
-    const { data: rows, error } = await supabase
-      .from("branches")
-      .select("branch_id, branch_desc, address, phone, waze_link")
-      .order("branch_desc");
-    if (error) {
-      console.error(error);
-      return NextResponse.json({ error: "Failed to load branches" }, { status: 502 });
-    }
-    const branches = (rows || []).map((r) => ({
-      id: r.branch_id,
-      name: r.branch_desc ?? r.branch_id,
-      address: r.address ?? undefined,
-      phone: r.phone ?? undefined,
-      map_url: r.waze_link ?? undefined,
-    }));
+    const settings = await getSettings();
+    const url =
+      settings?.branches_webhook_url ||
+      process.env.BRANCHES_WEBHOOK_URL ||
+      DEFAULT_BRANCHES_WEBHOOK_URL;
+    const branches = await fetchBranches(url);
     return NextResponse.json({ branches });
   } catch (e) {
     console.error(e);

@@ -14,16 +14,21 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { wizard, customer_address } = body;
+    const choicesWithAction = (wizard.choices || []).filter((c: { action?: string }) => c.action === "return" || c.action === "replace");
     if (!wizard?.orderId || !wizard.choices?.length) {
       return NextResponse.json({ error: "Invalid wizard data" }, { status: 400 });
     }
 
-    const items: ReturnRequestItem[] = wizard.choices.map((c: { sku: string; action: string; reason_id?: string; selected_size_id?: string }) => ({
+    const items: ReturnRequestItem[] = choicesWithAction.map((c: { sku: string; action: string; reason_id?: string; selected_size_id?: string }) => ({
       sku: c.sku,
       action: c.action === "replace" ? "replace" : "return",
       reason_id: c.reason_id,
       selected_size_id: c.selected_size_id,
     }));
+
+    if (items.length === 0) {
+      return NextResponse.json({ error: "Select at least one item to return or replace" }, { status: 400 });
+    }
 
     const hasReturn = items.some((i) => i.action === "return");
     const hasReplace = items.some((i) => i.action === "replace");
@@ -33,6 +38,7 @@ export async function POST(request: Request) {
     let amountToPay = 0;
     const orderItems = wizard.order?.items || wizard.order?.line_items || [];
     for (const c of wizard.choices) {
+      if (c.action !== "return" && c.action !== "replace") continue;
       const item = orderItems.find((i: { sku: string }) => i.sku === c.sku);
       const itemPrice = Number(item?.price ?? 0);
       if (c.action === "return") {

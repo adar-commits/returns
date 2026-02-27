@@ -53,7 +53,7 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
   }
 }
 
-export type SizeOption = { id: string; label?: string; price?: number; image?: string; images?: string[] };
+export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
 
 /** Normalize n8n/Shopify-style response: array wrapper [ { sizes: [...] } ] or direct { sizes }. Map name→label, image[]→image+images. */
 function normalizeSizesResponse(data: unknown): SizeOption[] {
@@ -69,7 +69,8 @@ function normalizeSizesResponse(data: unknown): SizeOption[] {
     const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
     const name = o.name ?? o.label ?? o.id ?? String(index);
     const id = typeof name === "string" ? name : String(index);
-    const price = o.price != null ? Number(o.price) : (o.compare_at_price != null ? Number(o.compare_at_price) : undefined);
+    const price = o.price != null ? Number(o.price) : undefined;
+    const compareAtPrice = o.compare_at_price != null ? Number(o.compare_at_price) : undefined;
     const img = o.image;
     const imageUrls = Array.isArray(img) ? img.filter((u): u is string => typeof u === "string") : typeof img === "string" ? [img] : [];
     const image = imageUrls[0] ?? undefined;
@@ -77,6 +78,7 @@ function normalizeSizesResponse(data: unknown): SizeOption[] {
       id,
       label: String(name),
       price: Number.isFinite(price) ? price : undefined,
+      compare_at_price: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
       image,
       images: imageUrls.length > 0 ? imageUrls : undefined,
     };

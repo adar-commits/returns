@@ -23,7 +23,7 @@ export async function PATCH(request: Request) {
     const allowed = [
       "eligibility_days", "return_reasons", "shipping_tiers",
       "content_banner", "content_footer", "content_help_banner", "content_headlines",
-      "otp_send_url", "orders_webhook_url", "sizes_webhook_url", "final_webhook_url",
+      "otp_send_url", "orders_webhook_url", "sizes_webhook_url", "branches_webhook_url", "invoices_webhook_url", "final_webhook_url",
     ];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {

@@ -19,9 +19,11 @@ type ReturnRow = {
 export default function StaffDashboard({
   role,
   branchId,
+  message,
 }: {
   role: string;
   branchId: string | null;
+  message?: string;
 }) {
   const router = useRouter();
   const [returns, setReturns] = useState<ReturnRow[]>([]);
@@ -54,6 +56,11 @@ export default function StaffDashboard({
           Log out
         </button>
       </div>
+      {message === "settings_admin_only" && (
+        <div className="msg-error" style={{ marginBottom: "var(--space-4)" }}>
+          Settings is available only to Admin users. You are logged in as {role}.
+        </div>
+      )}
       <h2 className="page-title" style={{ marginBottom: "var(--space-2)" }}>Return requests</h2>
       <p className="page-subtitle" style={{ marginBottom: "var(--space-6)" }}>By branch</p>
       {loading ? (

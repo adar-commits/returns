@@ -9,6 +9,8 @@ const WEBHOOK_KEYS = [
   { key: "otp_send_url", label: "OTP Send", description: "We POST { phone, code }; you deliver the code (e.g. via WhatsApp). We verify locally." },
   { key: "orders_webhook_url", label: "Orders", description: "We POST { phone }; you return { orders, customerDetails }. Include receipt_href per order if desired." },
   { key: "sizes_webhook_url", label: "Sizes", description: "We POST { sku }; you return { sizes } (replacement options)." },
+  { key: "branches_webhook_url", label: "Branches", description: "We GET; you return { branches } (id, name, address, phone, opening_hours, map_url)." },
+  { key: "invoices_webhook_url", label: "Invoices", description: "We GET with ?ivnum=...; you return { href } (receipt link for “צפה בקבלה”)." },
   { key: "final_webhook_url", label: "Final (request filed)", description: "We POST full return request + confirm_url when request is created." },
 ] as const;
 

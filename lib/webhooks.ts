@@ -80,7 +80,7 @@ function normalizeSizesResponse(data: unknown): SizeOption[] {
       price: Number.isFinite(price) ? price : undefined,
       compare_at_price: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
       image,
-      images: imageUrls.length > 0 ? imageUrls : undefined,
+      images: imageUrls.length > 0 ? imageUrls.slice(0, 3) : undefined,
     };
   });
 }

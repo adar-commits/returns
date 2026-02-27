@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function VerifyForm() {
@@ -10,6 +10,11 @@ function VerifyForm() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    codeInputRef.current?.focus();
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,6 +46,7 @@ function VerifyForm() {
       <div className="input-wrap">
         <label className="input-label" htmlFor="otp-code">קוד</label>
         <input
+          ref={codeInputRef}
           id="otp-code"
           type="text"
           inputMode="numeric"

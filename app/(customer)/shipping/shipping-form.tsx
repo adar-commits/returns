@@ -115,6 +115,18 @@ export default function ShippingForm() {
       >
         המשך לסיכום הזמנה
       </button>
+      <button
+        type="button"
+        className="btn btn-ghost"
+        style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
+        onClick={() => {
+          sessionStorage.removeItem("returns_wizard");
+          router.push("/orders");
+          router.refresh();
+        }}
+      >
+        Reset (QA)
+      </button>
     </div>
   );
 }

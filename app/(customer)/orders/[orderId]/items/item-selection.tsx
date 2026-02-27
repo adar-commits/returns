@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type LineItem = { sku: string; product_name?: string; price?: number; [key: string]: unknown };
 type ItemChoice = { sku: string; action: "return" | "replace"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
-type SizeOption = { id: string; label?: string; price?: number };
+type SizeOption = { id: string; label?: string; price?: number; image?: string };
 
 export default function ItemSelection({ orderId }: { orderId: string }) {
   const router = useRouter();
@@ -15,6 +15,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const [sizesCache, setSizesCache] = useState<Record<string, SizeOption[]>>({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -46,6 +47,15 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   };
 
   const handleContinue = () => {
+    setValidationError(null);
+    const missingReason = choices.some((c, idx) => {
+      const action = c.action ?? "return";
+      return action === "return" && (c.reason_id == null || String(c.reason_id).trim() === "");
+    });
+    if (missingReason) {
+      setValidationError("נא לבחור סיבת החזרה לכל פריט שמוחזר.");
+      return;
+    }
     setSending(true);
     const wizard = {
       orderId,
@@ -65,6 +75,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
 
   return (
     <div>
+      {validationError && (
+        <div className="msg-error" style={{ marginBottom: "var(--space-4)" }}>{validationError}</div>
+      )}
       {items.map((item, i) => (
         <div key={i} className="card">
           <p style={{ marginBottom: "var(--space-3)", fontSize: "var(--text-body)" }}><strong>{item.product_name || item.sku || "פריט"}</strong> {item.price != null && <span style={{ color: "var(--color-text-muted)" }}>— {item.price} ₪</span>}</p>
@@ -85,11 +98,13 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
           </div>
           {choices[i]?.action === "return" && (
             <div className="input-wrap">
-              <label className="input-label">סיבת ההחזרה</label>
+              <label className="input-label">סיבת ההחזרה <span style={{ color: "var(--color-error, #c00)" }}>*</span></label>
               <select
                 className="input"
                 value={choices[i].reason_id ?? ""}
                 onChange={(e) => setChoice(i, { reason_id: e.target.value })}
+                required
+                aria-required="true"
               >
                 <option value="">בחר סיבה</option>
                 {returnReasons.map((r, j) => (
@@ -101,24 +116,67 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
           {choices[i]?.action === "replace" && (
             <div className="input-wrap">
               <label className="input-label">גודל / אפשרות</label>
-              <select
-                className="input"
-                value={choices[i].selected_size_id ?? ""}
-                onChange={(e) => {
-                  const opt = sizesCache[item.sku || ""]?.find((s) => s.id === e.target.value);
-                  setChoice(i, {
-                    selected_size_id: e.target.value,
-                    size_label: opt?.label,
-                    size_price: opt?.price,
-                  });
-                }}
-                onFocus={() => fetchSizes(item.sku || "")}
-              >
-                <option value="">בחר גודל</option>
-                {(sizesCache[item.sku || ""] || []).map((s) => (
-                  <option key={s.id} value={s.id}>{s.label || s.id} {s.price != null ? `— ${s.price} ₪` : ""}</option>
-                ))}
-              </select>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", alignItems: "flex-start" }}>
+                {(sizesCache[item.sku || ""] || []).length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+                    {(sizesCache[item.sku || ""] || []).map((s) => (
+                      <label
+                        key={s.id}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "var(--space-1)",
+                          padding: "var(--space-2)",
+                          border: choices[i]?.selected_size_id === s.id ? "2px solid var(--color-primary, #9b2d30)" : "1px solid var(--color-border)",
+                          borderRadius: "var(--radius-md, 6px)",
+                          cursor: "pointer",
+                          minWidth: 80,
+                        }}
+                      >
+                        {s.image && (
+                          <img src={s.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} />
+                        )}
+                        <span style={{ fontSize: "var(--text-caption)" }}>{s.label || s.id}</span>
+                        {s.price != null && <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>{s.price} ₪</span>}
+                        <input
+                          type="radio"
+                          name={`size-${i}-${item.sku}`}
+                          value={s.id}
+                          checked={choices[i]?.selected_size_id === s.id}
+                          onChange={() => {
+                            setChoice(i, {
+                              selected_size_id: s.id,
+                              size_label: s.label,
+                              size_price: s.price,
+                            });
+                          }}
+                          style={{ marginTop: "var(--space-1)" }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <select
+                  className="input"
+                  value={choices[i].selected_size_id ?? ""}
+                  onChange={(e) => {
+                    const opt = sizesCache[item.sku || ""]?.find((s) => s.id === e.target.value);
+                    setChoice(i, {
+                      selected_size_id: e.target.value,
+                      size_label: opt?.label,
+                      size_price: opt?.price,
+                    });
+                  }}
+                  onFocus={() => fetchSizes(item.sku || "")}
+                  style={{ minWidth: 160 }}
+                >
+                  <option value="">בחר גודל</option>
+                  {(sizesCache[item.sku || ""] || []).map((s) => (
+                    <option key={s.id} value={s.id}>{s.label || s.id} {s.price != null ? `— ${s.price} ₪` : ""}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>

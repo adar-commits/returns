@@ -53,7 +53,9 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
   }
 }
 
-export async function fetchSizes(sku: string, sizesUrl: string): Promise<Array<{ id: string; label?: string; price?: number }>> {
+export type SizeOption = { id: string; label?: string; price?: number; image?: string };
+
+export async function fetchSizes(sku: string, sizesUrl: string): Promise<SizeOption[]> {
   try {
     const res = await fetch(sizesUrl, {
       method: "POST",

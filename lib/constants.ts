@@ -1,6 +1,5 @@
-/** Default logo shown in customer flow (override with env NEXT_PUBLIC_LOGO_URL). */
-export const DEFAULT_LOGO_URL =
-  "https://return-form-new-b441fc08d1cc.herokuapp.com/img/HoM_logo.webp";
+/** Default logo shown in customer flow (same-origin; override with env NEXT_PUBLIC_LOGO_URL). */
+export const DEFAULT_LOGO_URL = "/img/HoM_logo.webp";
 
 /** Default webhook URL used when no setting or env is configured for OTP, sizes, or final. */
 export const DEFAULT_WEBHOOK_URL =

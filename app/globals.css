@@ -441,6 +441,22 @@ body {
   margin: 0 auto var(--space-6);
 }
 
+/* ========== Item-selection product card ========== */
+/* Gallery on the right (RTL row = right-to-left, first child → right); above on mobile */
+.item-card {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.item-card-content { flex: 1 1 200px; min-width: 0; }
+.item-card-gallery { flex: 0 0 auto; }
+
+@media (max-width: 520px) {
+  .item-card { flex-direction: column; }
+  .item-card-gallery { width: 100%; display: flex; justify-content: center; }
+}
+
 /* ========== Progress stepper ========== */
 .stepper {
   display: flex;

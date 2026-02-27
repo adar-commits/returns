@@ -55,25 +55,9 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
 
 export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
 
-/** Normalize n8n/Shopify-style response: array wrapper [ { sizes: [...] } ] or direct { sizes }. Map name→label, image[]→image+images. */
-function normalizeSizesResponse(data: unknown): SizeOption[] {
-  let list: unknown[] = [];
-  if (Array.isArray(data) && data.length > 0) {
-    const first = data[0];
-    if (first && typeof first === "object" && "sizes" in (first as Record<string, unknown>)) {
-      list = ((first as Record<string, unknown>).sizes as unknown[]) ?? [];
-    } else if (first && typeof first === "object" && "Sizes" in (first as Record<string, unknown>)) {
-      list = ((first as Record<string, unknown>).Sizes as unknown[]) ?? [];
-    } else if (data.every((x) => x && typeof x === "object" && ("id" in (x as object) || "name" in (x as object) || "label" in (x as object)))) {
-      list = data;
-    }
-  } else if (data && typeof data === "object" && ("sizes" in (data as Record<string, unknown>) || "Sizes" in (data as Record<string, unknown>))) {
-    const d = data as Record<string, unknown>;
-    list = (d.sizes ?? d.Sizes) as unknown[] ?? [];
-  } else if (Array.isArray(data) && data.length > 0 && data.every((x) => x != null && typeof x === "object")) {
-    list = data;
-  }
-  if (!Array.isArray(list)) return [];
+/** Normalize a single sizes array from the webhook (one SKU's variants). */
+function normalizeSizeList(raw: unknown): SizeOption[] {
+  const list: unknown[] = Array.isArray(raw) ? raw : [];
   return list.map((item, index) => {
     const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
     const name = o.name ?? o.label ?? o.id ?? String(index);
@@ -81,31 +65,75 @@ function normalizeSizesResponse(data: unknown): SizeOption[] {
     const price = o.price != null ? Number(o.price) : undefined;
     const compareAtPrice = o.compare_at_price != null ? Number(o.compare_at_price) : undefined;
     const img = o.image;
-    const imageUrls = Array.isArray(img) ? img.filter((u): u is string => typeof u === "string") : typeof img === "string" ? [img] : [];
-    const image = imageUrls[0] ?? undefined;
+    const imageUrls = Array.isArray(img)
+      ? img.filter((u): u is string => typeof u === "string")
+      : typeof img === "string"
+      ? [img]
+      : [];
     return {
       id,
       label: String(name),
       price: Number.isFinite(price) ? price : undefined,
       compare_at_price: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
-      image,
-      images: imageUrls.length > 0 ? imageUrls.slice(0, 3) : undefined,
+      image: imageUrls[0] ?? undefined,
+      images: imageUrls.length > 0 ? imageUrls.slice(0, 5) : undefined,
     };
   });
 }
 
-export async function fetchSizes(sku: string, sizesUrl: string): Promise<SizeOption[]> {
+/**
+ * Normalize the batch GetSizes response.
+ * Expected: [ { sku: "...", sizes: [...] }, ... ]
+ * Also handles legacy: { sizes: [...] } or [ { sizes: [...] } ] for a single SKU.
+ */
+function normalizeSizesBatchResponse(data: unknown, fallbackSku?: string): Record<string, SizeOption[]> {
+  const result: Record<string, SizeOption[]> = {};
+
+  if (Array.isArray(data) && data.length > 0) {
+    const first = data[0] as Record<string, unknown>;
+    // Batch format: [ { sku, sizes }, ... ]
+    if (typeof first.sku === "string") {
+      for (const entry of data as Record<string, unknown>[]) {
+        if (typeof entry.sku === "string") {
+          result[entry.sku] = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
+        }
+      }
+      return result;
+    }
+    // Legacy array wrapper: [ { sizes: [...] } ]
+    if ("sizes" in first || "Sizes" in first) {
+      const sizes = normalizeSizeList(first.sizes ?? first.Sizes ?? []);
+      if (fallbackSku) result[fallbackSku] = sizes;
+      return result;
+    }
+  }
+
+  // Direct { sizes: [...] }
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const d = data as Record<string, unknown>;
+    const sizes = normalizeSizeList(d.sizes ?? d.Sizes ?? []);
+    if (fallbackSku) result[fallbackSku] = sizes;
+  }
+
+  return result;
+}
+
+/**
+ * Batch call: POST { Items: ["sku1","sku2",...] }, returns map of sku → SizeOption[].
+ */
+export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise<Record<string, SizeOption[]>> {
+  if (skus.length === 0) return {};
   try {
     const res = await fetch(sizesUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sku }),
+      body: JSON.stringify({ Items: skus }),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return {};
     const data = await res.json();
-    return normalizeSizesResponse(data);
+    return normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
   } catch {
-    return [];
+    return {};
   }
 }
 

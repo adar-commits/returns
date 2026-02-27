@@ -55,20 +55,24 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       setReturnReasons(settingsData.return_reasons || []);
       const items = (found?.items || found?.line_items || []) as LineItem[];
       setChoices(items.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
-      // Trigger GetSizes immediately for all products in this order (so gallery + variants are ready when user picks "החלפה")
-      items.forEach((it: LineItem) => {
-        const sku = it.sku?.trim();
-        if (!sku) return;
-        setSizesLoading((prev) => ({ ...prev, [sku]: true }));
-        fetch("/api/sizes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) })
+      // Batch GetSizes for all SKUs in one request
+      const skus = [...new Set(items.map((it: LineItem) => it.sku?.trim()).filter(Boolean))] as string[];
+      if (skus.length > 0) {
+        skus.forEach((s) => setSizesLoading((prev) => ({ ...prev, [s]: true })));
+        fetch("/api/sizes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ Items: skus }),
+        })
           .then((res) => res.json())
           .then((data) => {
             if (data.error) return;
-            setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] }));
+            const results: Record<string, SizeOption[]> = data.results || {};
+            setSizesCache((prev) => ({ ...prev, ...results }));
           })
           .catch(() => {})
-          .finally(() => setSizesLoading((prev) => ({ ...prev, [sku]: false })));
-      });
+          .finally(() => skus.forEach((s) => setSizesLoading((prev) => ({ ...prev, [s]: false }))));
+      }
     }).finally(() => setLoading(false));
   }, [orderId]);
 
@@ -76,9 +80,16 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     if (sizesCache[sku]) return;
     setSizesLoading((prev) => ({ ...prev, [sku]: true }));
     try {
-      const res = await fetch("/api/sizes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) });
+      const res = await fetch("/api/sizes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ Items: [sku] }),
+      });
       const data = await res.json();
-      if (!data.error) setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] }));
+      if (!data.error) {
+        const results: Record<string, SizeOption[]> = data.results || {};
+        setSizesCache((prev) => ({ ...prev, ...results }));
+      }
     } finally {
       setSizesLoading((prev) => ({ ...prev, [sku]: false }));
     }
@@ -143,8 +154,15 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
           : [];
         const galleryLoading = sizes.length === 0 && item.sku;
         return (
-        <div key={i} className="card" style={{ display: "flex", flexDirection: "row-reverse", gap: "var(--space-4)", flexWrap: "wrap", alignItems: "flex-start" }}>
-          <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+        <div key={i} className="card item-card">
+          <div className="item-card-gallery">
+            {productImages.length > 0 ? (
+              <SizeImageGallery urls={productImages} />
+            ) : galleryLoading ? (
+              <div className="skeleton" style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, borderRadius: 6 }} aria-hidden />
+            ) : null}
+          </div>
+          <div className="item-card-content">
             <p style={{ marginBottom: "var(--space-3)", fontSize: "var(--text-body)" }}><strong>{item.product_name || item.sku || "פריט"}</strong></p>
             <div className="input-wrap">
               <label className="input-label">החזרה או החלפה</label>
@@ -247,13 +265,6 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                 </div>
               </div>
             )}
-          </div>
-          <div style={{ flex: "0 0 auto", width: GALLERY_SIZE, height: GALLERY_SIZE, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {productImages.length > 0 ? (
-              <SizeImageGallery urls={productImages} />
-            ) : galleryLoading ? (
-              <div className="skeleton" style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, borderRadius: 6 }} aria-hidden />
-            ) : null}
           </div>
         </div>
         );

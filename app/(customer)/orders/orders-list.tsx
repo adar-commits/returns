@@ -10,10 +10,14 @@ type Order = {
   IVDATE?: string;
   ivdate?: string;
   eligible?: boolean;
+  total_price?: number | string;
+  total?: number | string;
   items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
   line_items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
   [key: string]: unknown;
 };
+
+const ISRAEL_VAT = 1.17;
 
 function orderProductLines(order: Order): string[] {
   const list = order.items || order.line_items || [];
@@ -74,9 +78,32 @@ const PREFETCH_MAX_AGE_MS = 60 * 1000;
           const eligible = order.eligible === true;
           return (
             <li key={id} className="list-item-card">
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-3)", alignItems: "flex-start" }}>
                 <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
-                {(order.IVDATE || order.ivdate) && <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{formatOrderDate(String(order.IVDATE ?? order.ivdate))}</span>}
+                {/* Left column (RTL end): date + price */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                  {(order.IVDATE || order.ivdate) && (
+                    <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
+                      {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
+                    </span>
+                  )}
+                  {(() => {
+                    const raw = order.total_price ?? order.total;
+                    const total = raw != null ? Number(raw) : NaN;
+                    if (!Number.isFinite(total) || total <= 0) return null;
+                    const exVat = Math.round(total / ISRAEL_VAT);
+                    return (
+                      <>
+                        <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary)", lineHeight: 1.2 }}>
+                          {total.toLocaleString("he-IL")} ₪
+                        </span>
+                        <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+                          ללא מע״מ: {exVat.toLocaleString("he-IL")} ₪
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
               {orderProductLines(order).length > 0 && (
                 <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)", lineHeight: 1.5 }}>

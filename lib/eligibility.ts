@@ -1,13 +1,9 @@
 import { createServerClient } from "./supabase-server";
 
 /**
- * Check if order is eligible for return/replace: within eligibility_days of IVDATE and no existing return_request for this order.
+ * Orders eligible for return/replace: no existing return_request for this order (no day limit).
  */
-export async function getEligibleOrderIds(
-  phone: string,
-  orderIds: string[],
-  eligibilityDays: number
-): Promise<Set<string>> {
+export async function getEligibleOrderIds(phone: string, orderIds: string[]): Promise<Set<string>> {
   if (orderIds.length === 0) return new Set();
   const supabase = createServerClient();
   const { data: existing } = await supabase
@@ -20,25 +16,15 @@ export async function getEligibleOrderIds(
 }
 
 /**
- * Filter orders: eligible only if IVDATE is within last eligibilityDays days and no existing return request.
+ * Mark orders as eligible if they have no existing return request (no day limit).
  */
 export function filterOrdersByEligibility(
   orders: Array<Record<string, unknown>>,
-  eligibilityDays: number,
   eligibleOrderIds: Set<string>
 ): Array<Record<string, unknown> & { eligible?: boolean }> {
-  const now = new Date();
-  const cutoff = new Date(now);
-  cutoff.setDate(cutoff.getDate() - eligibilityDays);
-
   return orders.map((order) => {
     const orderId = String(order.order_id ?? order.id ?? "");
-    const ivdate = order.IVDATE ?? order.ivdate;
-    const dateStr = typeof ivdate === "string" ? ivdate : null;
-    const orderDate = dateStr ? new Date(dateStr) : null;
-    const withinDays = orderDate ? orderDate >= cutoff : false;
-    const noExisting = eligibleOrderIds.has(orderId);
-    const eligible = withinDays && noExisting;
+    const eligible = eligibleOrderIds.has(orderId);
     return { ...order, eligible };
   });
 }

@@ -19,12 +19,8 @@ export async function GET() {
   }
   const data = normalizeOrdersResponse(raw);
   const orderIds = (data.orders || []).map((o: Record<string, unknown>) => String(o.order_id ?? o.id ?? ""));
-  const eligibleIds = await getEligibleOrderIds(session.phone, orderIds, settings?.eligibility_days ?? 900);
-  const ordersWithEligibility = filterOrdersByEligibility(
-    data.orders,
-    settings?.eligibility_days ?? 900,
-    eligibleIds
-  );
+  const eligibleIds = await getEligibleOrderIds(session.phone, orderIds);
+  const ordersWithEligibility = filterOrdersByEligibility(data.orders, eligibleIds);
   return NextResponse.json({
     orders: ordersWithEligibility,
     customerDetails: data.customerDetails,

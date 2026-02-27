@@ -3,25 +3,27 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const GALLERY_SIZE = 160;
+
 function SizeImageGallery({ urls }: { urls: string[] }) {
   const [index, setIndex] = useState(0);
   const n = urls.length;
   useEffect(() => setIndex(0), [urls.length]);
   if (n === 0) return null;
-  if (n === 1) return <img src={urls[0]} alt="" style={{ width: 96, height: 96, objectFit: "cover", borderRadius: 6 }} />;
+  if (n === 1) return <img src={urls[0]} alt="" style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, objectFit: "cover", borderRadius: 6 }} />;
   const prev = () => setIndex((i) => (i - 1 + n) % n);
   const next = () => setIndex((i) => (i + 1) % n);
   return (
-    <div style={{ position: "relative", width: 96, height: 96 }}>
+    <div style={{ position: "relative", width: GALLERY_SIZE, height: GALLERY_SIZE }}>
       <img src={urls[index]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }} />
-      <button type="button" aria-label="Previous" onClick={prev} style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 14 }}>‹</button>
-      <button type="button" aria-label="Next" onClick={next} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: 24, height: 24, borderRadius: "50%", border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 14 }}>›</button>
-      <div style={{ position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, alignItems: "center" }}>
+      <button type="button" aria-label="Previous" onClick={prev} style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 16 }}>‹</button>
+      <button type="button" aria-label="Next" onClick={next} style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--color-border)", background: "var(--color-surface)", cursor: "pointer", fontSize: 16 }}>›</button>
+      <div style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, alignItems: "center" }}>
         {n <= 8
           ? urls.map((_, i) => (
-              <span key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: i === index ? "var(--color-primary)" : "rgba(255,255,255,0.6)" }} />
+              <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: i === index ? "var(--color-primary)" : "rgba(255,255,255,0.6)" }} />
             ))
-          : <span style={{ fontSize: 10, color: "#fff", textShadow: "0 0 2px #000" }}>{index + 1}/{n}</span>}
+          : <span style={{ fontSize: 11, color: "#fff", textShadow: "0 0 2px #000" }}>{index + 1}/{n}</span>}
       </div>
     </div>
   );
@@ -37,6 +39,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const [returnReasons, setReturnReasons] = useState<string[]>([]);
   const [choices, setChoices] = useState<ItemChoice[]>([]);
   const [sizesCache, setSizesCache] = useState<Record<string, SizeOption[]>>({});
+  const [sizesLoading, setSizesLoading] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -52,22 +55,33 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       setReturnReasons(settingsData.return_reasons || []);
       const items = (found?.items || found?.line_items || []) as LineItem[];
       setChoices(items.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
-      // Trigger GetSizes immediately for all products in this order (so gallery is ready without waiting for "החלפה")
+      // Trigger GetSizes immediately for all products in this order (so gallery + variants are ready when user picks "החלפה")
       items.forEach((it: LineItem) => {
         const sku = it.sku?.trim();
         if (!sku) return;
+        setSizesLoading((prev) => ({ ...prev, [sku]: true }));
         fetch("/api/sizes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) })
           .then((res) => res.json())
-          .then((data) => setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] })));
+          .then((data) => {
+            if (data.error) return;
+            setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] }));
+          })
+          .catch(() => {})
+          .finally(() => setSizesLoading((prev) => ({ ...prev, [sku]: false })));
       });
     }).finally(() => setLoading(false));
   }, [orderId]);
 
   const fetchSizes = async (sku: string) => {
     if (sizesCache[sku]) return;
-    const res = await fetch("/api/sizes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) });
-    const data = await res.json();
-    setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] }));
+    setSizesLoading((prev) => ({ ...prev, [sku]: true }));
+    try {
+      const res = await fetch("/api/sizes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) });
+      const data = await res.json();
+      if (!data.error) setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] }));
+    } finally {
+      setSizesLoading((prev) => ({ ...prev, [sku]: false }));
+    }
   };
 
   const setChoice = (index: number, update: Partial<ItemChoice>) => {
@@ -168,6 +182,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
               <div className="input-wrap">
                 <label className="input-label">גודל / אפשרות</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", alignItems: "flex-start" }}>
+                  {sizesLoading[item.sku || ""] && sizes.length === 0 && (
+                    <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>טוען אפשרויות…</p>
+                  )}
                   {sizes.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
                       {sizes.map((s) => (
@@ -231,11 +248,11 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
               </div>
             )}
           </div>
-          <div style={{ flex: "0 0 auto", width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ flex: "0 0 auto", width: GALLERY_SIZE, height: GALLERY_SIZE, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {productImages.length > 0 ? (
               <SizeImageGallery urls={productImages} />
             ) : galleryLoading ? (
-              <div className="skeleton" style={{ width: 96, height: 96, borderRadius: 6 }} aria-hidden />
+              <div className="skeleton" style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, borderRadius: 6 }} aria-hidden />
             ) : null}
           </div>
         </div>

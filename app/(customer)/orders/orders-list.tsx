@@ -10,8 +10,19 @@ type Order = {
   IVDATE?: string;
   ivdate?: string;
   eligible?: boolean;
+  items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
+  line_items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
   [key: string]: unknown;
 };
+
+function orderProductLines(order: Order): string[] {
+  const list = order.items || order.line_items || [];
+  return list.map((item: { qty?: number; product_name?: string; partname?: string; sku?: string }) => {
+    const qty = Math.max(1, Number(item.qty) || 1);
+    const name = item.product_name || item.partname || item.sku || "פריט";
+    return `${qty}x ${name}`;
+  });
+}
 
 export default function OrdersList() {
   const [loading, setLoading] = useState(true);
@@ -19,7 +30,23 @@ export default function OrdersList() {
   const [customerName, setCustomerName] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
+const PREFETCH_KEY = "orders_prefetch";
+const PREFETCH_MAX_AGE_MS = 60 * 1000;
+
   useEffect(() => {
+    const prefetched = sessionStorage.getItem(PREFETCH_KEY);
+    if (prefetched) {
+      try {
+        const { orders: list, customerDetails: cd, at } = JSON.parse(prefetched);
+        if (at && Date.now() - at < PREFETCH_MAX_AGE_MS && Array.isArray(list)) {
+          setOrders(list);
+          if (cd && (cd.name || cd.full_name)) setCustomerName(cd.name || cd.full_name || "");
+          setLoading(false);
+          sessionStorage.removeItem(PREFETCH_KEY);
+          return;
+        }
+      } catch (_) {}
+    }
     fetch("/api/orders")
       .then((r) => {
         if (r.status === 401) window.location.href = "/";
@@ -51,6 +78,13 @@ export default function OrdersList() {
                 <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
                 {(order.IVDATE || order.ivdate) && <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{formatOrderDate(String(order.IVDATE ?? order.ivdate))}</span>}
               </div>
+              {orderProductLines(order).length > 0 && (
+                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)", lineHeight: 1.5 }}>
+                  {orderProductLines(order).map((line, idx) => (
+                    <div key={idx}>{line}</div>
+                  ))}
+                </div>
+              )}
               <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
                 <button
                   type="button"

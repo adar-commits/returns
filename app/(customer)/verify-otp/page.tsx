@@ -31,6 +31,14 @@ function VerifyForm() {
         setError(data.error || "Invalid code");
         return;
       }
+      // Prefetch orders in background so /orders loads instantly (session is now set)
+      const ordersRes = await fetch("/api/orders");
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json().catch(() => ({}));
+        try {
+          sessionStorage.setItem("orders_prefetch", JSON.stringify({ orders: ordersData.orders || [], customerDetails: ordersData.customerDetails || ordersData.customer_details, at: Date.now() }));
+        } catch (_) {}
+      }
       router.push("/orders");
       router.refresh();
     } finally {

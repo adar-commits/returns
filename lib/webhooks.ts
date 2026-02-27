@@ -58,11 +58,20 @@ export type SizeOption = { id: string; label?: string; price?: number; compare_a
 /** Normalize n8n/Shopify-style response: array wrapper [ { sizes: [...] } ] or direct { sizes }. Map name→label, image[]→image+images. */
 function normalizeSizesResponse(data: unknown): SizeOption[] {
   let list: unknown[] = [];
-  if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0] === "object" && "sizes" in (data[0] as Record<string, unknown>)) {
-    list = ((data[0] as Record<string, unknown>).sizes as unknown[]) ?? [];
+  if (Array.isArray(data) && data.length > 0) {
+    const first = data[0];
+    if (first && typeof first === "object" && "sizes" in (first as Record<string, unknown>)) {
+      list = ((first as Record<string, unknown>).sizes as unknown[]) ?? [];
+    } else if (first && typeof first === "object" && "Sizes" in (first as Record<string, unknown>)) {
+      list = ((first as Record<string, unknown>).Sizes as unknown[]) ?? [];
+    } else if (data.every((x) => x && typeof x === "object" && ("id" in (x as object) || "name" in (x as object) || "label" in (x as object)))) {
+      list = data;
+    }
   } else if (data && typeof data === "object" && ("sizes" in (data as Record<string, unknown>) || "Sizes" in (data as Record<string, unknown>))) {
     const d = data as Record<string, unknown>;
     list = (d.sizes ?? d.Sizes) as unknown[] ?? [];
+  } else if (Array.isArray(data) && data.length > 0 && data.every((x) => x != null && typeof x === "object")) {
+    list = data;
   }
   if (!Array.isArray(list)) return [];
   return list.map((item, index) => {

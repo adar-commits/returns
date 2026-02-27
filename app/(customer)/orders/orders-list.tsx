@@ -12,6 +12,12 @@ type Order = {
   eligible?: boolean;
   total_price?: number | string;
   total?: number | string;
+  BRANCHDES?: string;
+  branchdes?: string;
+  BRANCHNAME?: string;
+  branchname?: string;
+  branch_desc?: string;
+  branch_name?: string;
   items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
   line_items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
   [key: string]: unknown;
@@ -24,8 +30,14 @@ function orderProductLines(order: Order): string[] {
   return list.map((item: { qty?: number; product_name?: string; partname?: string; sku?: string }) => {
     const qty = Math.max(1, Number(item.qty) || 1);
     const name = item.product_name || item.partname || item.sku || "פריט";
-    return `${qty}x ${name}`;
+    return `${qty} x ${name}`;
   });
+}
+
+function orderBranchName(order: Order): string {
+  return String(
+    order.BRANCHDES ?? order.branchdes ?? order.branch_desc ?? order.BRANCHNAME ?? order.branchname ?? order.branch_name ?? ""
+  ).trim();
 }
 
 const PREFETCH_KEY = "orders_prefetch";
@@ -78,41 +90,61 @@ export default function OrdersList() {
           const eligible = order.eligible === true;
           return (
             <li key={id} className="list-item-card">
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-3)", alignItems: "flex-start" }}>
+              {/* Row 1: order ID (right) + date (left) */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
                 <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
-                {/* Left column (RTL end): date + price */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-                  {(order.IVDATE || order.ivdate) && (
-                    <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
-                      {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
-                    </span>
-                  )}
-                  {(() => {
-                    const raw = order.total_price ?? order.total;
-                    const total = raw != null ? Number(raw) : NaN;
-                    if (!Number.isFinite(total) || total <= 0) return null;
-                    const exVat = Math.round(total / ISRAEL_VAT);
-                    return (
-                      <>
-                        <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary)", lineHeight: 1.2 }}>
-                          {total.toLocaleString("he-IL")} ₪
-                        </span>
-                        <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-                          ללא מע״מ: {exVat.toLocaleString("he-IL")} ₪
-                        </span>
-                      </>
-                    );
-                  })()}
-                </div>
+                {(order.IVDATE || order.ivdate) && (
+                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+                    {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
+                  </span>
+                )}
               </div>
+
+              {/* Items — directly below headline */}
               {orderProductLines(order).length > 0 && (
-                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)", lineHeight: 1.5 }}>
+                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)", lineHeight: 1.6 }}>
                   {orderProductLines(order).map((line, idx) => (
                     <div key={idx}>{line}</div>
                   ))}
                 </div>
               )}
+
+              {/* Branch name */}
+              {orderBranchName(order) && (
+                <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)" }}>
+                  סניף: {orderBranchName(order)}
+                </div>
+              )}
+
+              {/* Price — bottom-left (end side in RTL), just above buttons */}
+              {(() => {
+                const raw = order.total_price ?? order.total;
+                const total = raw != null ? Number(raw) : NaN;
+                if (!Number.isFinite(total) || total <= 0) return null;
+                const exVat = Math.round(total / ISRAEL_VAT);
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", marginBottom: "var(--space-3)", gap: 2 }}>
+                    <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary)", lineHeight: 1.2 }}>
+                      ₪ {total.toLocaleString("he-IL")}
+                    </span>
+                    <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+                      ללא מע״מ: {exVat.toLocaleString("he-IL")} ₪
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {/* Buttons: החלפה/החזרה first (primary), חשבונית second (secondary) */}
               <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+                {eligible ? (
+                  <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
+                    החלפה / החזרה
+                  </Link>
+                ) : (
+                  <span style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)", fontSize: "var(--text-caption)", cursor: "not-allowed" }}>
+                    החלפה / החזרה (לא זמין)
+                  </span>
+                )}
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -127,15 +159,8 @@ export default function OrdersList() {
                     if (d.href) window.open(d.href, "_blank");
                   }}
                 >
-                  צפה בקבלה
+                  צפה בחשבונית
                 </button>
-                {eligible ? (
-                  <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
-                    החלפה / החזרה
-                  </Link>
-                ) : (
-                  <span style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)", fontSize: "var(--text-caption)", cursor: "not-allowed" }}>החלפה / החזרה (לא זמין)</span>
-                )}
               </div>
             </li>
           );

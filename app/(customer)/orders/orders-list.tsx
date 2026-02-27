@@ -28,14 +28,14 @@ function orderProductLines(order: Order): string[] {
   });
 }
 
+const PREFETCH_KEY = "orders_prefetch";
+const PREFETCH_MAX_AGE_MS = 60 * 1000;
+
 export default function OrdersList() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customerName, setCustomerName] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-
-const PREFETCH_KEY = "orders_prefetch";
-const PREFETCH_MAX_AGE_MS = 60 * 1000;
 
   useEffect(() => {
     const prefetched = sessionStorage.getItem(PREFETCH_KEY);

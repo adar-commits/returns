@@ -56,7 +56,12 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const items = (found?.items || found?.line_items || []) as LineItem[];
       setChoices(items.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
       // Batch GetSizes for all SKUs in one request
-      const skus = [...new Set(items.map((it: LineItem) => it.sku?.trim()).filter(Boolean))] as string[];
+      const seen = new Set<string>();
+      const skus: string[] = [];
+      for (const it of items) {
+        const s = it.sku?.trim();
+        if (s && !seen.has(s)) { seen.add(s); skus.push(s); }
+      }
       if (skus.length > 0) {
         skus.forEach((s) => setSizesLoading((prev) => ({ ...prev, [s]: true })));
         fetch("/api/sizes", {

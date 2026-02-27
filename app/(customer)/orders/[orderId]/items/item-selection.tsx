@@ -28,7 +28,7 @@ function SizeImageGallery({ urls }: { urls: string[] }) {
 }
 
 type LineItem = { sku: string; product_name?: string; price?: number; [key: string]: unknown };
-type ItemChoice = { sku: string; action: "" | "return" | "replace" | "no_change"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
+type ItemChoice = { sku: string; action: "" | "return" | "replace"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
 type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
 
 export default function ItemSelection({ orderId }: { orderId: string }) {
@@ -52,15 +52,16 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       setReturnReasons(settingsData.return_reasons || []);
       const items = (found?.items || found?.line_items || []) as LineItem[];
       setChoices(items.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
+      // Trigger GetSizes immediately for all products in this order (so gallery is ready without waiting for "החלפה")
+      items.forEach((it: LineItem) => {
+        const sku = it.sku?.trim();
+        if (!sku) return;
+        fetch("/api/sizes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku }) })
+          .then((res) => res.json())
+          .then((data) => setSizesCache((prev) => ({ ...prev, [sku]: data.sizes || [] })));
+      });
     }).finally(() => setLoading(false));
   }, [orderId]);
-
-  // Load sizes for all products so we can show the main product gallery (same carpet images for all variants)
-  useEffect(() => {
-    if (!order) return;
-    const list = (order.items || order.line_items || []) as LineItem[];
-    list.forEach((it) => { if (it.sku) fetchSizes(it.sku); });
-  }, [order]);
 
   const fetchSizes = async (sku: string) => {
     if (sizesCache[sku]) return;
@@ -81,7 +82,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     setValidationError(null);
     const hasUnselected = choices.some((c) => c.action === "" || c.action == null);
     if (hasUnselected) {
-      setValidationError("נא לבחור לכל פריט: החלפה, החזרה או ללא שינוי.");
+      setValidationError("נא לבחור לכל פריט: החלפה או החזרה.");
       return;
     }
     const missingReason = choices.some((c, idx) => {
@@ -126,25 +127,24 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
         const productImages = sizes.length > 0 && (sizes[0].images?.length || sizes[0].image)
           ? (sizes[0].images && sizes[0].images.length > 0 ? sizes[0].images : sizes[0].image ? [sizes[0].image] : [])
           : [];
+        const galleryLoading = sizes.length === 0 && item.sku;
         return (
         <div key={i} className="card" style={{ display: "flex", flexDirection: "row-reverse", gap: "var(--space-4)", flexWrap: "wrap", alignItems: "flex-start" }}>
           <div style={{ flex: "1 1 200px", minWidth: 0 }}>
             <p style={{ marginBottom: "var(--space-3)", fontSize: "var(--text-body)" }}><strong>{item.product_name || item.sku || "פריט"}</strong></p>
             <div className="input-wrap">
-              <label className="input-label">החזרה, החלפה או ללא שינוי</label>
+              <label className="input-label">החזרה או החלפה</label>
               <select
                 className="input"
                 value={choices[i]?.action ?? ""}
                 onChange={(e) => {
-                  const action = (e.target.value || "") as "" | "return" | "replace" | "no_change";
+                  const action = (e.target.value || "") as "" | "return" | "replace";
                   setChoice(i, { action, reason_id: action !== "return" ? undefined : choices[i]?.reason_id, selected_size_id: action !== "replace" ? undefined : choices[i]?.selected_size_id });
-                  if (action === "replace") fetchSizes(item.sku || "");
                 }}
               >
                 <option value="">בחר פעולה</option>
                 <option value="return">החזרה</option>
                 <option value="replace">החלפה</option>
-                <option value="no_change">ללא שינוי</option>
               </select>
             </div>
             {choices[i]?.action === "return" && (
@@ -231,11 +231,13 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
               </div>
             )}
           </div>
-          {productImages.length > 0 && (
-            <div style={{ flex: "0 0 auto" }}>
+          <div style={{ flex: "0 0 auto", width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {productImages.length > 0 ? (
               <SizeImageGallery urls={productImages} />
-            </div>
-          )}
+            ) : galleryLoading ? (
+              <div className="skeleton" style={{ width: 96, height: 96, borderRadius: 6 }} aria-hidden />
+            ) : null}
+          </div>
         </div>
         );
       })}

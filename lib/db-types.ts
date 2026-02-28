@@ -59,6 +59,7 @@ export interface ReturnRequestRow {
   confirm_token: string | null;
   replacement_order_id: string | null;
   customer_address: CustomerAddress | null;
+  webhook_payload: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }

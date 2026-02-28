@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { formatOrderDate } from "@/lib/format";
+import { formatOrderDate, parseOrderDate } from "@/lib/format";
 
 type Order = {
   order_id?: string;
@@ -94,8 +94,9 @@ export default function OrdersList() {
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
           const ivdate = order.IVDATE || order.ivdate;
-          const daysSinceOrder = ivdate
-            ? Math.floor((Date.now() - new Date(String(ivdate)).getTime()) / 86400000)
+          const orderDate = parseOrderDate(ivdate);
+          const daysSinceOrder = orderDate
+            ? Math.floor((Date.now() - orderDate.getTime()) / 86400000)
             : 0;
           const eligible = order.eligible === true && daysSinceOrder <= 20;
           const branch = orderBranchName(order);

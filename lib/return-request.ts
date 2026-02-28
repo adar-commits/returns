@@ -30,6 +30,7 @@ export async function createReturnRequest(params: {
   amount_to_pay: number;
   shipping_fee: number;
   customer_address: Record<string, unknown> | null;
+  webhook_payload?: Record<string, unknown> | null;
 }) {
   const supabase = createServerClient();
   const return_id = generateReturnId();
@@ -50,6 +51,7 @@ export async function createReturnRequest(params: {
       shipping_fee: params.shipping_fee,
       customer_address: params.customer_address,
       confirm_token,
+      ...(params.webhook_payload != null && { webhook_payload: params.webhook_payload }),
     })
     .select("id, return_id")
     .single();
@@ -72,6 +74,15 @@ export async function setReturnRequestStatus(returnId: string, status: string) {
   const { error } = await supabase
     .from("return_requests")
     .update({ status })
+    .eq("return_id", returnId);
+  if (error) throw error;
+}
+
+export async function updateReturnRequestWebhookPayload(returnId: string, payload: Record<string, unknown>) {
+  const supabase = createServerClient();
+  const { error } = await supabase
+    .from("return_requests")
+    .update({ webhook_payload: payload })
     .eq("return_id", returnId);
   if (error) throw error;
 }

@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 
-export default function SuccessView({ returnId }: { returnId: string }) {
+export default function SuccessView({
+  returnId,
+  shippingType,
+  branchName,
+}: {
+  returnId: string;
+  shippingType: string;
+  branchName: string;
+}) {
+  const destinationLabel =
+    shippingType === "branch" && branchName
+      ? `הבקשה נשלחה לסניף ${branchName}`
+      : "הבקשה נשלחה לשירות הלקוחות שלנו";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "var(--space-6) var(--space-4)", minHeight: "60vh", justifyContent: "center" }}>
 
@@ -36,6 +49,17 @@ export default function SuccessView({ returnId }: { returnId: string }) {
       <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "var(--color-text)", marginBottom: "var(--space-2)", textAlign: "center" }}>
         הבקשה נשלחה!
       </h1>
+
+      {/* Shipping destination */}
+      <p style={{
+        fontSize: "var(--text-body)",
+        fontWeight: 600,
+        color: "var(--color-primary)",
+        textAlign: "center",
+        marginBottom: "var(--space-3)",
+      }}>
+        {destinationLabel}
+      </p>
 
       {/* Sub-message */}
       <p style={{ fontSize: "var(--text-body)", color: "var(--color-text-muted)", textAlign: "center", lineHeight: 1.7, maxWidth: 320, marginBottom: "var(--space-6)" }}>

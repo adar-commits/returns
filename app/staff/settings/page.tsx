@@ -171,6 +171,39 @@ export default function StaffSettingsPage() {
         </div>
       </div>
 
+      <div className="card">
+        <p className="card-title">Terms & Policy links (Summary page)</p>
+        <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-4)" }}>
+          These links appear as clickable text inside the required checkbox on the Summary page. Leave blank to show plain (unlinked) text.
+        </p>
+        <div className="input-wrap">
+          <label className="input-label">פורטל החזרות — link URL</label>
+          <input
+            type="url"
+            className="input"
+            value={headlines["terms_portal_url"] ?? ""}
+            onChange={(e) =>
+              setHeadlines((prev) => ({ ...prev, terms_portal_url: e.target.value }))
+            }
+            placeholder="https://example.com/terms"
+            style={{ fontFamily: "monospace" }}
+          />
+        </div>
+        <div className="input-wrap">
+          <label className="input-label">מדיניות המשלוחים והביטולים — link URL</label>
+          <input
+            type="url"
+            className="input"
+            value={headlines["terms_shipping_url"] ?? ""}
+            onChange={(e) =>
+              setHeadlines((prev) => ({ ...prev, terms_shipping_url: e.target.value }))
+            }
+            placeholder="https://example.com/shipping-policy"
+            style={{ fontFamily: "monospace" }}
+          />
+        </div>
+      </div>
+
       {branches.length > 0 && (
         <div className="card">
           <p className="card-title">Waze links per branch</p>

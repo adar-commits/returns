@@ -8,8 +8,6 @@ export default async function CustomerHome() {
   return (
     <main className="page-wrap">
       <div className="hero">
-        <span className="hero-badge">החלפות והחזרות</span>
-        <h1 className="hero-title">מרכז ההחלפות וההחזרות</h1>
         <p className="hero-subtitle">שלום לך. הזן/י את מספר הטלפון כדי להמשיך</p>
       </div>
       <div className="card">

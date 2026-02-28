@@ -17,8 +17,17 @@ type ShippingTier = { min: number; max: number; fee: number };
 
 function WazeIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polygon points="3 11 22 2 13 21 11 13 3 11" />
+    <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Waze-style map pin body */}
+      <path d="M24 4C15.163 4 8 11.163 8 20c0 7.3 4.8 14.7 13.2 20.6.48.34 1.12.34 1.6 0C31.2 34.7 40 27.3 40 20 40 11.163 32.837 4 24 4z" fill="#33CCFF"/>
+      {/* Eyes */}
+      <circle cx="19" cy="19" r="2.5" fill="#1a1a2e"/>
+      <circle cx="29" cy="19" r="2.5" fill="#1a1a2e"/>
+      {/* Smile */}
+      <path d="M18 25c1.5 2.5 10.5 2.5 12 0" stroke="#1a1a2e" strokeWidth="2" strokeLinecap="round"/>
+      {/* Antenna */}
+      <circle cx="31" cy="10" r="2.5" fill="#FF6B35"/>
+      <line x1="29" y1="10" x2="27" y2="14" stroke="#FF6B35" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }
@@ -196,7 +205,7 @@ export default function ShippingForm() {
           ) : branches.length === 0 ? (
             <p style={{ color: "var(--color-text-muted)", fontSize: "var(--text-caption)", textAlign: "right" }}>לא נמצאו סניפים</p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)" }}>
               {branches.map((b) => {
                 const selected = selectedBranchId === b.id;
                 const wazeHref = wazeUrls[b.id] || b.map_url || null;
@@ -210,7 +219,7 @@ export default function ShippingForm() {
                       flexDirection: "column",
                       alignItems: "flex-end",
                       gap: "var(--space-1)",
-                      padding: "var(--space-4)",
+                      padding: "var(--space-3)",
                       border: selected ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
                       borderRadius: "var(--radius-md)",
                       background: selected ? "#f5f0e8" : "var(--color-surface-elevated)",
@@ -222,45 +231,44 @@ export default function ShippingForm() {
                       boxShadow: selected ? "0 0 0 3px rgba(155,45,48,0.10)" : "var(--shadow-sm)",
                     }}
                   >
-                    <strong style={{ fontSize: "var(--text-body)", color: "var(--color-text)" }}>
+                    <strong style={{ fontSize: "var(--text-caption)", color: "var(--color-text)", lineHeight: 1.3 }}>
                       {b.name}
                     </strong>
                     {(b.address || b.state) && (
-                      <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
+                      <span style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", lineHeight: 1.3, textAlign: "right" }}>
                         {[b.address, b.state].filter(Boolean).join(", ")}
                       </span>
                     )}
-                    <div style={{ display: "flex", gap: "var(--space-4)", alignItems: "center", marginTop: "var(--space-1)" }}>
-                      {b.phone && (
-                        <a
-                          href={`tel:${b.phone}`}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ fontSize: "var(--text-caption)", color: "var(--color-primary)", textDecoration: "none", direction: "ltr", fontWeight: 500 }}
-                        >
-                          {b.phone}
-                        </a>
-                      )}
-                      {wazeHref && (
-                        <a
-                          href={wazeHref}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: "var(--text-small)",
-                            color: "#00bcd4",
-                            fontWeight: 600,
-                            textDecoration: "none",
-                          }}
-                        >
-                          <WazeIcon />
-                          Waze
-                        </a>
-                      )}
-                    </div>
+                    {b.phone && (
+                      <a
+                        href={`tel:${b.phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ fontSize: "0.7rem", color: "var(--color-primary)", textDecoration: "none", direction: "ltr", fontWeight: 500, marginTop: 2 }}
+                      >
+                        {b.phone}
+                      </a>
+                    )}
+                    {wazeHref && (
+                      <a
+                        href={wazeHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 3,
+                          fontSize: "0.7rem",
+                          color: "#00bcd4",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          marginTop: 2,
+                        }}
+                      >
+                        <WazeIcon />
+                        Waze
+                      </a>
+                    )}
                   </button>
                 );
               })}
@@ -283,8 +291,7 @@ export default function ShippingForm() {
         style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
         onClick={() => {
           sessionStorage.removeItem("returns_wizard");
-          router.push("/orders");
-          router.refresh();
+          router.push("/");
         }}
       >
         Reset (QA)

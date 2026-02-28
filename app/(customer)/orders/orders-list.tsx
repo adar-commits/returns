@@ -90,6 +90,19 @@ export default function OrdersList() {
           : "בחר/י הזמנה להחלפה או החזרה"}
       </p>
 
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--space-3)" }}>
+        <button
+          type="button"
+          style={{ background: "none", border: "none", fontSize: "var(--text-small)", color: "var(--color-text-muted)", cursor: "pointer", fontFamily: "inherit", padding: "var(--space-1) var(--space-2)" }}
+          onClick={() => {
+            sessionStorage.removeItem("returns_wizard");
+            window.location.href = "/";
+          }}
+        >
+          Reset (QA)
+        </button>
+      </div>
+
       <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
@@ -103,17 +116,19 @@ export default function OrdersList() {
 
           return (
             <li key={id} className="list-item-card">
-              {/* Row 1: order ID (right) + date (left) */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
+              {/* Row 1: order ID */}
+              <div style={{ marginBottom: "var(--space-1)" }}>
                 <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
-                {(order.IVDATE || order.ivdate) && (
-                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-                    {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
-                  </span>
-                )}
               </div>
 
-              {/* Branch — below date row */}
+              {/* Row 2: date */}
+              {(order.IVDATE || order.ivdate) && (
+                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
+                  {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
+                </div>
+              )}
+
+              {/* Row 3: branch — below iv-date */}
               {branch && (
                 <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>
                   סניף: {branch}
@@ -138,9 +153,9 @@ export default function OrdersList() {
                       החלפה / החזרה
                     </Link>
                   ) : (
-                    <span style={{ padding: "var(--space-3) var(--space-4)", color: "var(--color-text-muted)", fontSize: "var(--text-caption)", cursor: "not-allowed" }}>
-                      החלפה / החזרה (לא זמין)
-                    </span>
+                    <button type="button" className="btn btn-primary" disabled style={{ width: "auto", minWidth: 0 }}>
+                      החלפה / החזרה
+                    </button>
                   )}
                   <button
                     type="button"

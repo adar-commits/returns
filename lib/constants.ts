@@ -3,7 +3,7 @@ export const DEFAULT_LOGO_URL = "/img/HoM_logo.webp";
 
 /** Default webhook URL used when no setting or env is configured for OTP, sizes, or final. */
 export const DEFAULT_WEBHOOK_URL =
-  "https://redcarpet.app.n8n.cloud/webhook/48cafaef-db0a-4240-8e0b-648f5be79bd2";
+  "https://redcarpet.app.n8n.cloud/webhook/e437eb1f-8b91-4c08-adbb-1b9c1d96ea09";
 
 /** Default webhook URL for Orders (separate n8n workflow). */
 export const DEFAULT_ORDERS_WEBHOOK_URL =

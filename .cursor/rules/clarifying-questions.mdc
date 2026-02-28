@@ -1,0 +1,21 @@
+---
+description: How to handle uncertain requests — ask clarifying questions in a consistent style
+alwaysApply: true
+---
+
+# Clarifying Questions Style
+
+When a request is ambiguous and clarification is needed before acting (or after acting if 90%+ confident but unsure on one detail), append a clearly separated question block at the **end** of the response using this exact format:
+
+```
+---
+
+> **❓ לפני שממשיך — רק לוודא:**
+> [the question here]
+```
+
+Rules:
+- Always place it **at the very end** of the response, after all other content
+- Never interrupt the main response to ask — finish the work first if reasonably confident
+- Use this format consistently every time; do not vary the style
+- Keep the question short and specific — one question at a time if possible

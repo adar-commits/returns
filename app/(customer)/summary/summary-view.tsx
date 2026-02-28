@@ -16,7 +16,7 @@ type Wizard = {
   orderId: string;
   order: { items?: LineItem[]; line_items?: LineItem[] };
   choices: Choice[];
-  shipping: { type: string; fee: number; branch_id?: string; branch?: { name?: string; address?: string; state?: string } };
+  shipping: { type: string; fee: number; branch_id?: string; branch?: { id?: string; name?: string; address?: string; state?: string; phone?: string; opening_hours?: string; map_url?: string } };
 };
 type CustomerDetails = { name?: string; full_name?: string; address?: string; phone?: string };
 
@@ -51,6 +51,10 @@ export default function SummaryView() {
   const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState(false);
+  const [termsPortalUrl, setTermsPortalUrl] = useState<string>("");
+  const [termsShippingUrl, setTermsShippingUrl] = useState<string>("");
 
   useEffect(() => {
     const raw = sessionStorage.getItem("returns_wizard");
@@ -96,6 +100,14 @@ export default function SummaryView() {
         setPhone(cd.phone || "");
         setAddress(cd.address || "");
       });
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        const h: Record<string, string> = d.content_headlines || {};
+        if (h.terms_portal_url) setTermsPortalUrl(h.terms_portal_url);
+        if (h.terms_shipping_url) setTermsShippingUrl(h.terms_shipping_url);
+      })
+      .catch(() => {});
   }, []);
 
   const netPay = Math.max(0, payTotal + shippingFee - refundTotal);
@@ -106,6 +118,11 @@ export default function SummaryView() {
   const handleSubmit = async () => {
     if (!wizard) return;
     setError(null);
+    setTermsError(false);
+    if (!termsAccepted) {
+      setTermsError(true);
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/return-request", {
@@ -119,8 +136,12 @@ export default function SummaryView() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error || "Failed to submit"); return; }
       if (data.payment_link) { window.location.href = data.payment_link; return; }
+      const shippingType = wizard.shipping?.type === "branch" ? "branch" : "courier";
+      const branchName = wizard.shipping?.branch?.name || "";
       sessionStorage.removeItem("returns_wizard");
-      router.push(`/success?returnId=${encodeURIComponent(data.return_id || "")}`);
+      router.push(
+        `/success?returnId=${encodeURIComponent(data.return_id || "")}&shippingType=${shippingType}&branchName=${encodeURIComponent(branchName)}`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -130,7 +151,7 @@ export default function SummaryView() {
 
   const shippingLabel =
     wizard.shipping?.type === "branch"
-      ? `איסוף עצמי — ${wizard.shipping.branch?.name ?? ""}${wizard.shipping.branch?.state ? `, ${wizard.shipping.branch.state}` : ""}`
+      ? `איסוף עצמי — ${wizard.shipping.branch?.name ?? ""}`
       : "שליח עד הבית";
 
   return (
@@ -157,7 +178,7 @@ export default function SummaryView() {
                 )}
                 {row.action === "replace" && (
                   <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
-                    החלפה{row.sizeLabel ? ` → ${row.sizeLabel}` : ""}
+                    המוצר המוחלף: {row.name}{row.sizeLabel ? ` למוצר ${row.sizeLabel}` : ""}
                   </p>
                 )}
                 {row.paidPrice > 0 && (
@@ -166,6 +187,17 @@ export default function SummaryView() {
                     {row.action === "replace" && row.newPrice !== row.paidPrice && (
                       <> → <strong>{fmt(row.newPrice)} ₪</strong></>
                     )}
+                  </p>
+                )}
+                {/* Per-item cost/refund label */}
+                {row.action === "return" && row.paidPrice > 0 && (
+                  <p style={{ fontSize: "var(--text-caption)", fontWeight: 600, color: "var(--color-success)", marginTop: 2 }}>
+                    זיכוי: {fmt(row.paidPrice)} ₪
+                  </p>
+                )}
+                {row.action === "replace" && row.diff !== 0 && (
+                  <p style={{ fontSize: "var(--text-caption)", fontWeight: 600, color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)", marginTop: 2 }}>
+                    {row.diff > 0 ? `תוספת תשלום: ${fmt(row.diff)} ₪` : `זיכוי: ${fmt(Math.abs(row.diff))} ₪`}
                   </p>
                 )}
               </div>
@@ -289,6 +321,84 @@ export default function SummaryView() {
         </div>
       )}
 
+      {/* Terms checkbox */}
+      <div
+        style={{
+          marginBottom: "var(--space-4)",
+          padding: "var(--space-4)",
+          borderRadius: "var(--radius-md)",
+          border: termsError
+            ? "2px solid var(--color-error, #b91c1c)"
+            : "1px solid var(--color-border)",
+          background: termsError ? "var(--color-error-bg)" : "var(--color-surface-elevated)",
+          transition: "border-color 0.2s, background 0.2s",
+        }}
+      >
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "var(--space-3)",
+            cursor: "pointer",
+            direction: "rtl",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => {
+              setTermsAccepted(e.target.checked);
+              if (e.target.checked) setTermsError(false);
+            }}
+            style={{
+              marginTop: 3,
+              width: 18,
+              height: 18,
+              flexShrink: 0,
+              accentColor: "var(--color-primary)",
+              cursor: "pointer",
+            }}
+          />
+          <span style={{ fontSize: "var(--text-caption)", lineHeight: 1.6, color: "var(--color-text)" }}>
+            בשליחת טופס זה אני מאשר/ת שקראתי את תקנון השימוש ב
+            {termsPortalUrl ? (
+              <a
+                href={termsPortalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ color: "var(--color-primary)", fontWeight: 600, textDecoration: "underline" }}
+              >
+                פורטל החזרות
+              </a>
+            ) : (
+              <strong>פורטל החזרות</strong>
+            )}
+            {" "}ובהתאם לתקנון{" "}
+            {termsShippingUrl ? (
+              <a
+                href={termsShippingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ color: "var(--color-primary)", fontWeight: 600, textDecoration: "underline" }}
+              >
+                מדיניות המשלוחים והביטולים
+              </a>
+            ) : (
+              <strong>מדיניות המשלוחים והביטולים</strong>
+            )}
+            {" "}של החברה
+            <span style={{ color: "var(--color-error, #b91c1c)", marginRight: 2 }}>*</span>
+          </span>
+        </label>
+        {termsError && (
+          <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-error, #b91c1c)", marginRight: 30 }}>
+            יש לאשר את התקנון לפני שליחת הבקשה
+          </p>
+        )}
+      </div>
+
       {error && <div className="msg-error">{error}</div>}
 
       <button
@@ -306,8 +416,7 @@ export default function SummaryView() {
         style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
         onClick={() => {
           sessionStorage.removeItem("returns_wizard");
-          router.push("/orders");
-          router.refresh();
+          router.push("/");
         }}
       >
         Reset (QA)

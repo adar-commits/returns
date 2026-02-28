@@ -8,6 +8,33 @@ const MAX_GALLERY_IMAGES = 3;
 const SIZE_GUIDE_URL =
   "https://www.carpetshop.co.il/cdn/shop/files/15_68460313-b64d-4af8-ae1d-2f7262a57abd.webp?v=1762080406";
 
+function NoImagePlaceholder() {
+  return (
+    <div
+      style={{
+        width: GALLERY_SIZE,
+        height: GALLERY_SIZE,
+        borderRadius: 8,
+        border: "1px solid var(--color-border)",
+        background: "var(--color-surface)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        color: "var(--color-text-muted)",
+      }}
+    >
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
+      </svg>
+      <span style={{ fontSize: "0.7rem", textAlign: "center", lineHeight: 1.3, padding: "0 6px" }}>אין תמונה זמינה</span>
+    </div>
+  );
+}
+
 function SizeImageGallery({ urls }: { urls: string[] }) {
   const limited = urls.slice(0, MAX_GALLERY_IMAGES);
   const [index, setIndex] = useState(0);
@@ -126,13 +153,28 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-type LineItem = { sku: string; product_name?: string; price?: number; [key: string]: unknown };
+type LineItem = { sku: string; product_name?: string; price?: number; qty?: number | string; [key: string]: unknown };
+type ExpandedLineItem = LineItem & { _lineIdx: number; _qtyIdx: number; _totalQty: number };
 type ItemChoice = { sku: string; action: "" | "return" | "replace"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
 type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
+
+function expandByQty(items: LineItem[]): ExpandedLineItem[] {
+  return items.flatMap((item, lineIdx) => {
+    const qty = Math.max(1, Math.round(Number(item.qty) || 1));
+    return Array.from({ length: qty }, (_, qtyIdx) => ({
+      ...item,
+      qty: 1,
+      _lineIdx: lineIdx,
+      _qtyIdx: qtyIdx,
+      _totalQty: qty,
+    }));
+  });
+}
 
 export default function ItemSelection({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [order, setOrder] = useState<{ items?: LineItem[]; [key: string]: unknown } | null>(null);
+  const [expandedItems, setExpandedItems] = useState<ExpandedLineItem[]>([]);
   const [returnReasons, setReturnReasons] = useState<string[]>([]);
   const [choices, setChoices] = useState<ItemChoice[]>([]);
   const [sizesCache, setSizesCache] = useState<Record<string, SizeOption[]>>({});
@@ -151,12 +193,15 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const found = orders.find((o: { order_id?: string }) => String(o.order_id) === orderId);
       setOrder(found || null);
       setReturnReasons(settingsData.return_reasons || []);
-      const items = (found?.items || found?.line_items || []) as LineItem[];
-      setChoices(items.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
+      const rawItems = (found?.items || found?.line_items || []) as LineItem[];
+      // Expand items with qty > 1 into individual rows
+      const exp = expandByQty(rawItems);
+      setExpandedItems(exp);
+      setChoices(exp.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
       const seen = new Set<string>();
       const skus: string[] = [];
-      for (const it of items) {
-        const s = it.sku?.trim();
+      for (const it of rawItems) {
+        const s = String(it.sku || "").trim();
         if (s && !seen.has(s)) { seen.add(s); skus.push(s); }
       }
       if (skus.length > 0) {
@@ -208,8 +253,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
 
   if (loading || !order) return <div className="loading-block"><div className="loader" /><span>טוען…</span></div>;
 
-  const items = (order.items || order.line_items || []) as LineItem[];
-  if (items.length === 0) return <div className="card"><p style={{ margin: 0, color: "var(--color-text-muted)" }}>לא נמצאו פריטים.</p></div>;
+  if (expandedItems.length === 0) return <div className="card"><p style={{ margin: 0, color: "var(--color-text-muted)" }}>לא נמצאו פריטים.</p></div>;
 
   return (
     <div>
@@ -219,7 +263,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
         <div className="msg-error" style={{ marginBottom: "var(--space-4)" }}>{validationError}</div>
       )}
 
-      {items.map((item, i) => {
+      {expandedItems.map((item, i) => {
         const sizes = sizesCache[item.sku || ""] || [];
         const productImages = sizes.length > 0
           ? (sizes[0].images && sizes[0].images.length > 0 ? sizes[0].images : sizes[0].image ? [sizes[0].image] : [])
@@ -233,12 +277,27 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                 <SizeImageGallery urls={productImages} />
               ) : galleryLoading ? (
                 <div className="skeleton" style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, borderRadius: 6 }} aria-hidden />
-              ) : null}
+              ) : (
+                <NoImagePlaceholder />
+              )}
             </div>
 
             <div className="item-card-content">
               <p style={{ marginBottom: "var(--space-3)", fontSize: "var(--text-body)" }}>
                 <strong>{item.product_name || item.sku || "פריט"}</strong>
+                {item._totalQty > 1 && (
+                  <span style={{
+                    marginRight: "var(--space-2)",
+                    fontSize: "var(--text-small)",
+                    fontWeight: 400,
+                    color: "var(--color-text-muted)",
+                    background: "var(--color-border)",
+                    borderRadius: "var(--radius-full)",
+                    padding: "1px 8px",
+                  }}>
+                    יח׳ {item._qtyIdx + 1} מתוך {item._totalQty}
+                  </span>
+                )}
               </p>
 
               {/* Action selector */}
@@ -305,10 +364,19 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                     <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>טוען אפשרויות…</p>
                   )}
 
+                  {!sizesLoading[item.sku || ""] && sizes.length === 0 && (
+                    <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
+                      לא נמצאו פריטים במידה אחרת למוצר זה
+                    </p>
+                  )}
+
                   {sizes.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
                       {sizes.map((s) => {
                         const selected = choices[i]?.selected_size_id === s.id;
+                        const origPrice = Number(item.price ?? 0);
+                        const sizePrice = s.price != null ? Number(s.price) : null;
+                        const diff = sizePrice != null && origPrice > 0 ? sizePrice - origPrice : null;
                         return (
                           <label
                             key={s.id}
@@ -338,16 +406,28 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                                   ₪{s.compare_at_price}
                                 </span>
                               )}
-                              {s.price != null && (
+                              {sizePrice != null && (
                                 <span style={{ fontSize: "var(--text-caption)", fontWeight: 700, color: "var(--color-primary, #9b2d30)" }}>
-                                  ₪{s.price}
+                                  ₪{sizePrice}
                                 </span>
                               )}
                             </span>
 
+                            {diff != null && diff !== 0 && (
+                              <span style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                color: diff > 0 ? "var(--color-primary, #9b2d30)" : "var(--color-success, #166534)",
+                                textAlign: "center",
+                                lineHeight: 1.2,
+                              }}>
+                                {diff > 0 ? `תוספת: ₪${diff}` : `זיכוי: ₪${Math.abs(diff)}`}
+                              </span>
+                            )}
+
                             <input
                               type="radio"
-                              name={`size-${i}-${item.sku}`}
+                              name={`size-${i}-${item.sku}-${item._lineIdx}-${item._qtyIdx}`}
                               value={s.id}
                               checked={selected}
                               onChange={() => setChoice(i, { selected_size_id: s.id, size_label: s.label, size_price: s.price })}
@@ -375,8 +455,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
         style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
         onClick={() => {
           sessionStorage.removeItem("returns_wizard");
-          router.push("/orders");
-          router.refresh();
+          router.push("/");
         }}
       >
         Reset (QA)

@@ -2,7 +2,7 @@ const STEPS = ["בחירת הזמנה", "בחירת פריטים", "משלוח �
 
 export default function ProgressBar({ currentStep }: { currentStep: number }) {
   return (
-    <div className="stepper">
+    <div className="stepper" style={{ marginTop: "var(--space-4)" }}>
       {STEPS.map((label, i) => (
         <div
           key={i}

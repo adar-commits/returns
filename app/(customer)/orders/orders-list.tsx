@@ -95,10 +95,12 @@ export default function OrdersList() {
           const id = String(order.order_id ?? order.id ?? "");
           const ivdate = order.IVDATE || order.ivdate;
           const orderDate = parseOrderDate(ivdate);
-          const daysSinceOrder = orderDate
+          const rawDays = orderDate
             ? Math.floor((Date.now() - orderDate.getTime()) / 86400000)
             : 0;
-          const eligible = order.eligible === true && daysSinceOrder <= 20;
+          const daysSinceOrder = rawDays < 0 ? 0 : rawDays;
+          const over20Days = daysSinceOrder > 20;
+          const eligible = order.eligible === true && !over20Days;
           const branch = orderBranchName(order);
 
           const raw = order.total_price ?? order.total;

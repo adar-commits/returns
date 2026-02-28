@@ -9,7 +9,8 @@ type Order = {
   id?: string;
   IVDATE?: string;
   ivdate?: string;
-  isReturnable?: boolean;
+  isReturnable?: boolean | string;
+  is_returnable?: boolean | string;
   total_price?: number | string;
   total?: number | string;
   BRANCHDES?: string;
@@ -40,7 +41,12 @@ function orderBranchName(order: Order): string {
   ).trim();
 }
 
-const PREFETCH_KEY = "orders_prefetch";
+/** Coerce API value to boolean (handles "true", "1", true, etc.) */
+function isReturnableValue(v: unknown): boolean {
+  if (v === true || v === 1) return true;
+  if (typeof v === "string") return v.toLowerCase() === "true" || v === "1";
+  return false;
+}
 const PREFETCH_MAX_AGE_MS = 60 * 1000;
 
 export default function OrdersList() {
@@ -93,7 +99,7 @@ export default function OrdersList() {
       <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
-          const canReturn = order.isReturnable === true;
+          const canReturn = isReturnableValue(order.isReturnable ?? order.is_returnable);
           const branch = orderBranchName(order);
 
           const raw = order.total_price ?? order.total;

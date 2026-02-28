@@ -9,8 +9,17 @@ export default async function CustomerLayout({ children }: { children: React.Rea
   const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || DEFAULT_LOGO_URL;
 
   return (
-    <div className="customer-flow" style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      <header style={{ padding: "var(--space-4) var(--space-4) var(--space-3)", textAlign: "center", borderBottom: "1px solid var(--color-border)", background: "var(--color-surface-elevated)", boxShadow: "0 1px 0 var(--color-border)" }}>
+    <div className="customer-flow" style={{ display: "flex", flexDirection: "column", minHeight: "100vh", minHeight: "100dvh" }}>
+      <header style={{
+        padding: "var(--space-4) var(--space-4) var(--space-3)",
+        paddingTop: "calc(var(--space-4) + env(safe-area-inset-top, 0px))",
+        paddingLeft: "calc(var(--space-4) + env(safe-area-inset-left, 0px))",
+        paddingRight: "calc(var(--space-4) + env(safe-area-inset-right, 0px))",
+        textAlign: "center",
+        borderBottom: "1px solid var(--color-border)",
+        background: "var(--color-surface-elevated)",
+        boxShadow: "0 1px 0 var(--color-border)",
+      }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logoUrl} alt="Logo" className="customer-header-logo" />
         <p className="customer-header-title">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Hebrew } from "next/font/google";
 import "./globals.css";
 
@@ -8,9 +8,33 @@ const notoHebrew = Noto_Sans_Hebrew({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#9b2d30" },
+    { media: "(prefers-color-scheme: dark)", color: "#9b2d30" },
+  ],
+};
+
 export const metadata: Metadata = {
   title: "מרכז ההחלפות וההחזרות | Returns",
-  description: "Returns and exchanges hub",
+  description: "פורטל החלפות והחזרות — השטיח האדום",
+  manifest: "/manifest",
+  icons: {
+    apple: "/img/HoM_logo.webp",
+  },
+  formatDetection: {
+    telephone: true,
+  },
+  openGraph: {
+    title: "מרכז ההחלפות וההחזרות",
+    description: "פורטל החלפות והחזרות — השטיח האדום",
+    locale: "he_IL",
+  },
 };
 
 export default function RootLayout({

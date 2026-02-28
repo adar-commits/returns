@@ -6,6 +6,17 @@
  * Only orders with total_price > 0 are included (credit notes excluded from "my orders").
  */
 
+function coerceReturnable(v: unknown): boolean | undefined {
+  if (v === true || v === 1) return true;
+  if (v === false || v === 0) return false;
+  if (typeof v === "string") {
+    const lower = v.toLowerCase();
+    if (lower === "true" || v === "1") return true;
+    if (lower === "false" || v === "0") return false;
+  }
+  return undefined;
+}
+
 function normalizeSinglePayload(data: Record<string, unknown>): {
   orders: Array<Record<string, unknown>>;
   customerDetails?: Record<string, unknown>;
@@ -53,7 +64,7 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
         ivdate: o.ivdate ?? o.IVDATE,
         IVNUM: o.ivnum ?? o.IVNUM,
         ivnum: o.ivnum ?? o.IVNUM,
-        isReturnable: o.isReturnable ?? o.is_returnable ?? undefined,
+        isReturnable: coerceReturnable(o.isReturnable ?? o.is_returnable ?? o.returnable ?? o.Returnable),
         receipt_link: o.receipt_link ?? o.receipt_href ?? o.invoice_link,
         receipt_href: o.receipt_link ?? o.receipt_href ?? o.invoice_link,
         items,

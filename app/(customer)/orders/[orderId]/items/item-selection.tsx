@@ -456,18 +456,6 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
         {sending ? "שולח…" : "המשך למשלוח ואיסוף"}
       </button>
 
-      <button
-        type="button"
-        className="btn btn-ghost"
-        style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
-        onClick={async () => {
-          sessionStorage.clear();
-          try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
-          window.location.href = "/";
-        }}
-      >
-        Reset (QA)
-      </button>
     </div>
   );
 }

@@ -90,24 +90,14 @@ export default function OrdersList() {
           : "בחר/י הזמנה להחלפה או החזרה"}
       </p>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--space-3)" }}>
-        <button
-          type="button"
-          style={{ background: "none", border: "none", fontSize: "var(--text-small)", color: "var(--color-text-muted)", cursor: "pointer", fontFamily: "inherit", padding: "var(--space-1) var(--space-2)" }}
-          onClick={async () => {
-            sessionStorage.clear();
-            try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
-            window.location.href = "/";
-          }}
-        >
-          Reset (QA)
-        </button>
-      </div>
-
       <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
-          const eligible = order.eligible === true;
+          const ivdate = order.IVDATE || order.ivdate;
+          const daysSinceOrder = ivdate
+            ? Math.floor((Date.now() - new Date(String(ivdate)).getTime()) / 86400000)
+            : 0;
+          const eligible = order.eligible === true && daysSinceOrder <= 20;
           const branch = orderBranchName(order);
 
           const raw = order.total_price ?? order.total;
@@ -127,9 +117,9 @@ export default function OrdersList() {
                 )}
               </div>
 
-              {/* Row 2: branch — below iv-date */}
+              {/* Row 2: branch — below iv-date, aligned left */}
               {branch && (
-                <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>
+                <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)", textAlign: "left" }}>
                   סניף: {branch}
                 </div>
               )}

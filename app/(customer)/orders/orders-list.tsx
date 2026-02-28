@@ -94,8 +94,9 @@ export default function OrdersList() {
         <button
           type="button"
           style={{ background: "none", border: "none", fontSize: "var(--text-small)", color: "var(--color-text-muted)", cursor: "pointer", fontFamily: "inherit", padding: "var(--space-1) var(--space-2)" }}
-          onClick={() => {
-            sessionStorage.removeItem("returns_wizard");
+          onClick={async () => {
+            sessionStorage.clear();
+            try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
             window.location.href = "/";
           }}
         >
@@ -116,19 +117,17 @@ export default function OrdersList() {
 
           return (
             <li key={id} className="list-item-card">
-              {/* Row 1: order ID */}
-              <div style={{ marginBottom: "var(--space-1)" }}>
+              {/* Row 1: order ID (right) + iv-date (left) on same line */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-1)" }}>
                 <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
+                {(order.IVDATE || order.ivdate) && (
+                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+                    {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
+                  </span>
+                )}
               </div>
 
-              {/* Row 2: date */}
-              {(order.IVDATE || order.ivdate) && (
-                <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
-                  {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
-                </div>
-              )}
-
-              {/* Row 3: branch — below iv-date */}
+              {/* Row 2: branch — below iv-date */}
               {branch && (
                 <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-2)" }}>
                   סניף: {branch}

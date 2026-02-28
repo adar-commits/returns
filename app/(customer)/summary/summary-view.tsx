@@ -53,8 +53,8 @@ export default function SummaryView() {
   const [error, setError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState(false);
-  const [termsPortalUrl, setTermsPortalUrl] = useState<string>("");
-  const [termsShippingUrl, setTermsShippingUrl] = useState<string>("");
+  const [termsPortalUrl, setTermsPortalUrl] = useState<string>("https://www.carpetshop.co.il/policies/terms-of-service");
+  const [termsShippingUrl, setTermsShippingUrl] = useState<string>("https://www.carpetshop.co.il/policies/refund-policy");
 
   useEffect(() => {
     const raw = sessionStorage.getItem("returns_wizard");
@@ -104,8 +104,9 @@ export default function SummaryView() {
       .then((r) => r.json())
       .then((d) => {
         const h: Record<string, string> = d.content_headlines || {};
-        if (h.terms_portal_url) setTermsPortalUrl(h.terms_portal_url);
-        if (h.terms_shipping_url) setTermsShippingUrl(h.terms_shipping_url);
+        // Override defaults only if explicitly set in settings
+        if (h.terms_portal_url?.trim()) setTermsPortalUrl(h.terms_portal_url.trim());
+        if (h.terms_shipping_url?.trim()) setTermsShippingUrl(h.terms_shipping_url.trim());
       })
       .catch(() => {});
   }, []);
@@ -172,36 +173,42 @@ export default function SummaryView() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-2)" }}>
               {/* Right: product info */}
               <div style={{ flex: 1, minWidth: 0, overflowWrap: "break-word", wordBreak: "break-word" }}>
-                <p style={{ fontWeight: 600, fontSize: "var(--text-body)", marginBottom: 4 }}>{row.name}</p>
+                <p style={{ fontWeight: 700, fontSize: "var(--text-body)", marginBottom: 6 }}>{row.name}</p>
+
                 {row.action === "return" && (
-                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>החזרה</p>
+                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: 2 }}>החזרה</p>
                 )}
+
                 {row.action === "replace" && (
-                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
-                    המוצר המוחלף: {row.name}{row.sizeLabel ? ` למוצר ${row.sizeLabel}` : ""}
-                  </p>
-                )}
-                {row.paidPrice > 0 && (
-                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: 2 }}>
-                    מחיר ששולם: {fmt(row.paidPrice)} ₪
-                    {row.action === "replace" && row.newPrice !== row.paidPrice && (
-                      <> → <strong>{fmt(row.newPrice)} ₪</strong></>
+                  <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", display: "flex", flexDirection: "column", gap: 2, marginBottom: 4 }}>
+                    <span>המוצר המוחלף: <strong style={{ color: "var(--color-text)" }}>{row.name}</strong></span>
+                    {row.sizeLabel && (
+                      <span>המוצר הרצוי: <strong style={{ color: "var(--color-text)" }}>{row.sizeLabel}</strong></span>
                     )}
-                  </p>
+                  </div>
                 )}
-                {/* Per-item cost/refund label */}
-                {row.action === "return" && row.paidPrice > 0 && (
-                  <p style={{ fontSize: "var(--text-caption)", fontWeight: 600, color: "var(--color-success)", marginTop: 2 }}>
-                    זיכוי: {fmt(row.paidPrice)} ₪
-                  </p>
-                )}
-                {row.action === "replace" && row.diff !== 0 && (
-                  <p style={{ fontSize: "var(--text-caption)", fontWeight: 600, color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)", marginTop: 2 }}>
-                    {row.diff > 0 ? `תוספת תשלום: ${fmt(row.diff)} ₪` : `זיכוי: ${fmt(Math.abs(row.diff))} ₪`}
-                  </p>
+
+                {row.paidPrice > 0 && (
+                  <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span>מחיר ששולם: <strong style={{ color: "var(--color-text)" }}>{fmt(row.paidPrice)} ₪</strong></span>
+                    {row.action === "replace" && row.newPrice > 0 && (
+                      <span>מחיר למוצר המוחלף: <strong style={{ color: "var(--color-text)" }}>{fmt(row.newPrice)} ₪</strong></span>
+                    )}
+                    {row.action === "return" && (
+                      <span style={{ fontWeight: 600, color: "var(--color-success)" }}>זיכוי: {fmt(row.paidPrice)} ₪</span>
+                    )}
+                    {row.action === "replace" && row.diff !== 0 && (
+                      <span style={{ fontWeight: 600, color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)" }}>
+                        {row.diff > 0 ? `תוספת תשלום: ${fmt(row.diff)} ₪` : `זיכוי: ${fmt(Math.abs(row.diff))} ₪`}
+                      </span>
+                    )}
+                    {row.action === "replace" && row.diff === 0 && (
+                      <span style={{ color: "var(--color-text-muted)" }}>ללא הפרש</span>
+                    )}
+                  </div>
                 )}
               </div>
-              {/* Left: amount */}
+              {/* Left: net amount badge */}
               <div style={{ textAlign: "left", direction: "ltr", flexShrink: 0 }}>
                 {row.action === "return" && row.paidPrice > 0 && (
                   <span style={{ color: "var(--color-success)", fontWeight: 700, fontSize: "var(--text-body)" }}>
@@ -209,18 +216,9 @@ export default function SummaryView() {
                   </span>
                 )}
                 {row.action === "replace" && row.diff !== 0 && (
-                  <span
-                    style={{
-                      color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)",
-                      fontWeight: 700,
-                      fontSize: "var(--text-body)",
-                    }}
-                  >
+                  <span style={{ color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)", fontWeight: 700, fontSize: "var(--text-body)" }}>
                     {row.diff > 0 ? "+" : "−"}{fmt(Math.abs(row.diff))} ₪
                   </span>
-                )}
-                {row.action === "replace" && row.diff === 0 && (
-                  <span style={{ color: "var(--color-text-muted)", fontSize: "var(--text-caption)" }}>ללא הפרש</span>
                 )}
               </div>
             </div>
@@ -414,9 +412,10 @@ export default function SummaryView() {
         type="button"
         className="btn btn-ghost"
         style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
-        onClick={() => {
-          sessionStorage.removeItem("returns_wizard");
-          router.push("/");
+        onClick={async () => {
+          sessionStorage.clear();
+          try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
+          window.location.href = "/";
         }}
       >
         Reset (QA)

@@ -8,7 +8,7 @@ export default async function CustomerHome() {
   return (
     <main className="page-wrap">
       <div className="hero">
-        <p className="hero-subtitle">שלום לך. הזן/י את מספר הטלפון כדי להמשיך</p>
+        <p className="hero-subtitle" style={{ marginBottom: "var(--space-3)" }}>שלום לך. הזן/י את מספר הטלפון כדי לצפות בהזמנות שלך</p>
       </div>
       <div className="card">
         <PhoneForm />

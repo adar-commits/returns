@@ -217,7 +217,8 @@ export default function ShippingForm() {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "flex-end",
+                      /* In RTL flex-column, flex-start = right side */
+                      alignItems: "flex-start",
                       gap: "var(--space-1)",
                       padding: "var(--space-3)",
                       border: selected ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
@@ -231,11 +232,11 @@ export default function ShippingForm() {
                       boxShadow: selected ? "0 0 0 3px rgba(155,45,48,0.10)" : "var(--shadow-sm)",
                     }}
                   >
-                    <strong style={{ fontSize: "var(--text-caption)", color: "var(--color-text)", lineHeight: 1.3 }}>
+                    <strong style={{ fontSize: "var(--text-caption)", color: "var(--color-text)", lineHeight: 1.3, display: "block", width: "100%", textAlign: "right" }}>
                       {b.name}
                     </strong>
                     {(b.address || b.state) && (
-                      <span style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", lineHeight: 1.3, textAlign: "right" }}>
+                      <span style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", lineHeight: 1.3, textAlign: "right", display: "block", width: "100%" }}>
                         {[b.address, b.state].filter(Boolean).join(", ")}
                       </span>
                     )}
@@ -243,7 +244,7 @@ export default function ShippingForm() {
                       <a
                         href={`tel:${b.phone}`}
                         onClick={(e) => e.stopPropagation()}
-                        style={{ fontSize: "0.7rem", color: "var(--color-primary)", textDecoration: "none", direction: "ltr", fontWeight: 500, marginTop: 2 }}
+                        style={{ fontSize: "0.7rem", color: "var(--color-primary)", textDecoration: "none", direction: "ltr", fontWeight: 500, marginTop: 2, display: "block", width: "100%", textAlign: "right" }}
                       >
                         {b.phone}
                       </a>
@@ -263,6 +264,8 @@ export default function ShippingForm() {
                           fontWeight: 600,
                           textDecoration: "none",
                           marginTop: 2,
+                          width: "100%",
+                          justifyContent: "flex-end",
                         }}
                       >
                         <WazeIcon />
@@ -289,9 +292,10 @@ export default function ShippingForm() {
         type="button"
         className="btn btn-ghost"
         style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
-        onClick={() => {
-          sessionStorage.removeItem("returns_wizard");
-          router.push("/");
+        onClick={async () => {
+          sessionStorage.clear();
+          try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
+          window.location.href = "/";
         }}
       >
         Reset (QA)

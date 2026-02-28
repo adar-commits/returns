@@ -15,8 +15,8 @@ export default async function OrderItemsPage({
     <main className="page-wrap-wide">
       <ProgressBar currentStep={1} />
       <p style={{ marginBottom: "var(--space-4)" }}>
-        <a href="/orders" className="link" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", direction: "ltr" }}>
-          ← חזרה להזמנות
+        <a href="/orders" className="link" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)" }}>
+          חזרה להזמנות <span aria-hidden>→</span>
         </a>
       </p>
       <h1 className="page-title">הזמנה {orderId}</h1>

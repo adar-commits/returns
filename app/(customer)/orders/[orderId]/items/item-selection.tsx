@@ -283,9 +283,10 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
             </div>
 
             <div className="item-card-content">
-              <p style={{ marginBottom: "var(--space-3)", fontSize: "var(--text-body)" }}>
-                <strong>{item.product_name || item.sku || "פריט"}</strong>
-                {item._totalQty > 1 && (
+              <div style={{ marginBottom: "var(--space-3)" }}>
+                <p style={{ fontSize: "var(--text-body)", marginBottom: 2 }}>
+                  <strong>{item.product_name || item.sku || "פריט"}</strong>
+                  {item._totalQty > 1 && (
                   <span style={{
                     marginRight: "var(--space-2)",
                     fontSize: "var(--text-small)",
@@ -298,7 +299,13 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                     יח׳ {item._qtyIdx + 1} מתוך {item._totalQty}
                   </span>
                 )}
-              </p>
+                </p>
+                {item.price != null && Number(item.price) > 0 && (
+                  <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+                    מחיר ששולם: <strong style={{ color: "var(--color-text)" }}>₪{Number(item.price).toLocaleString("he-IL")}</strong>
+                  </p>
+                )}
+              </div>
 
               {/* Action selector */}
               <div className="input-wrap">
@@ -453,9 +460,10 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
         type="button"
         className="btn btn-ghost"
         style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}
-        onClick={() => {
-          sessionStorage.removeItem("returns_wizard");
-          router.push("/");
+        onClick={async () => {
+          sessionStorage.clear();
+          try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
+          window.location.href = "/";
         }}
       >
         Reset (QA)

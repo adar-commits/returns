@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { formatOrderDate, parseOrderDate } from "@/lib/format";
+import { formatOrderDate } from "@/lib/format";
 
 type Order = {
   order_id?: string;
   id?: string;
   IVDATE?: string;
   ivdate?: string;
-  eligible?: boolean;
+  isReturnable?: boolean;
   total_price?: number | string;
   total?: number | string;
   BRANCHDES?: string;
@@ -93,14 +93,7 @@ export default function OrdersList() {
       <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
-          const ivdate = order.IVDATE || order.ivdate;
-          const orderDate = parseOrderDate(ivdate);
-          const rawDays = orderDate
-            ? Math.floor((Date.now() - orderDate.getTime()) / 86400000)
-            : 0;
-          const daysSinceOrder = rawDays < 0 ? 0 : rawDays;
-          const over20Days = daysSinceOrder > 20;
-          const eligible = order.eligible === true && !over20Days;
+          const canReturn = order.isReturnable === true;
           const branch = orderBranchName(order);
 
           const raw = order.total_price ?? order.total;
@@ -140,7 +133,7 @@ export default function OrdersList() {
               <div className="order-bottom-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
                 {/* Buttons */}
                 <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-                  {eligible ? (
+                  {canReturn ? (
                     <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
                       החלפה / החזרה
                     </Link>

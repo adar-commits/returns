@@ -53,6 +53,7 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
         ivdate: o.ivdate ?? o.IVDATE,
         IVNUM: o.ivnum ?? o.IVNUM,
         ivnum: o.ivnum ?? o.IVNUM,
+        isReturnable: o.isReturnable ?? o.is_returnable ?? undefined,
         receipt_link: o.receipt_link ?? o.receipt_href ?? o.invoice_link,
         receipt_href: o.receipt_link ?? o.receipt_href ?? o.invoice_link,
         items,

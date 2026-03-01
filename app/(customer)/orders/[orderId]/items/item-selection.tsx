@@ -171,6 +171,15 @@ function expandByQty(items: LineItem[]): ExpandedLineItem[] {
   });
 }
 
+/** Resolve sizes from cache — exact sku first, then any key that matches (prefix/suffix) for webhook SKU format mismatch */
+function getSizesForSku(sku: string, cache: Record<string, SizeOption[]>): SizeOption[] {
+  const s = (sku || "").trim();
+  if (cache[s]?.length) return cache[s];
+  const keys = Object.keys(cache);
+  const match = keys.find((k) => k === s || k.startsWith(s + "-") || s.startsWith(k + "-") || k.startsWith(s) || s.startsWith(k));
+  return match ? (cache[match] ?? []) : [];
+}
+
 export default function ItemSelection({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [order, setOrder] = useState<{ items?: LineItem[]; [key: string]: unknown } | null>(null);
@@ -264,11 +273,12 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       )}
 
       {expandedItems.map((item, i) => {
-        const sizes = sizesCache[item.sku || ""] || [];
+        const sizes = getSizesForSku(item.sku || "", sizesCache);
         const productImages = sizes.length > 0
           ? (sizes[0].images && sizes[0].images.length > 0 ? sizes[0].images : sizes[0].image ? [sizes[0].image] : [])
           : [];
-        const galleryLoading = sizes.length === 0 && !!item.sku && sizesLoading[item.sku || ""];
+        const anyLoading = Object.values(sizesLoading).some(Boolean);
+        const galleryLoading = sizes.length === 0 && !!item.sku && (sizesLoading[item.sku || ""] || anyLoading);
 
         return (
           <div key={i} className="card item-card">

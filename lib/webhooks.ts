@@ -83,17 +83,27 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
 
 /**
  * Normalize the batch GetSizes response.
- * Expected: [ { sku: "...", sizes: [...] }, ... ]
+ * Expected: [ { sku: "...", sizes: [...] }, ... ] or wrapped in { data: [...] }.
  * Also handles legacy: { sizes: [...] } or [ { sizes: [...] } ] for a single SKU.
  */
 function normalizeSizesBatchResponse(data: unknown, fallbackSku?: string): Record<string, SizeOption[]> {
   const result: Record<string, SizeOption[]> = {};
 
-  if (Array.isArray(data) && data.length > 0) {
-    const first = data[0] as Record<string, unknown>;
+  // Unwrap common gateway wrappers: { data: [...] } or { body: [...] }
+  let arr: unknown[] | null = null;
+  if (data != null && typeof data === "object" && !Array.isArray(data)) {
+    const d = data as Record<string, unknown>;
+    if (Array.isArray(d.data)) arr = d.data as unknown[];
+    else if (Array.isArray(d.body)) arr = d.body as unknown[];
+    else if (Array.isArray(d.result)) arr = d.result as unknown[];
+  }
+  if (arr == null && Array.isArray(data)) arr = data;
+
+  if (arr && arr.length > 0) {
+    const first = arr[0] as Record<string, unknown>;
     // Batch format: [ { sku, sizes }, ... ]
     if (typeof first.sku === "string") {
-      for (const entry of data as Record<string, unknown>[]) {
+      for (const entry of arr as Record<string, unknown>[]) {
         if (typeof entry.sku === "string") {
           result[entry.sku] = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
         }
@@ -131,7 +141,22 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
     });
     if (!res.ok) return {};
     const data = await res.json();
-    return normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
+    let out = normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
+    // Fallback: if webhook returns array in same order as Items, map by index when key is missing
+    const arr = Array.isArray(data) ? data : (data && typeof data === "object" && Array.isArray((data as Record<string, unknown>).data)) ? (data as Record<string, unknown>).data as unknown[] : null;
+    if (arr && arr.length > 0 && skus.length > 0) {
+      const first = arr[0] as Record<string, unknown>;
+      if (typeof first.sku === "string") {
+        for (let i = 0; i < arr.length && i < skus.length; i++) {
+          const entry = arr[i] as Record<string, unknown>;
+          const key = typeof entry.sku === "string" ? entry.sku : skus[i];
+          if (key && !out[key]?.length && entry.sizes != null) {
+            out = { ...out, [key]: normalizeSizeList(entry.sizes ?? entry.Sizes ?? []) };
+          }
+        }
+      }
+    }
+    return out;
   } catch {
     return {};
   }

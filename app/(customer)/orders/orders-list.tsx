@@ -47,6 +47,8 @@ function isReturnableValue(v: unknown): boolean {
   if (typeof v === "string") return v.toLowerCase() === "true" || v === "1";
   return false;
 }
+
+const PREFETCH_KEY = "orders_prefetch";
 const PREFETCH_MAX_AGE_MS = 60 * 1000;
 
 export default function OrdersList() {

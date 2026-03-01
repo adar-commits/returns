@@ -5,7 +5,9 @@ import { createReturnRequest, updateReturnRequestReplacementOrderId, updateRetur
 import { createServerClient } from "@/lib/supabase-server";
 import { generatePaymentLink } from "@/lib/payplus";
 import type { ReturnRequestItem } from "@/lib/db-types";
-import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants"; = {
+import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
+
+type WizardChoice = {
   sku: string;
   action: "" | "return" | "replace";
   reason_id?: string;

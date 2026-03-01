@@ -48,7 +48,7 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
         const num = typeof amt === "number" ? amt : Number(amt);
         const price = Number.isFinite(num) ? Math.abs(num) : 0;
         return {
-          sku: it.sku ?? it.partname ?? it.PARTNAME ?? it.PARTDES ?? it.partdes ?? "",
+          sku: String(it.sku ?? it.SKU ?? it.partname ?? it.PARTNAME ?? it.PARTDES ?? it.partdes ?? "").trim(),
           product_name: it.partname ?? it.PARTDES ?? it.partdes ?? it.product_name,
           partname: it.partname ?? it.product_name,
           qty: Math.abs(Number(it.qty) || 1),

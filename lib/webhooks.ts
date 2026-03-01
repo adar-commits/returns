@@ -61,7 +61,7 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
   return list.map((item, index) => {
     const o = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
     const name = o.name ?? o.label ?? o.id ?? String(index);
-    const id = typeof name === "string" ? name : String(index);
+    const id = (typeof o.id === "string" && o.id.trim() ? o.id : typeof name === "string" ? name : String(index));
     const price = o.price != null ? Number(o.price) : undefined;
     const compareAtPrice = o.compare_at_price != null ? Number(o.compare_at_price) : undefined;
     const img = o.image ?? o.Image;
@@ -80,7 +80,7 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
       price: Number.isFinite(price) ? price : undefined,
       compare_at_price: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
       image: combined[0] ?? undefined,
-      images: combined.length > 0 ? combined.slice(0, 5) : undefined,
+      images: combined.length > 0 ? combined.slice(0, 10) : undefined,
     };
   });
 }
@@ -93,13 +93,15 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
 function normalizeSizesBatchResponse(data: unknown, fallbackSku?: string): Record<string, SizeOption[]> {
   const result: Record<string, SizeOption[]> = {};
 
-  // Unwrap common gateway wrappers: { data: [...] } or { body: [...] }
+  // Unwrap common gateway wrappers: { data: [...] }, { body: [...] }, { result: [...] }, { output: [...] }, { json: [...] }
   let arr: unknown[] | null = null;
   if (data != null && typeof data === "object" && !Array.isArray(data)) {
     const d = data as Record<string, unknown>;
     if (Array.isArray(d.data)) arr = d.data as unknown[];
     else if (Array.isArray(d.body)) arr = d.body as unknown[];
     else if (Array.isArray(d.result)) arr = d.result as unknown[];
+    else if (Array.isArray(d.output)) arr = d.output as unknown[];
+    else if (Array.isArray(d.json)) arr = d.json as unknown[];
   }
   if (arr == null && Array.isArray(data)) arr = data;
 
@@ -154,6 +156,8 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
       if (Array.isArray(d.data)) arr = d.data as unknown[];
       else if (Array.isArray(d.body)) arr = d.body as unknown[];
       else if (Array.isArray(d.result)) arr = d.result as unknown[];
+      else if (Array.isArray(d.output)) arr = d.output as unknown[];
+      else if (Array.isArray(d.json)) arr = d.json as unknown[];
     }
     if (arr && arr.length > 0 && skus.length > 0) {
       const first = arr[0] as Record<string, unknown>;

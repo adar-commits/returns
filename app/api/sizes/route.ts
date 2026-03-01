@@ -19,9 +19,10 @@ export async function POST(request: Request) {
     const settings = await getSettings();
     const sizesUrl = settings?.sizes_webhook_url || process.env.SIZES_WEBHOOK_URL || DEFAULT_SIZES_WEBHOOK_URL;
     const results = await fetchSizesBatch(skus, sizesUrl);
-    // Also expose legacy `sizes` for single-sku callers
-    const sizes = skus.length === 1 ? (results[skus[0]] ?? []) : [];
-    return NextResponse.json({ results, sizes });
+    // Always return object shape so client can rely on data.results
+    const safeResults = results && typeof results === "object" ? results : {};
+    const sizes = skus.length === 1 ? (safeResults[skus[0]] ?? []) : [];
+    return NextResponse.json({ results: safeResults, sizes });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

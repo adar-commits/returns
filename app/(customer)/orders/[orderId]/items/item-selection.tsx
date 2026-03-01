@@ -224,7 +224,13 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
           .then((data) => {
             if (data.error) return;
             const results: Record<string, SizeOption[]> = data.results || {};
-            setSizesCache((prev) => ({ ...prev, ...results }));
+            // If we requested one SKU but results use a different key, use the only entry (webhook may return different key)
+            let toMerge = results;
+            if (skus.length === 1 && Object.keys(results).length > 0 && !results[skus[0]]?.length) {
+              const onlyKey = Object.keys(results)[0];
+              if (results[onlyKey]?.length) toMerge = { [skus[0]]: results[onlyKey] };
+            }
+            setSizesCache((prev) => ({ ...prev, ...toMerge }));
           })
           .catch(() => {})
           .finally(() => skus.forEach((s) => setSizesLoading((prev) => ({ ...prev, [s]: false }))));

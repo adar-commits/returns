@@ -23,6 +23,8 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
   const apiKey = process.env.PAYPLUS_API_KEY;
   const secretKey = process.env.PAYPLUS_SECRET_KEY;
   const paymentPageUid = process.env.PAYPLUS_PAYMENT_PAGE_UID || "7a0bc4d4-f35f-4301-a945-926378a2416d";
+  const expiryDatetime = process.env.PAYPLUS_EXPIRY_DATETIME || "30";
+  const payments = process.env.PAYPLUS_PAYMENTS || "12";
 
   if (!apiKey || !secretKey) {
     console.error("PayPlus: PAYPLUS_API_KEY or PAYPLUS_SECRET_KEY not set");
@@ -31,6 +33,8 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
 
   const body = {
     payment_page_uid: paymentPageUid,
+    expiry_datetime: expiryDatetime,
+    payments,
     amount: params.amount,
     currency_code: "ILS",
     sendEmailApproval: true,

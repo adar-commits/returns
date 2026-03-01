@@ -406,6 +406,132 @@ export default function SummaryView() {
         )}
       </div>
 
+      {/* Debug: full HTTP request — always visible above the button */}
+      <div
+        style={{
+          marginTop: "var(--space-4)",
+          marginBottom: "var(--space-4)",
+          padding: "var(--space-3)",
+          background: "#f0f4f8",
+          border: "2px solid var(--color-primary, #9b2d30)",
+          borderRadius: "var(--radius-md)",
+          fontSize: "var(--text-small)",
+          direction: "ltr",
+          textAlign: "left",
+        }}
+      >
+        <p style={{ fontWeight: 700, marginBottom: "var(--space-2)", color: "var(--color-text)", fontSize: "1rem" }}>
+          Full HTTP request (for debugging)
+        </p>
+        <p style={{ marginBottom: 4 }}>
+          <strong>1) Request to our API (when you click the button):</strong>
+        </p>
+        <p style={{ marginBottom: 2 }}>
+          <strong>URL:</strong>{" "}
+          {typeof window !== "undefined" ? `${window.location.origin}/api/return-request` : "/api/return-request"}
+        </p>
+        <p style={{ marginBottom: 2 }}>
+          <strong>Method:</strong> POST
+        </p>
+        <p style={{ marginBottom: 4 }}>
+          <strong>Body:</strong>
+        </p>
+        <pre
+          style={{
+            margin: "0 0 var(--space-3)",
+            padding: "var(--space-2)",
+            background: "var(--color-surface)",
+            borderRadius: 4,
+            overflow: "auto",
+            maxHeight: 280,
+            fontSize: "0.75rem",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-all",
+          }}
+        >
+          {wizard
+            ? JSON.stringify(
+                {
+                  wizard,
+                  customer_address: needsAddress ? { full_name: fullName, phone, address } : undefined,
+                },
+                null,
+                2
+              )
+            : "(wizard not loaded yet)"}
+        </pre>
+
+        {needsPayment && netPay > 0 && (
+          <>
+            <p style={{ marginBottom: 4, marginTop: "var(--space-3)" }}>
+              <strong>2) PayPlus request (server sends this after creating the return):</strong>
+            </p>
+            <p style={{ marginBottom: 2 }}>
+              <strong>URL:</strong> https://restapi.payplus.co.il/api/v1.0/PaymentPages/generateLink
+            </p>
+            <p style={{ marginBottom: 2 }}>
+              <strong>Method:</strong> POST
+            </p>
+            <p style={{ marginBottom: 2 }}>
+              <strong>Headers:</strong>
+            </p>
+            <pre
+              style={{
+                margin: "0 0 var(--space-2)",
+                padding: "var(--space-2)",
+                background: "var(--color-surface)",
+                borderRadius: 4,
+                overflow: "auto",
+                fontSize: "0.75rem",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
+              }}
+            >
+              {`Content-Type: application/json
+Authorization: {"api_key":"cfd5a2f5-d4e9-4f12-a8b6-c0bdd585df04","secret_key":"ba1ecb62-8c53-4278-8a4d-5f67a5d14a21"}`}
+            </pre>
+            <p style={{ marginBottom: 2 }}>
+              <strong>Body:</strong>
+            </p>
+            <pre
+              style={{
+                margin: 0,
+                padding: "var(--space-2)",
+                background: "var(--color-surface)",
+                borderRadius: 4,
+                overflow: "auto",
+                maxHeight: 320,
+                fontSize: "0.75rem",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
+              }}
+            >
+              {JSON.stringify(
+                {
+                  payment_page_uid: "c97ea01d-bad2-45bc-b662-c4b99cff6cd4",
+                  expiry_datetime: "30",
+                  payments: "12",
+                  amount: netPay,
+                  currency_code: "ILS",
+                  sendEmailApproval: false,
+                  sendEmailFailure: false,
+                  refURL_success: typeof window !== "undefined" ? `${window.location.origin}/api/payplus/success?return_id=<return_id>` : "<baseUrl>/api/payplus/success?return_id=<return_id>",
+                  refURL_failure: typeof window !== "undefined" ? `${window.location.origin}/api/payplus/failure?return_id=<return_id>` : "<baseUrl>/api/payplus/failure?return_id=<return_id>",
+                  language_code: "he",
+                  customer: {
+                    customer_name: fullName || "Test Customer",
+                    email: "test@example.com",
+                    phone: phone || "0501234567",
+                  },
+                },
+                null,
+                2
+              )}
+            </pre>
+          </>
+        )}
+      </div>
+
       {error && <div className="msg-error">{error}</div>}
 
       <button
@@ -417,126 +543,6 @@ export default function SummaryView() {
         {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום ושליחת בקשה"}
       </button>
 
-      {/* Debug: request we fire on submit */}
-      {wizard && (
-        <div
-          style={{
-            marginTop: "var(--space-4)",
-            padding: "var(--space-3)",
-            background: "var(--color-surface-elevated)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-md)",
-            fontSize: "var(--text-small)",
-            direction: "ltr",
-            textAlign: "left",
-          }}
-        >
-          <p style={{ fontWeight: 700, marginBottom: "var(--space-2)", color: "var(--color-text-muted)" }}>Debug — request to our API (on submit)</p>
-          <p style={{ marginBottom: 4 }}>
-            <strong>URL:</strong>{" "}
-            {typeof window !== "undefined" ? `${window.location.origin}/api/return-request` : "/api/return-request"}
-          </p>
-          <p style={{ marginBottom: 4 }}>
-            <strong>Method:</strong> POST
-          </p>
-          <p style={{ marginBottom: 4 }}>
-            <strong>Body:</strong>
-          </p>
-          <pre
-            style={{
-              margin: 0,
-              padding: "var(--space-2)",
-              background: "var(--color-surface)",
-              borderRadius: 4,
-              overflow: "auto",
-              maxHeight: 320,
-              fontSize: "0.75rem",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-all",
-            }}
-          >
-            {JSON.stringify(
-              {
-                wizard,
-                customer_address: needsAddress ? { full_name: fullName, phone, address } : undefined,
-              },
-              null,
-              2
-            )}
-          </pre>
-
-          {/* Debug: full PayPlus request the server will send when payment is needed */}
-          {needsPayment && netPay > 0 && (
-            <>
-              <p style={{ fontWeight: 700, marginTop: "var(--space-4)", marginBottom: "var(--space-2)", color: "var(--color-text-muted)" }}>
-                Debug — full PayPlus request (server will send this)
-              </p>
-              <p style={{ marginBottom: 4 }}>
-                <strong>URL:</strong> https://restapi.payplus.co.il/api/v1.0/PaymentPages/generateLink
-              </p>
-              <p style={{ marginBottom: 4 }}>
-                <strong>Method:</strong> POST
-              </p>
-              <p style={{ marginBottom: 4 }}>
-                <strong>Headers:</strong>
-              </p>
-              <pre
-                style={{
-                  margin: "0 0 var(--space-2)",
-                  padding: "var(--space-2)",
-                  background: "var(--color-surface)",
-                  borderRadius: 4,
-                  overflow: "auto",
-                  fontSize: "0.75rem",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all",
-                }}
-              >
-                {`Content-Type: application/json
-Authorization: {"api_key":"cfd5a2f5-d4e9-4f12-a8b6-c0bdd585df04","secret_key":"ba1ecb62-8c53-4278-8a4d-5f67a5d14a21"}`}
-              </pre>
-              <p style={{ marginBottom: 4 }}>
-                <strong>Body:</strong>
-              </p>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: "var(--space-2)",
-                  background: "var(--color-surface)",
-                  borderRadius: 4,
-                  overflow: "auto",
-                  maxHeight: 360,
-                  fontSize: "0.75rem",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-all",
-                }}
-              >
-                {JSON.stringify(
-                  {
-                    payment_page_uid: "c97ea01d-bad2-45bc-b662-c4b99cff6cd4",
-                    expiry_datetime: "30",
-                    payments: "12",
-                    amount: netPay,
-                    currency_code: "ILS",
-                    sendEmailApproval: false,
-                    sendEmailFailure: false,
-                    refURL_success: typeof window !== "undefined" ? `${window.location.origin}/api/payplus/success?return_id=<return_id>` : "<baseUrl>/api/payplus/success?return_id=<return_id>",
-                    refURL_failure: typeof window !== "undefined" ? `${window.location.origin}/api/payplus/failure?return_id=<return_id>` : "<baseUrl>/api/payplus/failure?return_id=<return_id>",
-                    language_code: "he",
-                    customer: {
-                      customer_name: fullName || "Test Customer",
-                      email: "test@example.com",
-                      phone: phone || "0501234567",
-                    },
-                  },
-                  null,
-                  2
-                )}
-              </pre>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

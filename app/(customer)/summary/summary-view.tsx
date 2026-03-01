@@ -417,6 +417,55 @@ export default function SummaryView() {
         {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום ושליחת בקשה"}
       </button>
 
+      {/* Debug: request we fire on submit */}
+      {wizard && (
+        <div
+          style={{
+            marginTop: "var(--space-4)",
+            padding: "var(--space-3)",
+            background: "var(--color-surface-elevated)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-md)",
+            fontSize: "var(--text-small)",
+            direction: "ltr",
+            textAlign: "left",
+          }}
+        >
+          <p style={{ fontWeight: 700, marginBottom: "var(--space-2)", color: "var(--color-text-muted)" }}>Debug — request fired on submit</p>
+          <p style={{ marginBottom: 4 }}>
+            <strong>URL:</strong>{" "}
+            {typeof window !== "undefined" ? `${window.location.origin}/api/return-request` : "/api/return-request"}
+          </p>
+          <p style={{ marginBottom: 4 }}>
+            <strong>Method:</strong> POST
+          </p>
+          <p style={{ marginBottom: 4 }}>
+            <strong>Body:</strong>
+          </p>
+          <pre
+            style={{
+              margin: 0,
+              padding: "var(--space-2)",
+              background: "var(--color-surface)",
+              borderRadius: 4,
+              overflow: "auto",
+              maxHeight: 320,
+              fontSize: "0.75rem",
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-all",
+            }}
+          >
+            {JSON.stringify(
+              {
+                wizard,
+                customer_address: needsAddress ? { full_name: fullName, phone, address } : undefined,
+              },
+              null,
+              2
+            )}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }

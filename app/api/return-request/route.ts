@@ -240,10 +240,11 @@ export async function POST(request: Request) {
         }
         return NextResponse.json({ return_id, payment_link: linkResult.payment_page_link });
       }
-      return NextResponse.json(
-        { error: "Unable to generate payment link. Please try again or contact support." },
-        { status: 502 }
-      );
+      const errorMessage =
+        linkResult && "error" in linkResult
+          ? linkResult.error
+          : "Unable to generate payment link. Please try again or contact support.";
+      return NextResponse.json({ error: errorMessage }, { status: 502 });
     }
 
     if (finalUrl) {

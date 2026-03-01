@@ -15,7 +15,9 @@ export type GenerateLinkParams = {
   customer_phone?: string;
 };
 
-export type GenerateLinkResult = { payment_page_link: string; page_request_uid: string } | null;
+export type GenerateLinkResult =
+  | { payment_page_link: string; page_request_uid: string; error?: never }
+  | { payment_page_link?: never; page_request_uid?: never; error: string };
 
 export async function generatePaymentLink(params: GenerateLinkParams): Promise<GenerateLinkResult> {
   const apiKey = process.env.PAYPLUS_API_KEY;
@@ -24,7 +26,7 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
 
   if (!apiKey || !secretKey) {
     console.error("PayPlus: PAYPLUS_API_KEY or PAYPLUS_SECRET_KEY not set");
-    return null;
+    return { error: "Payment is not configured. Please contact support." };
   }
 
   const body = {
@@ -47,30 +49,41 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
       : {}),
   };
 
-  const res = await fetch(`${PAYPLUS_BASE}/PaymentPages/generateLink`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: JSON.stringify({ api_key: apiKey, secret_key: secretKey }),
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error("PayPlus generateLink error:", res.status, data);
-    return null;
+  let res: Response;
+  let data: Record<string, unknown> = {};
+  try {
+    res = await fetch(`${PAYPLUS_BASE}/PaymentPages/generateLink`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: JSON.stringify({ api_key: apiKey, secret_key: secretKey }),
+      },
+      body: JSON.stringify(body),
+    });
+    data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  } catch (e) {
+    console.error("PayPlus generateLink request failed:", e);
+    return { error: "Payment service unavailable. Please try again later." };
   }
 
-  const results = data.results;
-  const resultData = data.data;
-  if (results?.status !== "success" || !resultData?.payment_page_link) {
+  if (!res.ok) {
+    const msg = (data?.results as { description?: string })?.description || (data?.message as string) || res.statusText;
+    console.error("PayPlus generateLink error:", res.status, data);
+    return { error: msg || "Payment service error. Please try again or contact support." };
+  }
+
+  const results = data.results as { status?: string } | undefined;
+  const resultData = (data.data ?? data.Data) as { payment_page_link?: string; page_request_uid?: string } | undefined;
+  const link = resultData?.payment_page_link;
+
+  if (results?.status !== "success" || !link) {
+    const msg = (results as { description?: string })?.description || (data?.message as string) || "Invalid response from payment service.";
     console.error("PayPlus generateLink unexpected response:", data);
-    return null;
+    return { error: msg };
   }
 
   return {
-    payment_page_link: resultData.payment_page_link,
+    payment_page_link: link,
     page_request_uid: resultData.page_request_uid || "",
   };
 }

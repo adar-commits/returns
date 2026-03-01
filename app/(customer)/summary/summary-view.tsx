@@ -82,6 +82,8 @@ export default function SummaryView() {
         if (diff > 0) pay += diff;
         else refund += -diff;
         rows.push({ sku: c.sku, name, action: "replace", paidPrice, newPrice, diff, sizeLabel: c.size_label });
+      } else if (c.action === "keep") {
+        rows.push({ sku: c.sku, name, action: "keep", paidPrice, newPrice: paidPrice, diff: 0 });
       }
     }
 
@@ -188,6 +190,10 @@ export default function SummaryView() {
                   </div>
                 )}
 
+                {row.action === "keep" && (
+                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: 2 }}>ללא שינוי</p>
+                )}
+
                 {row.paidPrice > 0 && (
                   <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", display: "flex", flexDirection: "column", gap: 2 }}>
                     <span>מחיר ששולם: <strong style={{ color: "var(--color-text)" }}>{fmt(row.paidPrice)} ₪</strong></span>
@@ -219,6 +225,9 @@ export default function SummaryView() {
                   <span style={{ color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)", fontWeight: 700, fontSize: "var(--text-body)" }}>
                     {row.diff > 0 ? "+" : "−"}{fmt(Math.abs(row.diff))} ₪
                   </span>
+                )}
+                {row.action === "keep" && (
+                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>—</span>
                 )}
               </div>
             </div>

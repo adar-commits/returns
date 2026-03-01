@@ -155,7 +155,7 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
 
 type LineItem = { sku: string; product_name?: string; price?: number; qty?: number | string; [key: string]: unknown };
 type ExpandedLineItem = LineItem & { _lineIdx: number; _qtyIdx: number; _totalQty: number };
-type ItemChoice = { sku: string; action: "" | "return" | "replace"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
+type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
 type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
 
 function expandByQty(items: LineItem[]): ExpandedLineItem[] {
@@ -289,7 +289,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const handleContinue = () => {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
-      setValidationError("נא לבחור לכל פריט: החלפה או החזרה.");
+      setValidationError("נא לבחור לכל פריט: החלפה, החזרה או ללא שינוי.");
       return;
     }
     if (choices.some((c) => c.action === "return" && (c.reason_id == null || String(c.reason_id).trim() === ""))) {
@@ -380,7 +380,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   className="input"
                   value={choices[i]?.action ?? ""}
                   onChange={(e) => {
-                    const action = (e.target.value || "") as "" | "return" | "replace";
+                    const action = (e.target.value || "") as "" | "return" | "replace" | "keep";
                     setChoice(i, {
                       action,
                       reason_id: action !== "return" ? undefined : choices[i]?.reason_id,
@@ -391,6 +391,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   <option value="">בחר פעולה</option>
                   <option value="return">החזרה</option>
                   <option value="replace">החלפה</option>
+                  <option value="keep">ללא שינוי</option>
                 </select>
               </div>
 

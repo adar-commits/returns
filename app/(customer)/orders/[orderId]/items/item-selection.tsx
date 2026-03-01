@@ -171,12 +171,17 @@ function expandByQty(items: LineItem[]): ExpandedLineItem[] {
   });
 }
 
-/** Resolve sizes from cache — exact sku first, then any key that matches (prefix/suffix) for webhook SKU format mismatch */
+/** Resolve sizes from cache — exact sku first, then prefix/suffix, then same product code (e.g. 31503138-200290 → 31503138-80150) */
 function getSizesForSku(sku: string, cache: Record<string, SizeOption[]>): SizeOption[] {
   const s = (sku || "").trim();
+  if (!s) return [];
   if (cache[s]?.length) return cache[s];
   const keys = Object.keys(cache);
-  const match = keys.find((k) => k === s || k.startsWith(s + "-") || s.startsWith(k + "-") || k.startsWith(s) || s.startsWith(k));
+  let match = keys.find((k) => k.startsWith(s + "-") || s.startsWith(k + "-") || k.startsWith(s) || s.startsWith(k));
+  if (match) return cache[match] ?? [];
+  // Same product, different size variant: e.g. order has 31503138-200290, webhook returned 31503138-80150
+  const productCode = s.split("-")[0];
+  if (productCode) match = keys.find((k) => k.split("-")[0] === productCode);
   return match ? (cache[match] ?? []) : [];
 }
 
@@ -224,11 +229,14 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
           .then((data) => {
             if (data.error) return;
             const results: Record<string, SizeOption[]> = data.results || {};
-            // If we requested one SKU but results use a different key, use the only entry (webhook may return different key)
-            let toMerge = results;
-            if (skus.length === 1 && Object.keys(results).length > 0 && !results[skus[0]]?.length) {
-              const onlyKey = Object.keys(results)[0];
-              if (results[onlyKey]?.length) toMerge = { [skus[0]]: results[onlyKey] };
+            // Map results to requested SKUs: exact key, or by product code (e.g. webhook returns 31503138-80150, we requested 31503138-200290)
+            const toMerge: Record<string, SizeOption[]> = { ...results };
+            const resultKeys = Object.keys(results);
+            for (const reqSku of skus) {
+              if (toMerge[reqSku]?.length) continue;
+              const productCode = reqSku.split("-")[0];
+              const match = resultKeys.find((k) => k.split("-")[0] === productCode);
+              if (match && results[match]?.length) toMerge[reqSku] = results[match];
             }
             setSizesCache((prev) => ({ ...prev, ...toMerge }));
           })

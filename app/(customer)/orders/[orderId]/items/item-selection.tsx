@@ -467,6 +467,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                               display: "flex",
                               flexDirection: "column",
                               alignItems: "center",
+                              justifyContent: "space-between",
                               gap: 4,
                               padding: "var(--space-2) var(--space-3)",
                               border: selected
@@ -474,7 +475,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                                 : "1px solid var(--color-border)",
                               borderRadius: "var(--radius-md, 8px)",
                               cursor: "pointer",
-                              minWidth: 88,
+                              width: 100,
+                              minHeight: 132,
+                              boxSizing: "border-box",
                               background: selected ? "rgba(155,45,48,0.06)" : "var(--color-surface)",
                               transition: "border-color 0.15s, background 0.15s",
                             }}

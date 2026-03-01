@@ -1,9 +1,10 @@
 /**
  * PayPlus Payment Pages – generate link for customer to pay.
- * @see https://docs.payplus.co.il/reference/post_paymentpages-generatelink
+ * Hardcoded URL, auth, and body shape per working request.
  */
 
-const PAYPLUS_BASE = "https://restapi.payplus.co.il/api/v1.0";
+const PAYPLUS_URL = "https://restapi.payplus.co.il/api/v1.0/PaymentPages/generateLink";
+const PAYPLUS_AUTH = '{"api_key":"cfd5a2f5-d4e9-4f12-a8b6-c0bdd585df04","secret_key":"ba1ecb62-8c53-4278-8a4d-5f67a5d14a21"}';
 
 export type GenerateLinkParams = {
   amount: number; // ILS
@@ -20,72 +21,36 @@ export type GenerateLinkResult =
   | { payment_page_link?: never; page_request_uid?: never; error: string };
 
 export async function generatePaymentLink(params: GenerateLinkParams): Promise<GenerateLinkResult> {
-  const apiKey = process.env.PAYPLUS_API_KEY?.trim();
-  const secretKey = process.env.PAYPLUS_SECRET_KEY?.trim();
-  const paymentPageUid = (process.env.PAYPLUS_PAYMENT_PAGE_UID || "c97ea01d-bad2-45bc-b662-c4b99cff6cd4").trim();
-  const expiryDatetime = process.env.PAYPLUS_EXPIRY_DATETIME || "30";
-  const payments = process.env.PAYPLUS_PAYMENTS || "12";
-
-  const missing: string[] = [];
-  if (!apiKey) missing.push("PAYPLUS_API_KEY");
-  if (!secretKey) missing.push("PAYPLUS_SECRET_KEY");
-  if (missing.length > 0) {
-    const msg = `Payment not configured: ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} not set. Set them in .env.local (local) or in your host's environment (e.g. Vercel → Settings → Environment Variables).`;
-    console.error("PayPlus:", msg);
-    return { error: msg };
-  }
-
   const body = {
-    payment_page_uid: paymentPageUid,
-    expiry_datetime: expiryDatetime,
-    payments,
+    payment_page_uid: "c97ea01d-bad2-45bc-b662-c4b99cff6cd4",
+    expiry_datetime: "30",
+    payments: "12",
     amount: params.amount,
     currency_code: "ILS",
-    sendEmailApproval: true,
+    sendEmailApproval: false,
     sendEmailFailure: false,
     refURL_success: params.success_url,
     refURL_failure: params.failure_url,
     language_code: "he",
-    ...(params.customer_name || params.customer_email || params.customer_phone
-      ? {
-          customer: {
-            customer_name: params.customer_name || "Customer",
-            email: params.customer_email || "no-reply@returns.local",
-            ...(params.customer_phone && { phone: params.customer_phone }),
-          },
-        }
-      : {}),
+    customer: {
+      customer_name: params.customer_name || "Test Customer",
+      email: params.customer_email || "test@example.com",
+      phone: params.customer_phone || "0501234567",
+    },
   };
 
   let res: Response;
   let data: Record<string, unknown> = {};
   try {
-    // Try 1: Authorization header as JSON (format that worked for you in Postman)
-    const authHeader = JSON.stringify({ api_key: apiKey, secret_key: secretKey });
-    res = await fetch(`${PAYPLUS_BASE}/PaymentPages/generateLink`, {
+    res = await fetch(PAYPLUS_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: authHeader,
+        Authorization: PAYPLUS_AUTH,
       },
       body: JSON.stringify(body),
     });
     data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-
-    // If 405 Method Not Allowed, retry with separate api-key / secret-key headers (per PayPlus docs)
-    if (res.status === 405) {
-      console.error("PayPlus returned 405 with Authorization header, retrying with api-key/secret-key headers");
-      res = await fetch(`${PAYPLUS_BASE}/PaymentPages/generateLink`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": apiKey,
-          "secret-key": secretKey,
-        },
-        body: JSON.stringify(body),
-      });
-      data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    }
   } catch (e) {
     console.error("PayPlus generateLink request failed:", e);
     return { error: "Payment service unavailable. Please try again later." };

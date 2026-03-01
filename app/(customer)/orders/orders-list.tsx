@@ -91,12 +91,26 @@ export default function OrdersList() {
 
   return (
     <div style={{ marginTop: "var(--space-2)" }}>
-      {/* Combined greeting + instruction in one sentence */}
-      <p style={{ marginBottom: "var(--space-5)", fontSize: "var(--text-body)", color: "var(--color-text-muted)", lineHeight: 1.5 }}>
-        {customerName
-          ? <>היי, <strong style={{ color: "var(--color-text)" }}>{customerName}</strong> — בחר/י הזמנה להחלפה או החזרה</>
-          : "בחר/י הזמנה להחלפה או החזרה"}
-      </p>
+      {/* Row: greeting (right) + different-phone link (left in RTL) */}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "var(--space-3)", marginBottom: "var(--space-5)" }}>
+        <p style={{ flex: "1 1 200px", margin: 0, fontSize: "var(--text-body)", color: "var(--color-text-muted)", lineHeight: 1.5 }}>
+          {customerName
+            ? <>היי, <strong style={{ color: "var(--color-text)" }}>{customerName}</strong> — בחר/י הזמנה להחלפה או החזרה</>
+            : "בחר/י הזמנה להחלפה או החזרה"}
+        </p>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          style={{ flexShrink: 0, width: "auto", minWidth: 0, fontSize: "var(--text-small)", whiteSpace: "nowrap" }}
+          onClick={async () => {
+            sessionStorage.clear();
+            try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
+            window.location.href = "/";
+          }}
+        >
+          ״הזמנת על טלפון אחר? לחץ כאן״
+        </button>
+      </div>
 
       <ul className="list-plain">
         {orders.map((order) => {

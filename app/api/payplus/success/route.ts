@@ -6,10 +6,30 @@ import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
 /**
  * PayPlus redirects the user here after successful payment.
  * We confirm the return request, fire the n8n webhook, and redirect to the success page.
+ * Handles both GET (redirect) and POST (form post from PayPlus).
  */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const return_id = searchParams.get("return_id");
+  return handleSuccessRedirect(request);
+}
+export async function POST(request: Request) {
+  return handleSuccessRedirect(request);
+}
+
+async function handleSuccessRedirect(request: Request) {
+  const url = new URL(request.url);
+  let return_id = url.searchParams.get("return_id");
+  if (!return_id && request.method === "POST") {
+    try {
+      const contentType = request.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const body = await request.json().catch(() => ({}));
+        return_id = (body as Record<string, unknown>).return_id as string | undefined;
+      } else if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+        const form = await request.formData().catch(() => null);
+        return_id = form?.get("return_id") as string | undefined;
+      }
+    } catch (_) {}
+  }
   if (!return_id) {
     return NextResponse.redirect(new URL("/?error=missing_return", request.url));
   }

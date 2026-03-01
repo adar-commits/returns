@@ -60,16 +60,32 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
   let res: Response;
   let data: Record<string, unknown> = {};
   try {
+    // Try 1: Authorization header as JSON (format that worked for you in Postman)
+    const authHeader = JSON.stringify({ api_key: apiKey, secret_key: secretKey });
     res = await fetch(`${PAYPLUS_BASE}/PaymentPages/generateLink`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": apiKey,
-        "secret-key": secretKey,
+        Authorization: authHeader,
       },
       body: JSON.stringify(body),
     });
     data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+    // If 405 Method Not Allowed, retry with separate api-key / secret-key headers (per PayPlus docs)
+    if (res.status === 405) {
+      console.error("PayPlus returned 405 with Authorization header, retrying with api-key/secret-key headers");
+      res = await fetch(`${PAYPLUS_BASE}/PaymentPages/generateLink`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": apiKey,
+          "secret-key": secretKey,
+        },
+        body: JSON.stringify(body),
+      });
+      data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    }
   } catch (e) {
     console.error("PayPlus generateLink request failed:", e);
     return { error: "Payment service unavailable. Please try again later." };

@@ -185,6 +185,21 @@ function getSizesForSku(sku: string, cache: Record<string, SizeOption[]>): SizeO
   return match ? (cache[match] ?? []) : [];
 }
 
+/** Normalize size string for comparison: "200*290", "200290", "200x290" → "200290" */
+function normalizeSizeKey(str: string): string {
+  return (str || "").replace(/[\s*×xX]/g, "").toLowerCase();
+}
+
+/** True if this size option is the same size as the current item (by SKU); do not allow replace-with-same */
+function isSameSizeAsItem(itemSku: string, sizeOption: SizeOption): boolean {
+  const skuPart = itemSku.split("-").slice(1).join("-").trim();
+  if (!skuPart) return false;
+  const itemKey = normalizeSizeKey(skuPart);
+  const labelPart = (sizeOption.label ?? sizeOption.id ?? "").split(/\s*-\s*/)[0].trim();
+  const sizeKey = normalizeSizeKey(labelPart);
+  return sizeKey.length > 0 && itemKey === sizeKey;
+}
+
 export default function ItemSelection({ orderId }: { orderId: string }) {
   const router = useRouter();
   const [order, setOrder] = useState<{ items?: LineItem[]; [key: string]: unknown } | null>(null);
@@ -246,6 +261,23 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     }).finally(() => setLoading(false));
   }, [orderId]);
 
+  // Clear replacement selection when it points to same-size option (same SKU)
+  useEffect(() => {
+    if (expandedItems.length === 0 || Object.keys(sizesCache).length === 0) return;
+    let changed = false;
+    const next = [...choices];
+    for (let i = 0; i < expandedItems.length; i++) {
+      if (next[i]?.action !== "replace" || !next[i].selected_size_id) continue;
+      const sizes = getSizesForSku(expandedItems[i].sku || "", sizesCache);
+      const opt = sizes.find((s) => s.id === next[i].selected_size_id);
+      if (opt && isSameSizeAsItem(expandedItems[i].sku || "", opt)) {
+        next[i] = { ...next[i], selected_size_id: "", size_label: undefined, size_price: undefined };
+        changed = true;
+      }
+    }
+    if (changed) setChoices(next);
+  }, [sizesCache, expandedItems, choices]);
+
   const setChoice = (index: number, update: Partial<ItemChoice>) => {
     setChoices((prev) => {
       const next = [...prev];
@@ -267,6 +299,16 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     if (choices.some((c) => c.action === "replace" && (c.selected_size_id == null || String(c.selected_size_id).trim() === ""))) {
       setValidationError("נא לבחור גודל לכל פריט שמוחלף.");
       return;
+    }
+    // Do not allow replace with same item (same SKU/size)
+    for (let idx = 0; idx < expandedItems.length; idx++) {
+      if (choices[idx]?.action !== "replace" || !choices[idx].selected_size_id) continue;
+      const it = expandedItems[idx];
+      const sz = getSizesForSku(it.sku || "", sizesCache).find((s) => s.id === choices[idx].selected_size_id);
+      if (sz && isSameSizeAsItem(it.sku || "", sz)) {
+        setValidationError("לא ניתן להחליף לאותו מוצר/מידה. נא לבחור מידה אחרת.");
+        return;
+      }
     }
     setSending(true);
     sessionStorage.setItem("returns_wizard", JSON.stringify({ orderId, order, choices, step: "items" }));
@@ -403,7 +445,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
 
                   {sizes.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
-                      {sizes.map((s) => {
+                      {sizes
+                        .filter((s) => !isSameSizeAsItem(item.sku || "", s))
+                        .map((s) => {
                         const selected = choices[i]?.selected_size_id === s.id;
                         const origPrice = Number(item.price ?? 0);
                         const sizePrice = s.price != null ? Number(s.price) : null;

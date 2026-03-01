@@ -22,7 +22,7 @@ export type GenerateLinkResult =
 export async function generatePaymentLink(params: GenerateLinkParams): Promise<GenerateLinkResult> {
   const apiKey = process.env.PAYPLUS_API_KEY?.trim();
   const secretKey = process.env.PAYPLUS_SECRET_KEY?.trim();
-  const paymentPageUid = (process.env.PAYPLUS_PAYMENT_PAGE_UID || "7a0bc4d4-f35f-4301-a945-926378a2416d").trim();
+  const paymentPageUid = (process.env.PAYPLUS_PAYMENT_PAGE_UID || "c97ea01d-bad2-45bc-b662-c4b99cff6cd4").trim();
   const expiryDatetime = process.env.PAYPLUS_EXPIRY_DATETIME || "30";
   const payments = process.env.PAYPLUS_PAYMENTS || "12";
 
@@ -46,7 +46,7 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
     refURL_success: params.success_url,
     refURL_failure: params.failure_url,
     language_code: "he",
-    ...(params.customer_name || params.customer_email
+    ...(params.customer_name || params.customer_email || params.customer_phone
       ? {
           customer: {
             customer_name: params.customer_name || "Customer",
@@ -64,7 +64,8 @@ export async function generatePaymentLink(params: GenerateLinkParams): Promise<G
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: JSON.stringify({ api_key: apiKey, secret_key: secretKey }),
+        "api-key": apiKey,
+        "secret-key": secretKey,
       },
       body: JSON.stringify(body),
     });

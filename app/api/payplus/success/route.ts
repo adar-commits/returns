@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
 async function handleSuccessRedirect(request: Request) {
   const url = new URL(request.url);
-  let return_id = url.searchParams.get("return_id");
+  let return_id: string | null | undefined = url.searchParams.get("return_id");
   if (!return_id && request.method === "POST") {
     try {
       const contentType = request.headers.get("content-type") || "";

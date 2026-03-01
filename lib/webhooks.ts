@@ -64,19 +64,23 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
     const id = typeof name === "string" ? name : String(index);
     const price = o.price != null ? Number(o.price) : undefined;
     const compareAtPrice = o.compare_at_price != null ? Number(o.compare_at_price) : undefined;
-    const img = o.image;
-    const imageUrls = Array.isArray(img)
+    const img = o.image ?? o.Image;
+    const imgList = o.images ?? o.Images;
+    const imageUrls: string[] = Array.isArray(img)
       ? img.filter((u): u is string => typeof u === "string")
       : typeof img === "string"
       ? [img]
       : [];
+    const extra = Array.isArray(imgList) ? imgList.filter((u): u is string => typeof u === "string") : [];
+    const combined = imageUrls.length ? [...imageUrls] : [...extra];
+    for (const u of extra) if (u && !combined.includes(u)) combined.push(u);
     return {
       id,
       label: String(name),
       price: Number.isFinite(price) ? price : undefined,
       compare_at_price: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
-      image: imageUrls[0] ?? undefined,
-      images: imageUrls.length > 0 ? imageUrls.slice(0, 5) : undefined,
+      image: combined[0] ?? undefined,
+      images: combined.length > 0 ? combined.slice(0, 5) : undefined,
     };
   });
 }
@@ -143,7 +147,14 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
     const data = await res.json();
     let out = normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
     // Fallback: if webhook returns array in same order as Items, map by index when key is missing
-    const arr = Array.isArray(data) ? data : (data && typeof data === "object" && Array.isArray((data as Record<string, unknown>).data)) ? (data as Record<string, unknown>).data as unknown[] : null;
+    let arr: unknown[] | null = null;
+    if (Array.isArray(data)) arr = data;
+    else if (data != null && typeof data === "object") {
+      const d = data as Record<string, unknown>;
+      if (Array.isArray(d.data)) arr = d.data as unknown[];
+      else if (Array.isArray(d.body)) arr = d.body as unknown[];
+      else if (Array.isArray(d.result)) arr = d.result as unknown[];
+    }
     if (arr && arr.length > 0 && skus.length > 0) {
       const first = arr[0] as Record<string, unknown>;
       if (typeof first.sku === "string") {
@@ -152,6 +163,15 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
           const key = typeof entry.sku === "string" ? entry.sku : skus[i];
           if (key && !out[key]?.length && entry.sizes != null) {
             out = { ...out, [key]: normalizeSizeList(entry.sizes ?? entry.Sizes ?? []) };
+          }
+        }
+      } else if (("sizes" in first || "Sizes" in first) && arr.length >= skus.length) {
+        // Batch [ { sizes: [...] }, ... ] without sku — map by index to requested skus
+        for (let i = 0; i < skus.length; i++) {
+          const entry = (arr[i] as Record<string, unknown>) ?? {};
+          const list = entry.sizes ?? entry.Sizes ?? [];
+          if (Array.isArray(list) && list.length > 0) {
+            out = { ...out, [skus[i]]: normalizeSizeList(list) };
           }
         }
       }

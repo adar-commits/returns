@@ -20,15 +20,19 @@ export type GenerateLinkResult =
   | { payment_page_link?: never; page_request_uid?: never; error: string };
 
 export async function generatePaymentLink(params: GenerateLinkParams): Promise<GenerateLinkResult> {
-  const apiKey = process.env.PAYPLUS_API_KEY;
-  const secretKey = process.env.PAYPLUS_SECRET_KEY;
-  const paymentPageUid = process.env.PAYPLUS_PAYMENT_PAGE_UID || "7a0bc4d4-f35f-4301-a945-926378a2416d";
+  const apiKey = process.env.PAYPLUS_API_KEY?.trim();
+  const secretKey = process.env.PAYPLUS_SECRET_KEY?.trim();
+  const paymentPageUid = (process.env.PAYPLUS_PAYMENT_PAGE_UID || "7a0bc4d4-f35f-4301-a945-926378a2416d").trim();
   const expiryDatetime = process.env.PAYPLUS_EXPIRY_DATETIME || "30";
   const payments = process.env.PAYPLUS_PAYMENTS || "12";
 
-  if (!apiKey || !secretKey) {
-    console.error("PayPlus: PAYPLUS_API_KEY or PAYPLUS_SECRET_KEY not set");
-    return { error: "Payment is not configured. Please contact support." };
+  const missing: string[] = [];
+  if (!apiKey) missing.push("PAYPLUS_API_KEY");
+  if (!secretKey) missing.push("PAYPLUS_SECRET_KEY");
+  if (missing.length > 0) {
+    const msg = `Payment not configured: ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} not set. Set them in .env.local (local) or in your host's environment (e.g. Vercel → Settings → Environment Variables).`;
+    console.error("PayPlus:", msg);
+    return { error: msg };
   }
 
   const body = {

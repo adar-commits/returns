@@ -244,6 +244,7 @@ export async function POST(request: Request) {
         linkResult && "error" in linkResult
           ? linkResult.error
           : "Unable to generate payment link. Please try again or contact support.";
+      console.error("Return request: payment link failed —", errorMessage);
       return NextResponse.json({ error: errorMessage }, { status: 502 });
     }
 

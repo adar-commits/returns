@@ -439,15 +439,22 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
 
                   {!sizesLoading[item.sku || ""] && sizes.length === 0 && (
                     <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
-                      לא נמצאו פריטים במידה אחרת למוצר זה
+                      לא נמצאו מידות אחרות במלאי
                     </p>
                   )}
 
-                  {sizes.length > 0 && (
+                  {sizes.length > 0 && (() => {
+                    const replacementSizes = sizes.filter((s) => !isSameSizeAsItem(item.sku || "", s));
+                    if (replacementSizes.length === 0) {
+                      return (
+                        <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
+                          לא נמצאו מידות אחרות במלאי
+                        </p>
+                      );
+                    }
+                    return (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
-                      {sizes
-                        .filter((s) => !isSameSizeAsItem(item.sku || "", s))
-                        .map((s) => {
+                      {replacementSizes.map((s) => {
                         const selected = choices[i]?.selected_size_id === s.id;
                         const origPrice = Number(item.price ?? 0);
                         const sizePrice = s.price != null ? Number(s.price) : null;
@@ -512,7 +519,8 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                         );
                       })}
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               )}
             </div>

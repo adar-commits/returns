@@ -222,7 +222,7 @@ export async function POST(request: Request) {
       const successUrl = `${baseUrl}/api/payplus/success?return_id=${encodeURIComponent(return_id)}`;
       const failureUrl = `${baseUrl}/api/payplus/failure?return_id=${encodeURIComponent(return_id)}`;
       const linkResult = await generatePaymentLink({
-        amount: 1, // Static 1.00 ILS for testing success webhook
+        amount: totalToPay,
         return_id,
         success_url: successUrl,
         failure_url: failureUrl,

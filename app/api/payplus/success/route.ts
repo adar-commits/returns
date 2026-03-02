@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { getSettings } from "@/lib/settings";
-import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
+import { DEFAULT_WEBHOOK_URL } from "@/lib/constants";
 
 /**
  * PayPlus redirects the user here after successful payment.
@@ -57,9 +57,6 @@ async function handleSuccessRedirect(request: Request) {
     .update({ status: "confirmed", payment_status: "paid" })
     .eq("return_id", return_id);
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : DEFAULT_APP_URL);
   const shippingType = payload?.shipping && typeof payload.shipping === "object" && (payload.shipping as Record<string, unknown>).method === "branch"
     ? "branch"
     : "courier";
@@ -90,7 +87,9 @@ async function handleSuccessRedirect(request: Request) {
     }
   }
 
-  const successUrl = new URL("/success", baseUrl);
+  // Redirect to thank-you on same origin that received the callback
+  const origin = new URL(request.url).origin;
+  const successUrl = new URL("/success", origin);
   successUrl.searchParams.set("returnId", return_id);
   successUrl.searchParams.set("shippingType", shippingType);
   successUrl.searchParams.set("branchName", branchName);

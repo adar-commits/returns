@@ -115,8 +115,12 @@ export default function SummaryView() {
       .catch(() => {});
   }, []);
 
-  const netPay = Math.max(0, payTotal + shippingFee - refundTotal);
-  const netRefund = Math.max(0, refundTotal - payTotal - shippingFee);
+  // If the only cost is shipping (no product diff, no refund), do not charge for shipping
+  const effectiveShippingFee =
+    payTotal === 0 && refundTotal === 0 && shippingFee > 0 ? 0 : shippingFee;
+
+  const netPay = Math.max(0, payTotal + effectiveShippingFee - refundTotal);
+  const netRefund = Math.max(0, refundTotal - payTotal - effectiveShippingFee);
   const needsPayment = netPay > 0;
   const needsAddress = needsPayment && wizard?.shipping?.type === "delivery";
 
@@ -130,11 +134,15 @@ export default function SummaryView() {
     }
     setSubmitting(true);
     try {
+      const wizardToSend =
+        effectiveShippingFee !== shippingFee
+          ? { ...wizard, shipping: { ...wizard.shipping, fee: effectiveShippingFee } }
+          : wizard;
       const res = await fetch("/api/return-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          wizard,
+          wizard: wizardToSend,
           customer_address: needsAddress ? { full_name: fullName, phone, address } : undefined,
         }),
       });
@@ -199,7 +207,7 @@ export default function SummaryView() {
                 )}
 
                 {row.action === "unsure" && (
-                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: 2 }}>איני בטוח/ה</p>
+                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: 2 }}>איני בטוח/ה עדיין</p>
                 )}
 
                 {row.paidPrice > 0 && (
@@ -251,7 +259,7 @@ export default function SummaryView() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-2)" }}>
           <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{shippingLabel}</span>
           <span style={{ fontSize: "var(--text-caption)", fontWeight: 600, direction: "ltr" }}>
-            {shippingFee > 0 ? `+${fmt(shippingFee)} ₪` : "חינם"}
+            {effectiveShippingFee > 0 ? `+${fmt(effectiveShippingFee)} ₪` : "חינם"}
           </span>
         </div>
 

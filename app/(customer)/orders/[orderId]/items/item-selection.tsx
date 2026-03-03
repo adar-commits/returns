@@ -292,7 +292,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const handleContinue = () => {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
-      setValidationError("נא לבחור לכל פריט: החלפה, החזרה, ללא שינוי או איני בטוח/ה.");
+      setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה עדיין או ללא שינוי.");
       return;
     }
     if (choices.some((c) => c.action === "return" && (c.reason_id == null || String(c.reason_id).trim() === ""))) {
@@ -392,10 +392,10 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   }}
                 >
                   <option value="">בחר פעולה</option>
-                  <option value="return">החזרה</option>
-                  <option value="replace">החלפה</option>
+                  <option value="return">החזרת מוצר</option>
+                  <option value="replace">החלפת מידה</option>
+                  <option value="unsure">איני בטוח/ה עדיין</option>
                   <option value="keep">ללא שינוי</option>
-                  <option value="unsure">איני בטוח/ה</option>
                 </select>
               </div>
 

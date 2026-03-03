@@ -86,10 +86,7 @@ export async function POST(request: Request) {
       size_price: c.size_price,
     }));
 
-    if (items.length === 0) {
-      return NextResponse.json({ error: "Select at least one item to return or replace" }, { status: 400 });
-    }
-
+    // Allow submission with no return/replace (e.g. only keep/unsure + callback for consultation)
     const hasReturn = items.some((i) => i.action === "return");
     const hasReplace = items.some((i) => i.action === "replace");
     const type = hasReturn && hasReplace ? "mixed" : hasReplace ? "replacement" : "return";

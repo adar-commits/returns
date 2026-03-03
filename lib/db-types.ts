@@ -39,6 +39,7 @@ export interface AppSettingsRow {
   content_footer: unknown;
   content_help_banner: ContentHelpBanner | null;
   content_headlines: Record<string, string> | null;
+  restricted_skus?: string[];
   updated_at: string;
 }
 

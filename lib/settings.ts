@@ -29,6 +29,7 @@ export async function updateSettings(updates: Partial<{
   branches_webhook_url: string | null;
   final_webhook_url: string | null;
   invoices_webhook_url: string | null;
+  restricted_skus: string[] | null;
 }>) {
   const supabase = createServerClient();
   const { data, error } = await supabase

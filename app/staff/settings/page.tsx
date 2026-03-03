@@ -27,6 +27,8 @@ export default function StaffSettingsPage() {
   const [webhooks, setWebhooks] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [branches, setBranches] = useState<BranchItem[]>([]);
+  const [restrictedSkus, setRestrictedSkus] = useState<string[]>([]);
+  const [restrictedSkuInput, setRestrictedSkuInput] = useState("");
 
   useEffect(() => {
     fetch("/api/branches")
@@ -46,6 +48,7 @@ export default function StaffSettingsPage() {
           if (data[key] != null) wh[key] = data[key];
         });
         setWebhooks(wh);
+        if (Array.isArray(data.restricted_skus)) setRestrictedSkus(data.restricted_skus);
       })
       .catch(() => setMessage("Failed to load settings"))
       .finally(() => setLoading(false));
@@ -64,6 +67,7 @@ export default function StaffSettingsPage() {
           shipping_tiers: shippingTiers,
           content_help_banner: helpBanner,
           content_headlines: Object.keys(headlines).length ? headlines : null,
+          restricted_skus: restrictedSkus,
           ...webhooks,
         }),
       });
@@ -131,6 +135,44 @@ export default function StaffSettingsPage() {
         <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
           <input className="input" value={reasonInput} onChange={(e) => setReasonInput(e.target.value)} placeholder="New reason" style={{ flex: 1 }} />
           <button type="button" className="btn btn-secondary" style={{ width: "auto", minWidth: 0 }} onClick={addReason}>Add</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <p className="card-title">Restricted SKUs</p>
+        <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-4)" }}>
+          Items with these SKUs will not appear on the return/replace selection page. One SKU per line or comma-separated.
+        </p>
+        <ul className="list-plain">
+          {restrictedSkus.map((sku, i) => (
+            <li key={i} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
+              <code style={{ fontSize: "var(--text-small)", background: "var(--color-surface-elevated)", padding: "2px 6px", borderRadius: 4 }}>{sku}</code>
+              <button type="button" className="btn btn-ghost" style={{ width: "auto", minWidth: 0, padding: "var(--space-2)" }} onClick={() => setRestrictedSkus((prev) => prev.filter((_, idx) => idx !== i))}>Remove</button>
+            </li>
+          ))}
+        </ul>
+        <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)", flexWrap: "wrap" }}>
+          <input
+            className="input"
+            value={restrictedSkuInput}
+            onChange={(e) => setRestrictedSkuInput(e.target.value)}
+            placeholder="SKU (e.g. 33600090-160230) or multiple comma-separated"
+            style={{ flex: 1, minWidth: 200 }}
+          />
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ width: "auto", minWidth: 0 }}
+            onClick={() => {
+              const toAdd = restrictedSkuInput.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+              if (toAdd.length) {
+                setRestrictedSkus((prev) => [...new Set([...prev, ...toAdd])]);
+                setRestrictedSkuInput("");
+              }
+            }}
+          >
+            Add
+          </button>
         </div>
       </div>
 

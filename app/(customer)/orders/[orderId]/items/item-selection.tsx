@@ -155,7 +155,7 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
 
 type LineItem = { sku: string; product_name?: string; price?: number; qty?: number | string; [key: string]: unknown };
 type ExpandedLineItem = LineItem & { _lineIdx: number; _qtyIdx: number; _totalQty: number };
-type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
+type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep" | "unsure"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
 type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
 
 function expandByQty(items: LineItem[]): ExpandedLineItem[] {
@@ -205,6 +205,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<{ items?: LineItem[]; [key: string]: unknown } | null>(null);
   const [expandedItems, setExpandedItems] = useState<ExpandedLineItem[]>([]);
   const [returnReasons, setReturnReasons] = useState<string[]>([]);
+  const [restrictedSkus, setRestrictedSkus] = useState<string[]>([]);
   const [choices, setChoices] = useState<ItemChoice[]>([]);
   const [sizesCache, setSizesCache] = useState<Record<string, SizeOption[]>>({});
   const [sizesLoading, setSizesLoading] = useState<Record<string, boolean>>({});
@@ -222,14 +223,16 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const found = orders.find((o: { order_id?: string }) => String(o.order_id) === orderId);
       setOrder(found || null);
       setReturnReasons(settingsData.return_reasons || []);
+      setRestrictedSkus(Array.isArray(settingsData.restricted_skus) ? settingsData.restricted_skus : []);
       const rawItems = (found?.items || found?.line_items || []) as LineItem[];
-      // Expand items with qty > 1 into individual rows
-      const exp = expandByQty(rawItems);
+      const restrictedSet = new Set((Array.isArray(settingsData.restricted_skus) ? settingsData.restricted_skus : []).map((s: string) => String(s).trim()));
+      const filteredRawItems = rawItems.filter((it) => !restrictedSet.has(String(it.sku || "").trim()));
+      const exp = expandByQty(filteredRawItems);
       setExpandedItems(exp);
       setChoices(exp.map((it) => ({ sku: it.sku || "", action: "", reason_id: "", selected_size_id: "" })));
       const seen = new Set<string>();
       const skus: string[] = [];
-      for (const it of rawItems) {
+      for (const it of filteredRawItems) {
         const s = String(it.sku || "").trim();
         if (s && !seen.has(s)) { seen.add(s); skus.push(s); }
       }
@@ -289,7 +292,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const handleContinue = () => {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
-      setValidationError("נא לבחור לכל פריט: החלפה, החזרה או ללא שינוי.");
+      setValidationError("נא לבחור לכל פריט: החלפה, החזרה, ללא שינוי או איני בטוח/ה.");
       return;
     }
     if (choices.some((c) => c.action === "return" && (c.reason_id == null || String(c.reason_id).trim() === ""))) {
@@ -380,7 +383,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   className="input"
                   value={choices[i]?.action ?? ""}
                   onChange={(e) => {
-                    const action = (e.target.value || "") as "" | "return" | "replace" | "keep";
+                    const action = (e.target.value || "") as "" | "return" | "replace" | "keep" | "unsure";
                     setChoice(i, {
                       action,
                       reason_id: action !== "return" ? undefined : choices[i]?.reason_id,
@@ -392,6 +395,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   <option value="return">החזרה</option>
                   <option value="replace">החלפה</option>
                   <option value="keep">ללא שינוי</option>
+                  <option value="unsure">איני בטוח/ה</option>
                 </select>
               </div>
 

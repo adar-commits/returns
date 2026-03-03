@@ -84,6 +84,8 @@ export default function SummaryView() {
         rows.push({ sku: c.sku, name, action: "replace", paidPrice, newPrice, diff, sizeLabel: c.size_label });
       } else if (c.action === "keep") {
         rows.push({ sku: c.sku, name, action: "keep", paidPrice, newPrice: paidPrice, diff: 0 });
+      } else if (c.action === "unsure") {
+        rows.push({ sku: c.sku, name, action: "unsure", paidPrice, newPrice: paidPrice, diff: 0 });
       }
     }
 
@@ -139,7 +141,7 @@ export default function SummaryView() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error || "Failed to submit"); return; }
       if (data.payment_link) { window.location.href = data.payment_link; return; }
-      const shippingType = wizard.shipping?.type === "branch" ? "branch" : "courier";
+      const shippingType = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
       const branchName = wizard.shipping?.branch?.name || "";
       sessionStorage.removeItem("returns_wizard");
       router.push(
@@ -155,7 +157,9 @@ export default function SummaryView() {
   const shippingLabel =
     wizard.shipping?.type === "branch"
       ? `איסוף עצמי — ${wizard.shipping.branch?.name ?? ""}`
-      : "שליח עד הבית";
+      : wizard.shipping?.type === "callback"
+        ? "חזרו אלי בטלפון - חינם"
+        : "שליח עד הבית";
 
   return (
     <div>
@@ -194,6 +198,10 @@ export default function SummaryView() {
                   <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: 2 }}>ללא שינוי</p>
                 )}
 
+                {row.action === "unsure" && (
+                  <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: 2 }}>איני בטוח/ה</p>
+                )}
+
                 {row.paidPrice > 0 && (
                   <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", display: "flex", flexDirection: "column", gap: 2 }}>
                     <span>מחיר ששולם: <strong style={{ color: "var(--color-text)" }}>{fmt(row.paidPrice)} ₪</strong></span>
@@ -227,6 +235,9 @@ export default function SummaryView() {
                   </span>
                 )}
                 {row.action === "keep" && (
+                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>—</span>
+                )}
+                {row.action === "unsure" && (
                   <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>—</span>
                 )}
               </div>

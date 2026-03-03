@@ -14,7 +14,9 @@ export default function SuccessView({
   const destinationLabel =
     shippingType === "branch" && branchName
       ? `הבקשה נשלחה לסניף ${branchName}`
-      : "הבקשה נשלחה לשירות הלקוחות שלנו";
+      : shippingType === "callback"
+        ? "יועצ/ת עיצוב תחזור אליכם עד 24 שעות"
+        : "הבקשה נשלחה לשירות הלקוחות שלנו";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "var(--space-6) var(--space-4)", minHeight: "60vh", justifyContent: "center" }}>

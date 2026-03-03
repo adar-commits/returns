@@ -57,9 +57,14 @@ async function handleSuccessRedirect(request: Request) {
     .update({ status: "confirmed", payment_status: "paid" })
     .eq("return_id", return_id);
 
-  const shippingType = payload?.shipping && typeof payload.shipping === "object" && (payload.shipping as Record<string, unknown>).method === "branch"
-    ? "branch"
-    : "courier";
+  const shippingType =
+    payload?.shipping && typeof payload.shipping === "object"
+      ? (payload.shipping as Record<string, unknown>).method === "branch"
+        ? "branch"
+        : (payload.shipping as Record<string, unknown>).method === "callback"
+          ? "callback"
+          : "courier"
+      : "courier";
   const branchName =
     payload?.shipping &&
     typeof payload.shipping === "object" &&

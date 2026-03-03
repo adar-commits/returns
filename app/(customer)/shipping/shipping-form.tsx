@@ -86,7 +86,7 @@ export default function ShippingForm() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [shippingTiers, setShippingTiers] = useState<ShippingTier[]>([]);
   const [wazeUrls, setWazeUrls] = useState<Record<string, string>>({});
-  const [deliveryOrBranch, setDeliveryOrBranch] = useState<"delivery" | "branch">("delivery");
+  const [deliveryOrBranch, setDeliveryOrBranch] = useState<"delivery" | "branch" | "callback">("delivery");
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [shippingFee, setShippingFee] = useState(0);
   const [loadingBranches, setLoadingBranches] = useState(true);
@@ -135,9 +135,13 @@ export default function ShippingForm() {
     const raw = sessionStorage.getItem("returns_wizard");
     if (!raw) return;
     const wizard = JSON.parse(raw);
-    wizard.shipping = deliveryOrBranch === "delivery"
-      ? { type: "delivery", fee: shippingFee }
-      : { type: "branch", branch_id: selectedBranchId, branch: selectedBranch, fee: 0 };
+    if (deliveryOrBranch === "delivery") {
+      wizard.shipping = { type: "delivery", fee: shippingFee };
+    } else if (deliveryOrBranch === "branch") {
+      wizard.shipping = { type: "branch", branch_id: selectedBranchId, branch: selectedBranch, fee: 0 };
+    } else {
+      wizard.shipping = { type: "callback", fee: 0 };
+    }
     wizard.step = "shipping";
     sessionStorage.setItem("returns_wizard", JSON.stringify(wizard));
     router.push("/summary");
@@ -187,6 +191,16 @@ export default function ShippingForm() {
             <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
               הגיעו לאחד מסניפינו ללא עלות משלוח
+            </p>
+          </div>
+        </label>
+
+        <label className="choice-option" data-selected={deliveryOrBranch === "callback"} style={{ cursor: "pointer" }}>
+          <input type="radio" name="shipping" checked={deliveryOrBranch === "callback"} onChange={() => setDeliveryOrBranch("callback")} />
+          <div>
+            <strong>חזרו אלי בטלפון - חינם</strong>
+            <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
+              יועצ/ת עיצוב מטמענו תחזור אליכם עד 24 שעות להתייעצות
             </p>
           </div>
         </label>

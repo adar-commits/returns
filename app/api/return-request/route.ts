@@ -162,7 +162,7 @@ export async function POST(request: Request) {
       };
     });
 
-    const shippingMethod = wizard.shipping?.type === "branch" ? "branch" : "courier";
+    const shippingMethod = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
     const branchInfo =
       wizard.shipping?.type === "branch"
         ? {

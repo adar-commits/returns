@@ -26,7 +26,7 @@ type WizardOrderItem = {
 };
 
 type WizardShipping = {
-  type: "delivery" | "branch";
+  type: "delivery" | "branch" | "callback";
   fee: number;
   branch_id?: string;
   branch?: {

@@ -166,7 +166,7 @@ export default function StaffSettingsPage() {
             onClick={() => {
               const toAdd = restrictedSkuInput.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
               if (toAdd.length) {
-                setRestrictedSkus((prev) => [...new Set([...prev, ...toAdd])]);
+                setRestrictedSkus((prev) => Array.from(new Set([...prev, ...toAdd])));
                 setRestrictedSkuInput("");
               }
             }}

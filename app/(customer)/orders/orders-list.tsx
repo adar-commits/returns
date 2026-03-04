@@ -141,20 +141,20 @@ export default function OrdersList() {
               <div className="order-bottom-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
                 {/* Buttons - always side by side */}
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "var(--space-1)" }}>
-                  <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "nowrap" }}>
+                  <div className="order-card-buttons" style={{ display: "flex", gap: "var(--space-2)", flexWrap: "nowrap" }}>
                     {canReturn ? (
-                      <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
+                      <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none", fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
                         החלפה / החזרה
                       </Link>
                     ) : (
-                      <button type="button" className="btn btn-primary" disabled style={{ width: "auto", minWidth: 0 }}>
+                      <button type="button" className="btn btn-primary" disabled style={{ width: "auto", minWidth: 0, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
                         החלפה / החזרה
                       </button>
                     )}
                     <button
                     type="button"
                     className="btn btn-secondary"
-                    style={{ width: "auto", minWidth: 0 }}
+                    style={{ width: "auto", minWidth: 0, fontSize: "0.8125rem", whiteSpace: "nowrap" }}
                     onClick={async () => {
                       const href = order.receipt_href ?? order.invoice_link ?? order.receipt_link;
                       if (href) { window.open(String(href), "_blank"); return; }

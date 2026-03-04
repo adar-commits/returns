@@ -145,8 +145,8 @@ export default function ShippingForm() {
       }
       if (c.action === "replace" && c.size_price != null) total += Number(c.size_price);
     }
-    // Fixed cost for home delivery: 39.90 ILS
-    setShippingFee(39.9);
+    // Fixed cost for home delivery: 84.90 ILS
+    setShippingFee(84.9);
   }, [shippingTiers]);
 
   const selectedBranch = branches.find((b) => b.id === selectedBranchId);
@@ -216,7 +216,7 @@ export default function ShippingForm() {
               <input type="radio" name="shipping" checked={deliveryOrBranch === "delivery"} onChange={() => setDeliveryOrBranch("delivery")} />
               <div>
                 <strong>שליח עד הבית</strong>
-                <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪39.90</span>
+                <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪84.90</span>
                 <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
                   מערך השליחים שלנו יאסוף את המוצר מביתכם
                 </p>

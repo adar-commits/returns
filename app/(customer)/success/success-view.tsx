@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 export default function SuccessView({
   returnId,
   shippingType,
@@ -94,11 +92,6 @@ export default function SuccessView({
         </div>
       )}
 
-      <p style={{ marginTop: "var(--space-4)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-        <Link href="/orders" className="link" style={{ fontSize: "inherit", textDecoration: "none" }}>
-          לחץ להתחלה מחדש
-        </Link>
-      </p>
     </div>
   );
 }

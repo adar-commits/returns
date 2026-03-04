@@ -36,6 +36,11 @@ export default async function CustomerLayout({ children }: { children: React.Rea
           </a>
         </div>
       )}
+      <div className="help-block" style={{ paddingTop: 0, marginTop: 0 }}>
+        <a href="/orders" className="link" style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+          להתחלה מחדש לחץ כאן
+        </a>
+      </div>
       {footer && <footer className="footer-block">{footer}</footer>}
     </div>
   );

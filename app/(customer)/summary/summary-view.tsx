@@ -443,9 +443,6 @@ export default function SummaryView() {
       >
         {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום ושליחת בקשה"}
       </button>
-      <p style={{ marginTop: "var(--space-3)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-        <a href="/orders" className="link" style={{ fontSize: "inherit" }}>לחץ להתחלה מחדש</a>
-      </p>
     </div>
   );
 }

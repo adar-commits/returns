@@ -9,6 +9,7 @@ type Order = {
   id?: string;
   IVDATE?: string;
   ivdate?: string;
+  status?: string;
   isReturnable?: boolean | string;
   is_returnable?: boolean | string;
   total_price?: number | string;
@@ -23,6 +24,13 @@ type Order = {
   line_items?: Array<{ qty?: number; product_name?: string; partname?: string; sku?: string }>;
   [key: string]: unknown;
 };
+
+function isOrderCancelled(order: Order): boolean {
+  const s = String(order.status ?? "").trim();
+  if (!s) return false;
+  const lower = s.toLowerCase();
+  return lower === "מבוטלת" || lower === "בוטל" || lower === "בוטלה" || lower === "cancelled" || lower === "canceled";
+}
 
 const ISRAEL_VAT = 1.17;
 
@@ -106,7 +114,8 @@ export default function OrdersList() {
       <ul className="list-plain">
         {orders.map((order) => {
           const id = String(order.order_id ?? order.id ?? "");
-          const canReturn = isReturnableValue(order.isReturnable ?? order.is_returnable);
+          const cancelled = isOrderCancelled(order);
+          const canReturn = !cancelled && isReturnableValue(order.isReturnable ?? order.is_returnable);
           const branch = orderBranchName(order);
 
           const raw = order.total_price ?? order.total;
@@ -118,7 +127,9 @@ export default function OrdersList() {
             <li key={id} className="list-item-card">
               {/* Row 1: order ID (right) + iv-date (left) on same line */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-1)" }}>
-                <strong style={{ fontSize: "var(--text-body)" }}>הזמנה {id}</strong>
+                <strong style={{ fontSize: "var(--text-body)" }}>
+                  הזמנה {id}{cancelled ? " (מבוטלת)" : ""}
+                </strong>
                 {(order.IVDATE || order.ivdate) && (
                   <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
                     {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
@@ -175,7 +186,7 @@ export default function OrdersList() {
                   </div>
                   {!canReturn && (
                     <p style={{ margin: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-                      חלפה התקופה בה ניתן לבצע החזרה / החלפה
+                      {cancelled ? "ההזמנה מבוטלת" : "חלפה התקופה בה ניתן לבצע החזרה / החלפה"}
                     </p>
                   )}
                 </div>

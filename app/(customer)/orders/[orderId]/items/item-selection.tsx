@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { DEFAULT_RESTRICTED_SKUS } from "@/lib/constants";
 
 const GALLERY_SIZE = 160;
 const SIZE_GUIDE_URL =
@@ -171,9 +172,12 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const found = orders.find((o: { order_id?: string }) => String(o.order_id) === orderId);
       setOrder(found || null);
       setReturnReasons(settingsData.return_reasons || []);
-      setRestrictedSkus(Array.isArray(settingsData.restricted_skus) ? settingsData.restricted_skus : []);
+      const fromSettings = Array.isArray(settingsData.restricted_skus) ? settingsData.restricted_skus : [];
+      setRestrictedSkus(fromSettings);
       const rawItems = (found?.items || found?.line_items || []) as LineItem[];
-      const restrictedSet = new Set((Array.isArray(settingsData.restricted_skus) ? settingsData.restricted_skus : []).map((s: string) => String(s).trim()));
+      const restrictedSet = new Set(
+        [...DEFAULT_RESTRICTED_SKUS, ...fromSettings].map((s: string) => String(s).trim())
+      );
       const filteredRawItems = rawItems.filter((it) => !restrictedSet.has(String(it.sku || "").trim()));
       const exp = expandByQty(filteredRawItems);
       setExpandedItems(exp);

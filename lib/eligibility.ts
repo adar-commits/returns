@@ -35,10 +35,18 @@ export function isOrderWithinEligibilityDays(
   return diffDays >= 0 && diffDays <= eligibilityDays;
 }
 
+/** True if order status indicates cancelled (מבוטלת, בוטל, etc.). */
+function isOrderCancelled(order: Record<string, unknown>): boolean {
+  const s = String(order.status ?? order.STATUS ?? order.order_status ?? "").trim();
+  if (!s) return false;
+  const lower = s.toLowerCase();
+  return lower === "מבוטלת" || lower === "בוטל" || lower === "בוטלה" || lower === "cancelled" || lower === "canceled";
+}
+
 /**
  * Mark orders with eligible (no existing return request) and set isReturnable:
- * true only when order is within eligibility_days AND has no existing return request.
- * Orders past the period are still included; they get isReturnable: false so the UI
+ * true only when order is within eligibility_days AND has no existing return request AND is not cancelled.
+ * Orders past the period or cancelled are still included; they get isReturnable: false so the UI
  * shows them with the replace/return button disabled and the note.
  */
 export function filterOrdersByEligibility(
@@ -50,7 +58,8 @@ export function filterOrdersByEligibility(
     const orderId = String(order.order_id ?? order.id ?? "");
     const noExistingRequest = eligibleOrderIds.has(orderId);
     const withinDays = isOrderWithinEligibilityDays(order, eligibilityDays);
-    const isReturnable = withinDays && noExistingRequest;
+    const cancelled = isOrderCancelled(order);
+    const isReturnable = !cancelled && withinDays && noExistingRequest;
     return {
       ...order,
       eligible: isReturnable,

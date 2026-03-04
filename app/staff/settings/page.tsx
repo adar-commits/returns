@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 type ShippingTier = { min: number; max: number; fee: number };
 type ContentHelpBanner = { text: string; href: string };
@@ -29,6 +29,11 @@ export default function StaffSettingsPage() {
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [restrictedSkus, setRestrictedSkus] = useState<string[]>([]);
   const [restrictedSkuInput, setRestrictedSkuInput] = useState("");
+  const messageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (message) messageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [message]);
 
   useEffect(() => {
     fetch("/api/branches")
@@ -112,7 +117,7 @@ export default function StaffSettingsPage() {
   return (
     <div className="staff-layout">
       <h1 className="page-title">Settings</h1>
-      {message && <div className={message.startsWith("Failed") ? "msg-error" : "msg-success"} style={{ marginBottom: "var(--space-4)" }}>{message}</div>}
+      {message && <div ref={messageRef} className={message.startsWith("Failed") ? "msg-error" : "msg-success"} style={{ marginBottom: "var(--space-4)" }}>{message}</div>}
 
       <div className="card">
         <p className="card-title">Eligibility</p>

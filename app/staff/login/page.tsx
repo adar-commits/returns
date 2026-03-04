@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -12,6 +12,11 @@ function StaffLoginForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [error]);
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -101,7 +106,7 @@ function StaffLoginForm() {
               required
             />
           </div>
-          {error && <div className="msg-error">{error}</div>}
+          {error && <div ref={errorRef} className="msg-error">{error}</div>}
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? "Logging in…" : "Log in with email"}
           </button>

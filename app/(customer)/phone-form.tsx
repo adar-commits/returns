@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 /** Digits only; must start with 05 (Israeli mobile). No + or other chars. Reject leading 97. */
@@ -25,7 +25,12 @@ export default function PhoneForm() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [error]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,7 +76,7 @@ export default function PhoneForm() {
           maxLength={11}
         />
       </div>
-      {error && <div className="msg-error">{error}</div>}
+      {error && <div ref={errorRef} className="msg-error">{error}</div>}
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? "שולח…" : "שלח קוד"}
       </button>

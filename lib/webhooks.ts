@@ -197,18 +197,34 @@ export type Branch = {
   opening_hours?: string;
 };
 
-/** Normalise Priority OData shape [ { value: [...] } ] or direct { value } or { branches }. */
+/** Normalise Priority OData shape [ { value: [...] } ] or direct { value } or { branches }. Also unwraps n8n-style { body: { branches } } or { body: [...] }. */
 function normalizeBranchesResponse(data: unknown): Branch[] {
   let rows: Record<string, unknown>[] = [];
 
-  if (Array.isArray(data) && data.length > 0) {
-    const first = data[0] as Record<string, unknown>;
+  // Unwrap common wrappers (e.g. n8n returns { body: { branches: [...] } } or { body: [...] })
+  let unwrapped: unknown = data;
+  if (data != null && typeof data === "object" && !Array.isArray(data)) {
+    const d = data as Record<string, unknown>;
+    if (d.body != null) unwrapped = d.body;
+    else if (d.data != null) unwrapped = d.data;
+    else if (d.result != null) unwrapped = d.result;
+    else if (d.output != null) unwrapped = d.output;
+  }
+  if (unwrapped != null && typeof unwrapped === "object" && !Array.isArray(unwrapped)) {
+    const u = unwrapped as Record<string, unknown>;
+    if (Array.isArray(u.branches)) rows = u.branches as Record<string, unknown>[];
+    else if (Array.isArray(u.Branches)) rows = u.Branches as Record<string, unknown>[];
+    else if (Array.isArray(u.value)) rows = u.value as Record<string, unknown>[];
+  }
+
+  if (rows.length === 0 && Array.isArray(unwrapped) && unwrapped.length > 0) {
+    const first = unwrapped[0] as Record<string, unknown>;
     if ("value" in first && Array.isArray(first.value)) {
       rows = first.value as Record<string, unknown>[];
     } else if ("BRANCHNAME" in first || "id" in first || "branch_id" in first) {
-      rows = data as Record<string, unknown>[];
+      rows = unwrapped as Record<string, unknown>[];
     }
-  } else if (data && typeof data === "object") {
+  } else if (rows.length === 0 && data && typeof data === "object" && !Array.isArray(data)) {
     const d = data as Record<string, unknown>;
     if (Array.isArray(d.value)) rows = d.value as Record<string, unknown>[];
     else if (Array.isArray(d.branches)) rows = d.branches as Record<string, unknown>[];

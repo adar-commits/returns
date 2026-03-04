@@ -16,6 +16,7 @@ function VerifyForm() {
   const [resending, setResending] = useState(false);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -24,6 +25,10 @@ function VerifyForm() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [error]);
 
   function startTimer() {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -142,7 +147,7 @@ function VerifyForm() {
         )}
       </div>
 
-      {error && <div className="msg-error">{error}</div>}
+      {error && <div ref={errorRef} className="msg-error">{error}</div>}
       <button type="submit" className="btn btn-primary" disabled={loading}>
         {loading ? "בודק…" : "אשר קוד"}
       </button>

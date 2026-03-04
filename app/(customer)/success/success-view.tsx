@@ -94,18 +94,11 @@ export default function SuccessView({
         </div>
       )}
 
-      {/* Back to orders */}
-      <Link
-        href="/orders"
-        style={{
-          marginTop: "var(--space-4)",
-          fontSize: "var(--text-small)",
-          color: "var(--color-text-muted)",
-          textDecoration: "none",
-        }}
-      >
-        חזרה לדף ההזמנות
-      </Link>
+      <p style={{ marginTop: "var(--space-4)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+        <Link href="/orders" className="link" style={{ fontSize: "inherit", textDecoration: "none" }}>
+          לחץ להתחלה מחדש
+        </Link>
+      </p>
     </div>
   );
 }

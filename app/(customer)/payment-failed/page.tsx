@@ -58,17 +58,15 @@ export default async function PaymentFailedPage({
         <Link
           href="/summary"
           className="btn btn-primary"
-          style={{ textDecoration: "none", marginBottom: "var(--space-3)" }}
+          style={{ textDecoration: "none", marginBottom: "var(--space-2)" }}
         >
           חזרה לסכם ולשלם שוב
         </Link>
-
-        <Link
-          href="/orders"
-          style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", textDecoration: "none" }}
-        >
-          חזרה להזמנות
-        </Link>
+        <p style={{ marginTop: "var(--space-2)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+          <Link href="/orders" className="link" style={{ fontSize: "inherit" }}>
+            לחץ להתחלה מחדש
+          </Link>
+        </p>
       </div>
     </main>
   );

@@ -90,13 +90,19 @@ export default function ShippingForm() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
   const [shippingFee, setShippingFee] = useState(0);
   const [loadingBranches, setLoadingBranches] = useState(true);
+  const [branchesLoadError, setBranchesLoadError] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [submittingCallback, setSubmittingCallback] = useState(false);
 
   useEffect(() => {
+    setBranchesLoadError(false);
     fetch("/api/branches")
-      .then((r) => r.json())
-      .then((d) => setBranches(d.branches || []))
+      .then((r) => {
+        if (!r.ok) setBranchesLoadError(true);
+        return r.json();
+      })
+      .then((d) => setBranches(d.branches ?? []))
+      .catch(() => setBranchesLoadError(true))
       .finally(() => setLoadingBranches(false));
     fetch("/api/settings")
       .then((r) => r.json())
@@ -188,10 +194,6 @@ export default function ShippingForm() {
         />
       )}
 
-      <p style={{ marginBottom: "var(--space-4)" }}>
-        <a href={`/orders/${orderId}/items`} className="link">חזרה →</a>
-      </p>
-
       {/* Shipping option cards */}
       <div className="choice-group" style={{ marginBottom: "var(--space-5)" }}>
         <label className="choice-option" data-selected={deliveryOrBranch === "delivery"} style={{ cursor: "pointer" }}>
@@ -200,7 +202,7 @@ export default function ShippingForm() {
             <strong>שליח עד הבית</strong>
             <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪39.90</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-              מערך השליחים שלנו יאסוף מהבית
+              מערך השליחים שלנו יאסוף את המוצר מביתכם
             </p>
           </div>
         </label>
@@ -211,7 +213,7 @@ export default function ShippingForm() {
             <strong>החזרה / החלפה בכל סניף</strong>
             <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-              הגיעו לאחד מסניפינו ללא עלות משלוח
+              החזירו את המוצר לאחד מסניפי הרשת שלנו ללא עלות
             </p>
           </div>
         </label>
@@ -222,7 +224,7 @@ export default function ShippingForm() {
             <strong>חזרו אלי בטלפון — </strong>
             <span style={{ color: "var(--color-success)", fontWeight: 600 }}>חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-              יועצ/ת עיצוב מטמענו תחזור אליכם עד 24 שעות להתייעצות
+              יועצ/ת עיצוב לשירותך ללא עלות - מענה עד 24 שעות
             </p>
           </div>
         </label>
@@ -238,6 +240,8 @@ export default function ShippingForm() {
             <div className="loading-block" style={{ padding: "var(--space-6)" }}>
               <div className="loader" /><span>טוען סניפים…</span>
             </div>
+          ) : branchesLoadError ? (
+            <p style={{ color: "var(--color-error, #b91c1c)", fontSize: "var(--text-caption)", textAlign: "right" }}>שגיאה בטעינת הסניפים. נסו לרענן את הדף.</p>
           ) : branches.length === 0 ? (
             <p style={{ color: "var(--color-text-muted)", fontSize: "var(--text-caption)", textAlign: "right" }}>לא נמצאו סניפים</p>
           ) : (
@@ -324,6 +328,9 @@ export default function ShippingForm() {
       >
         {submittingCallback ? "שולח…" : deliveryOrBranch === "callback" ? "שליחה ובקשה להחזרה טלפונית" : "המשך לסיכום הזמנה"}
       </button>
+      <p style={{ marginTop: "var(--space-3)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+        <a href="/orders" className="link" style={{ fontSize: "inherit" }}>לחץ להתחלה מחדש</a>
+      </p>
     </div>
   );
 }

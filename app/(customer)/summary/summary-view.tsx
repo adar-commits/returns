@@ -56,6 +56,12 @@ export default function SummaryView() {
   const [termsPortalUrl, setTermsPortalUrl] = useState<string>("https://www.carpetshop.co.il/policies/terms-of-service");
   const [termsShippingUrl, setTermsShippingUrl] = useState<string>("https://www.carpetshop.co.il/policies/refund-policy");
   const errorRef = useRef<HTMLDivElement>(null);
+  const termsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (termsError) termsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [error, termsError]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("returns_wizard");
@@ -131,7 +137,6 @@ export default function SummaryView() {
     setTermsError(false);
     if (!termsAccepted) {
       setTermsError(true);
-      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     setSubmitting(true);
@@ -177,10 +182,6 @@ export default function SummaryView() {
 
   return (
     <div>
-      <p style={{ marginBottom: "var(--space-4)" }}>
-        <a href="/shipping" className="link">חזרה →</a>
-      </p>
-
       {/* ── Per-product breakdown ── */}
       <div className="card" style={{ marginBottom: "var(--space-4)" }}>
         <p style={{ fontWeight: 700, fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-3)", letterSpacing: "0.04em" }}>
@@ -355,6 +356,7 @@ export default function SummaryView() {
 
       {/* Terms checkbox */}
       <div
+        ref={termsRef}
         style={{
           marginBottom: "var(--space-4)",
           padding: "var(--space-4)",
@@ -441,7 +443,9 @@ export default function SummaryView() {
       >
         {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום ושליחת בקשה"}
       </button>
-
+      <p style={{ marginTop: "var(--space-3)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+        <a href="/orders" className="link" style={{ fontSize: "inherit" }}>לחץ להתחלה מחדש</a>
+      </p>
     </div>
   );
 }

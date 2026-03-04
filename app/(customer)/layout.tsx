@@ -28,12 +28,11 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         </p>
       </header>
       {banner && <div className="content-banner">{banner}</div>}
-      <div style={{ flex: 1 }}>{children}</div>
+      <main className="customer-main">{children}</main>
       {helpBanner?.text && (
         <div className="help-block">
-          <p>{helpBanner.text}</p>
-          <a href={helpHref} target="_blank" rel="noopener noreferrer" className="link">
-            צור קשר
+          <a href={helpHref} target="_blank" rel="noopener noreferrer" className="help-block-link">
+            {helpBanner.text.trim()} לחצו כאן לשיחת WhatsApp
           </a>
         </div>
       )}

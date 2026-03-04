@@ -265,6 +265,10 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     }).finally(() => setLoading(false));
   }, [orderId]);
 
+  useEffect(() => {
+    if (validationError) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [validationError]);
+
   // Clear replacement selection when it points to same-size option (same SKU)
   useEffect(() => {
     if (expandedItems.length === 0 || Object.keys(sizesCache).length === 0) return;
@@ -569,7 +573,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       <button type="button" className="btn btn-primary" onClick={handleContinue} disabled={sending}>
         {sending ? "שולח…" : "המשך למשלוח ואיסוף"}
       </button>
-
+      <p style={{ marginTop: "var(--space-3)", marginBottom: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+        <a href="/orders" className="link" style={{ fontSize: "inherit" }}>לחץ להתחלה מחדש</a>
+      </p>
     </div>
   );
 }

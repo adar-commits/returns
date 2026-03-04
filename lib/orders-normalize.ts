@@ -79,19 +79,32 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
   };
 }
 
+/**
+ * Unwrap n8n/common webhook wrappers so we get { customer, orders } or array of same.
+ * If the payload is { body: { ... } }, { data: { ... } }, etc., use the inner payload.
+ */
+function unwrapOrdersPayload(data: Record<string, unknown> | unknown[]): Record<string, unknown> | unknown[] {
+  if (Array.isArray(data)) return data;
+  const d = data as Record<string, unknown>;
+  const inner = d.body ?? d.data ?? d.result ?? d.output ?? d.json;
+  if (inner != null && typeof inner === "object") return inner as Record<string, unknown> | unknown[];
+  return data;
+}
+
 export function normalizeOrdersResponse(data: Record<string, unknown> | unknown[]): {
   orders: Array<Record<string, unknown>>;
   customerDetails?: Record<string, unknown>;
 } {
-  if (Array.isArray(data) && data.length > 0) {
-    const first = data[0] as Record<string, unknown>;
+  const unwrapped = unwrapOrdersPayload(data);
+  if (Array.isArray(unwrapped) && unwrapped.length > 0) {
+    const first = unwrapped[0] as Record<string, unknown>;
     const customer = first.customer ?? first.Customer;
-    const allOrders = data.flatMap((e: unknown) => {
+    const allOrders = unwrapped.flatMap((e: unknown) => {
       const r = e as Record<string, unknown>;
       const list = r.orders ?? r.Orders ?? [];
       return Array.isArray(list) ? list : [];
     });
     return normalizeSinglePayload({ customer, orders: allOrders });
   }
-  return normalizeSinglePayload(data as Record<string, unknown>);
+  return normalizeSinglePayload(unwrapped as Record<string, unknown>);
 }

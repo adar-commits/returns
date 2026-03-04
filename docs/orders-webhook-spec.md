@@ -106,6 +106,7 @@ The app will use the **first** element’s `customer` and **merge all** `orders`
 ## Notes
 
 - **customer** can be omitted if you don't have it; the app will still show orders.
-- **orders** must be an array (can be empty).
+- **orders** must be an array (can be empty). **Return all orders** the customer should see, including orders older than the return-eligibility window (e.g. 20 days). The app will show older orders with the replace/return action disabled and the note "חלפה התקופה בה ניתן לבצע החזרה / החלפה". Do not filter out old orders in your API.
 - **Items** can be named `Items` or `items`; **partname** can be **product_name**; **price_amount** can be **price**. The app normalizes these for compatibility.
 - **Credit notes / returns**: Documents with `total_price <= 0` (e.g. `IK...` credit notes) are filtered out and do not appear in the customer’s order list.
+- **n8n / wrappers**: If your webhook returns the payload inside `body`, `data`, `result`, or `output`, the app will unwrap it automatically.

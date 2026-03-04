@@ -459,10 +459,10 @@ body {
 /* ========== Hero (landing) ========== */
 .hero {
   text-align: center;
-  padding: var(--space-8) 0 var(--space-6);
+  padding: var(--space-8) 0 var(--space-4);
   background: linear-gradient(180deg, var(--color-surface-elevated) 0%, var(--color-surface) 100%);
   border-radius: var(--radius-xl);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 .hero-badge {
@@ -488,7 +488,7 @@ body {
   font-size: var(--text-body);
   color: var(--color-text-muted);
   max-width: 320px;
-  margin: 0 auto var(--space-6);
+  margin: 0 auto var(--space-4);
 }
 
 /* ========== Item-selection product card ========== */
@@ -544,14 +544,16 @@ body {
   z-index: 0;
   pointer-events: none;
 }
+/* RTL: fill from the right (step 1) toward the left */
 .stepper-track-fill {
   position: absolute;
-  left: 0;
+  right: 0;
+  left: auto;
   top: 0;
   bottom: 0;
   background: var(--color-primary);
   transition: width 0.2s ease;
-  border-radius: 0 2px 2px 0;
+  border-radius: 2px 0 0 2px;
 }
 
 .stepper-step {

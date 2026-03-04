@@ -91,6 +91,7 @@ export default function ShippingForm() {
   const [shippingFee, setShippingFee] = useState(0);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
+  const [submittingCallback, setSubmittingCallback] = useState(false);
 
   useEffect(() => {
     fetch("/api/branches")
@@ -124,9 +125,8 @@ export default function ShippingForm() {
       }
       if (c.action === "replace" && c.size_price != null) total += Number(c.size_price);
     }
-    for (const tier of shippingTiers) {
-      if (total >= tier.min && total <= tier.max) { setShippingFee(tier.fee); break; }
-    }
+    // Fixed cost for home delivery: 39.90 ILS
+    setShippingFee(39.9);
   }, [shippingTiers]);
 
   const selectedBranch = branches.find((b) => b.id === selectedBranchId);
@@ -147,12 +147,36 @@ export default function ShippingForm() {
     router.push("/summary");
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (deliveryOrBranch === "branch" && selectedBranchId) {
       setShowWarning(true);
-    } else {
-      doNavigate();
+      return;
     }
+    if (deliveryOrBranch === "callback") {
+      const raw = sessionStorage.getItem("returns_wizard");
+      if (!raw) return;
+      const wizard = JSON.parse(raw);
+      wizard.shipping = { type: "callback", fee: 0 };
+      wizard.step = "shipping";
+      setSubmittingCallback(true);
+      try {
+        const res = await fetch("/api/return-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wizard }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return;
+        sessionStorage.removeItem("returns_wizard");
+        router.push(
+          `/success?returnId=${encodeURIComponent(data.return_id || "")}&shippingType=callback&branchName=`
+        );
+      } finally {
+        setSubmittingCallback(false);
+      }
+      return;
+    }
+    doNavigate();
   };
 
   return (
@@ -174,10 +198,7 @@ export default function ShippingForm() {
           <input type="radio" name="shipping" checked={deliveryOrBranch === "delivery"} onChange={() => setDeliveryOrBranch("delivery")} />
           <div>
             <strong>שליח עד הבית</strong>
-            {shippingFee === 0
-              ? <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
-              : <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪{shippingFee}</span>
-            }
+            <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪39.90</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
               מערך השליחים שלנו יאסוף מהבית
             </p>
@@ -187,7 +208,7 @@ export default function ShippingForm() {
         <label className="choice-option" data-selected={deliveryOrBranch === "branch"} style={{ cursor: "pointer" }}>
           <input type="radio" name="shipping" checked={deliveryOrBranch === "branch"} onChange={() => setDeliveryOrBranch("branch")} />
           <div>
-            <strong>החזרה לסניף / איסוף עצמי</strong>
+            <strong>החזרה / החלפה בכל סניף</strong>
             <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
               הגיעו לאחד מסניפינו ללא עלות משלוח
@@ -198,7 +219,8 @@ export default function ShippingForm() {
         <label className="choice-option" data-selected={deliveryOrBranch === "callback"} style={{ cursor: "pointer" }}>
           <input type="radio" name="shipping" checked={deliveryOrBranch === "callback"} onChange={() => setDeliveryOrBranch("callback")} />
           <div>
-            <strong>חזרו אלי בטלפון - חינם</strong>
+            <strong>חזרו אלי בטלפון — </strong>
+            <span style={{ color: "var(--color-success)", fontWeight: 600 }}>חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
               יועצ/ת עיצוב מטמענו תחזור אליכם עד 24 שעות להתייעצות
             </p>
@@ -298,9 +320,9 @@ export default function ShippingForm() {
         type="button"
         className="btn btn-primary"
         onClick={handleContinue}
-        disabled={deliveryOrBranch === "branch" && !selectedBranchId}
+        disabled={(deliveryOrBranch === "branch" && !selectedBranchId) || submittingCallback}
       >
-        המשך לסיכום הזמנה
+        {submittingCallback ? "שולח…" : deliveryOrBranch === "callback" ? "שליחה ובקשה להחזרה טלפונית" : "המשך לסיכום הזמנה"}
       </button>
     </div>
   );

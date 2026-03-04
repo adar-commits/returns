@@ -11,6 +11,7 @@ type WizardChoice = {
   sku: string;
   action: "" | "return" | "replace";
   reason_id?: string;
+  reason_text?: string;
   selected_size_id?: string;
   size_label?: string;
   size_price?: number;
@@ -140,10 +141,13 @@ export async function POST(request: Request) {
       const paidPrice = Number(orderItem?.price ?? 0);
       const newPrice = c.size_price != null ? Number(c.size_price) : null;
       const priceDiff = newPrice != null ? newPrice - paidPrice : null;
+      const isOtherReason = c.reason_id != null && returnReasons[Number(c.reason_id)] === "אחר";
       const reasonText =
-        c.reason_id != null && returnReasons[Number(c.reason_id)] != null
-          ? returnReasons[Number(c.reason_id)]
-          : null;
+        isOtherReason && c.reason_text?.trim()
+          ? c.reason_text.trim()
+          : c.reason_id != null && returnReasons[Number(c.reason_id)] != null
+            ? returnReasons[Number(c.reason_id)]
+            : null;
       return {
         sku: c.sku,
         product_name: productName,

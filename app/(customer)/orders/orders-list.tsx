@@ -139,18 +139,19 @@ export default function OrdersList() {
 
               {/* Bottom row: price (left/end) inline with buttons (right/start) */}
               <div className="order-bottom-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
-                {/* Buttons */}
-                <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-                  {canReturn ? (
-                    <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
-                      החלפה / החזרה
-                    </Link>
-                  ) : (
-                    <button type="button" className="btn btn-primary" disabled style={{ width: "auto", minWidth: 0 }}>
-                      החלפה / החזרה
-                    </button>
-                  )}
-                  <button
+                {/* Buttons - always side by side */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "var(--space-1)" }}>
+                  <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "nowrap" }}>
+                    {canReturn ? (
+                      <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none" }}>
+                        החלפה / החזרה
+                      </Link>
+                    ) : (
+                      <button type="button" className="btn btn-primary" disabled style={{ width: "auto", minWidth: 0 }}>
+                        החלפה / החזרה
+                      </button>
+                    )}
+                    <button
                     type="button"
                     className="btn btn-secondary"
                     style={{ width: "auto", minWidth: 0 }}
@@ -166,6 +167,12 @@ export default function OrdersList() {
                   >
                     צפה בחשבונית
                   </button>
+                  </div>
+                  {!canReturn && (
+                    <p style={{ margin: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+                      חלפה התקופה בה ניתן לבצע החזרה / החלפה
+                    </p>
+                  )}
                 </div>
 
                 {/* Price — same row as buttons, on the left (RTL end) */}

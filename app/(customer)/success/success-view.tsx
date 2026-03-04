@@ -94,16 +94,7 @@ export default function SuccessView({
         </div>
       )}
 
-      {/* CTA */}
-      <Link
-        href="/my-returns"
-        className="btn btn-primary"
-        style={{ textDecoration: "none", maxWidth: 360, width: "100%", textAlign: "center" }}
-      >
-        צפייה בסטטוס הבקשות שלי
-      </Link>
-
-      {/* Back to orders — subtle */}
+      {/* Back to orders */}
       <Link
         href="/orders"
         style={{

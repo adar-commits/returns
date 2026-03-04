@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const GALLERY_SIZE = 160;
@@ -155,7 +155,7 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
 
 type LineItem = { sku: string; product_name?: string; price?: number; qty?: number | string; [key: string]: unknown };
 type ExpandedLineItem = LineItem & { _lineIdx: number; _qtyIdx: number; _totalQty: number };
-type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep" | "unsure"; reason_id?: string; selected_size_id?: string; size_label?: string; size_price?: number };
+type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep" | "unsure"; reason_id?: string; reason_text?: string; selected_size_id?: string; size_label?: string; size_price?: number };
 type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
 
 function expandByQty(items: LineItem[]): ExpandedLineItem[] {
@@ -212,6 +212,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   useEffect(() => {
@@ -293,14 +294,23 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
       setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה עדיין או ללא שינוי.");
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (choices.some((c) => c.action === "return" && (c.reason_id == null || String(c.reason_id).trim() === ""))) {
       setValidationError("נא לבחור סיבת החזרה לכל פריט שמוחזר.");
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    const otherReasonIndex = returnReasons.findIndex((r) => r === "אחר");
+    if (otherReasonIndex >= 0 && choices.some((c) => c.action === "return" && String(c.reason_id) === String(otherReasonIndex) && (!c.reason_text || !String(c.reason_text).trim()))) {
+      setValidationError("נא למלא את סיבת ההחזרה עבור \"אחר\".");
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (choices.some((c) => c.action === "replace" && (c.selected_size_id == null || String(c.selected_size_id).trim() === ""))) {
       setValidationError("נא לבחור גודל לכל פריט שמוחלף.");
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     // Do not allow replace with same item (same SKU/size)
@@ -310,6 +320,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const sz = getSizesForSku(it.sku || "", sizesCache).find((s) => s.id === choices[idx].selected_size_id);
       if (sz && isSameSizeAsItem(it.sku || "", sz)) {
         setValidationError("לא ניתן להחליף לאותו מוצר/מידה. נא לבחור מידה אחרת.");
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
     }
@@ -328,7 +339,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       {sizeGuideOpen && <SizeGuideModal onClose={() => setSizeGuideOpen(false)} />}
 
       {validationError && (
-        <div className="msg-error" style={{ marginBottom: "var(--space-4)" }}>{validationError}</div>
+        <div ref={errorRef} className="msg-error" style={{ marginBottom: "var(--space-4)" }}>{validationError}</div>
       )}
 
       {expandedItems.map((item, i) => {
@@ -408,7 +419,11 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   <select
                     className="input"
                     value={choices[i].reason_id ?? ""}
-                    onChange={(e) => setChoice(i, { reason_id: e.target.value })}
+                    onChange={(e) => {
+                    const val = e.target.value;
+                    const isOther = returnReasons[Number(val)] === "אחר";
+                    setChoice(i, { reason_id: val, reason_text: isOther ? (choices[i]?.reason_text ?? "") : undefined });
+                  }}
                     required
                   >
                     <option value="">בחר סיבה</option>
@@ -416,6 +431,21 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                       <option key={j} value={String(j)}>{r}</option>
                     ))}
                   </select>
+                  {returnReasons[Number(choices[i]?.reason_id)] === "אחר" && (
+                    <div className="input-wrap" style={{ marginTop: "var(--space-2)" }}>
+                      <label className="input-label">
+                        פרט/י את הסיבה <span style={{ color: "var(--color-error, #c00)" }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={choices[i]?.reason_text ?? ""}
+                        onChange={(e) => setChoice(i, { reason_text: e.target.value })}
+                        placeholder="סיבת ההחזרה"
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

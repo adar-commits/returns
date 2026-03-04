@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type LineItem = { sku: string; product_name?: string; partname?: string; price?: number; qty?: number };
@@ -55,6 +55,7 @@ export default function SummaryView() {
   const [termsError, setTermsError] = useState(false);
   const [termsPortalUrl, setTermsPortalUrl] = useState<string>("https://www.carpetshop.co.il/policies/terms-of-service");
   const [termsShippingUrl, setTermsShippingUrl] = useState<string>("https://www.carpetshop.co.il/policies/refund-policy");
+  const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("returns_wizard");
@@ -130,6 +131,7 @@ export default function SummaryView() {
     setTermsError(false);
     if (!termsAccepted) {
       setTermsError(true);
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     setSubmitting(true);
@@ -147,7 +149,11 @@ export default function SummaryView() {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(data.error || "Failed to submit"); return; }
+      if (!res.ok) {
+        setError(data.error || "Failed to submit");
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       if (data.payment_link) { window.location.href = data.payment_link; return; }
       const shippingType = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
       const branchName = wizard.shipping?.branch?.name || "";
@@ -195,10 +201,10 @@ export default function SummaryView() {
 
                 {row.action === "replace" && (
                   <div style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", display: "flex", flexDirection: "column", gap: 2, marginBottom: 4 }}>
-                    <span>המוצר המוחלף: <strong style={{ color: "var(--color-text)" }}>{row.name}</strong></span>
                     {row.sizeLabel && (
                       <span>המוצר הרצוי: <strong style={{ color: "var(--color-text)" }}>{row.sizeLabel}</strong></span>
                     )}
+                    <span>המוצר המוחלף: <strong style={{ color: "var(--color-text)" }}>{row.name}</strong></span>
                   </div>
                 )}
 
@@ -425,7 +431,7 @@ export default function SummaryView() {
         )}
       </div>
 
-      {error && <div className="msg-error">{error}</div>}
+      {error && <div ref={errorRef} className="msg-error">{error}</div>}
 
       <button
         type="button"

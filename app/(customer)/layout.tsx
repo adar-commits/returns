@@ -4,13 +4,14 @@ import { DEFAULT_LOGO_URL } from "@/lib/constants";
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
   const helpBanner = settings?.content_help_banner as { text?: string; href?: string } | null;
+  const helpHref = helpBanner?.href?.trim() || "https://wa.me/972779725055?text=%D7%94%D7%99%D7%99";
   const banner = settings?.content_banner as string | null;
   const footer = settings?.content_footer as string | null;
   const logoUrl = process.env.NEXT_PUBLIC_LOGO_URL || DEFAULT_LOGO_URL;
 
   return (
     <div className="customer-flow" style={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}>
-      <header style={{
+      <header className="customer-header" style={{
         padding: "var(--space-4) var(--space-4) var(--space-3)",
         paddingTop: "calc(var(--space-4) + env(safe-area-inset-top, 0px))",
         paddingLeft: "calc(var(--space-4) + env(safe-area-inset-left, 0px))",
@@ -31,11 +32,9 @@ export default async function CustomerLayout({ children }: { children: React.Rea
       {helpBanner?.text && (
         <div className="help-block">
           <p>{helpBanner.text}</p>
-          {helpBanner.href && (
-            <a href={helpBanner.href} target="_blank" rel="noopener noreferrer" className="link">
-              צור קשר
-            </a>
-          )}
+          <a href={helpHref} target="_blank" rel="noopener noreferrer" className="link">
+            צור קשר
+          </a>
         </div>
       )}
       {footer && <footer className="footer-block">{footer}</footer>}

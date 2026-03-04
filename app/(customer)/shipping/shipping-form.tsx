@@ -93,6 +93,20 @@ export default function ShippingForm() {
   const [branchesLoadError, setBranchesLoadError] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [submittingCallback, setSubmittingCallback] = useState(false);
+  const [onlyCallback, setOnlyCallback] = useState(false);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("returns_wizard");
+    if (!raw) return;
+    try {
+      const wizard = JSON.parse(raw);
+      const choices = wizard.choices || [];
+      if (choices.some((c: { action?: string }) => c.action === "unsure")) {
+        setOnlyCallback(true);
+        setDeliveryOrBranch("callback");
+      }
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     setBranchesLoadError(false);
@@ -194,37 +208,41 @@ export default function ShippingForm() {
         />
       )}
 
-      {/* Shipping option cards */}
+      {/* Shipping option cards — when any product is "איני בטוח/ה" show only נציג טלפוני */}
       <div className="choice-group" style={{ marginBottom: "var(--space-5)" }}>
-        <label className="choice-option" data-selected={deliveryOrBranch === "delivery"} style={{ cursor: "pointer" }}>
-          <input type="radio" name="shipping" checked={deliveryOrBranch === "delivery"} onChange={() => setDeliveryOrBranch("delivery")} />
-          <div>
-            <strong>שליח עד הבית</strong>
-            <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪39.90</span>
-            <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-              מערך השליחים שלנו יאסוף את המוצר מביתכם
-            </p>
-          </div>
-        </label>
+        {!onlyCallback && (
+          <>
+            <label className="choice-option" data-selected={deliveryOrBranch === "delivery"} style={{ cursor: "pointer" }}>
+              <input type="radio" name="shipping" checked={deliveryOrBranch === "delivery"} onChange={() => setDeliveryOrBranch("delivery")} />
+              <div>
+                <strong>שליח עד הבית</strong>
+                <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪39.90</span>
+                <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
+                  מערך השליחים שלנו יאסוף את המוצר מביתכם
+                </p>
+              </div>
+            </label>
 
-        <label className="choice-option" data-selected={deliveryOrBranch === "branch"} style={{ cursor: "pointer" }}>
-          <input type="radio" name="shipping" checked={deliveryOrBranch === "branch"} onChange={() => setDeliveryOrBranch("branch")} />
+            <label className="choice-option" data-selected={deliveryOrBranch === "branch"} style={{ cursor: "pointer" }}>
+              <input type="radio" name="shipping" checked={deliveryOrBranch === "branch"} onChange={() => setDeliveryOrBranch("branch")} />
+              <div>
+                <strong>החזרה / החלפה בכל סניף</strong>
+                <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
+                <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
+                  החזירו את המוצר לאחד מסניפי הרשת שלנו ללא עלות
+                </p>
+              </div>
+            </label>
+          </>
+        )}
+
+        <label className="choice-option" data-selected={deliveryOrBranch === "callback"} style={{ cursor: onlyCallback ? "default" : "pointer" }}>
+          <input type="radio" name="shipping" checked={deliveryOrBranch === "callback"} onChange={() => !onlyCallback && setDeliveryOrBranch("callback")} disabled={onlyCallback} />
           <div>
-            <strong>החזרה / החלפה בכל סניף</strong>
+            <strong>נציג טלפוני</strong>
             <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-              החזירו את המוצר לאחד מסניפי הרשת שלנו ללא עלות
-            </p>
-          </div>
-        </label>
-
-        <label className="choice-option" data-selected={deliveryOrBranch === "callback"} style={{ cursor: "pointer" }}>
-          <input type="radio" name="shipping" checked={deliveryOrBranch === "callback"} onChange={() => setDeliveryOrBranch("callback")} />
-          <div>
-            <strong>חזרו אלי בטלפון — </strong>
-            <span style={{ color: "var(--color-success)", fontWeight: 600 }}>חינם</span>
-            <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-              יועצ/ת עיצוב לשירותך ללא עלות - מענה עד 24 שעות
+              {onlyCallback ? "נבחר אופן זה כי בחרת איני בטוח/ה באחד מהפריטים — יועצ/ת יחזור אליך בהקדם" : "חזרו אלי בטלפון — יועצ/ת עיצוב לשירותך ללא עלות, מענה עד 24 שעות"}
             </p>
           </div>
         </label>

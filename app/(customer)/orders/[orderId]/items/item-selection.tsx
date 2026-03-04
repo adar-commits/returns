@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const GALLERY_SIZE = 160;
-const MAX_GALLERY_IMAGES = 3;
 const SIZE_GUIDE_URL =
   "https://www.carpetshop.co.il/cdn/shop/files/15_68460313-b64d-4af8-ae1d-2f7262a57abd.webp?v=1762080406";
 
@@ -35,69 +34,17 @@ function NoImagePlaceholder() {
   );
 }
 
+/** Single product image (no carousel) to avoid iOS gallery bugs. */
 function SizeImageGallery({ urls }: { urls: string[] }) {
-  const limited = urls.slice(0, MAX_GALLERY_IMAGES);
-  const [index, setIndex] = useState(0);
-  const n = limited.length;
-  useEffect(() => setIndex(0), [n]);
-  if (n === 0) return null;
-  if (n === 1)
-    return (
-      <img
-        src={limited[0]}
-        alt=""
-        style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, objectFit: "cover", borderRadius: 6 }}
-        loading="eager"
-      />
-    );
-  const prev = () => setIndex((i) => (i - 1 + n) % n);
-  const next = () => setIndex((i) => (i + 1) % n);
-  const btnStyle: React.CSSProperties = {
-    position: "absolute", top: "50%", transform: "translateY(-50%)",
-    width: 44, height: 44, borderRadius: "50%",
-    border: "1px solid var(--color-border)",
-    background: "rgba(255,255,255,0.92)",
-    cursor: "pointer", fontSize: 20,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    touchAction: "manipulation", WebkitTapHighlightColor: "transparent",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-  };
+  const src = urls[0];
+  if (!src) return null;
   return (
-    <div style={{ position: "relative", width: GALLERY_SIZE, height: GALLERY_SIZE }}>
-      <img
-        src={limited[index]}
-        alt=""
-        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
-        loading="eager"
-      />
-      <button type="button" aria-label="Previous" onClick={prev} style={{ ...btnStyle, left: 4 }}>‹</button>
-      <button type="button" aria-label="Next" onClick={next} style={{ ...btnStyle, right: 4 }}>›</button>
-      <div style={{ position: "absolute", bottom: 8, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6, alignItems: "center" }}>
-        {limited.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Image ${i + 1}`}
-            onClick={() => setIndex(i)}
-            style={{
-              border: "none", cursor: "pointer", padding: 0,
-              minWidth: 28, minHeight: 28,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "transparent",
-              touchAction: "manipulation",
-            }}
-          >
-            <span style={{
-              display: "block",
-              width: i === index ? 10 : 7, height: i === index ? 10 : 7,
-              borderRadius: "50%",
-              background: i === index ? "var(--color-primary)" : "rgba(255,255,255,0.75)",
-              transition: "width 0.15s, height 0.15s",
-            }} />
-          </button>
-        ))}
-      </div>
-    </div>
+    <img
+      src={src}
+      alt=""
+      style={{ width: GALLERY_SIZE, height: GALLERY_SIZE, objectFit: "cover", borderRadius: 8 }}
+      loading="eager"
+    />
   );
 }
 

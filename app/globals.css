@@ -438,7 +438,7 @@ body {
   border-top: 1px solid var(--color-border);
 }
 
-/* Mobile: help block sits right below content (no large gap); override inline minHeight */
+/* Mobile only: no min-height so help block sits right below content; tighter spacing */
 @media (max-width: 768px) {
   .customer-flow {
     min-height: auto !important;
@@ -447,9 +447,14 @@ body {
   .customer-main .page-wrap-wide {
     padding-bottom: var(--space-3);
   }
+  .customer-main .page-wrap > *:first-child,
+  .customer-main .page-wrap-wide > *:first-child {
+    margin-top: 0;
+  }
   .help-block {
     padding-top: var(--space-3);
     padding-bottom: var(--space-3);
+    margin-bottom: 0;
   }
 }
 
@@ -648,26 +653,53 @@ body {
   .customer-header-logo { max-height: 64px; }
   .customer-header-title { font-size: 1.2rem; }
 }
-/* Mobile: sticky header and progress bar; reserve space so body isn't covered. Header visible on iOS. */
+/* Mobile only: header fixed height (no gap), sticky, always visible on iOS */
 @media (max-width: 768px) {
+  .customer-flow {
+    --customer-header-h: calc(80px + env(safe-area-inset-top, 0px));
+  }
   .customer-header {
     position: sticky;
     top: 0;
     z-index: 10;
     flex-shrink: 0;
-    min-height: 1px;
+    width: 100%;
+    height: var(--customer-header-h, 96px);
+    min-height: var(--customer-header-h, 96px);
+    max-height: var(--customer-header-h, 96px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding: calc(var(--space-2) + env(safe-area-inset-top, 0px)) var(--space-3) var(--space-2) !important;
     background: var(--color-surface-elevated);
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
+  .customer-header .customer-header-logo {
+    max-height: 36px;
+    width: auto;
+    object-fit: contain;
+  }
+  .customer-header .customer-header-title {
+    margin: 2px 0 0;
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
   .customer-main {
-    padding-top: 72px; /* tighter gap below header so progress bar is closer */
+    padding-top: 0;
+  }
+  .customer-main .page-wrap,
+  .customer-main .page-wrap-wide {
+    padding-top: 0;
   }
   .customer-main .stepper {
     position: sticky;
-    top: 72px;
+    top: var(--customer-header-h, 96px);
     z-index: 5;
     background: var(--color-surface);
     margin-bottom: 0;
@@ -687,11 +719,6 @@ body {
   .page-wrap,
   .page-wrap-wide {
     padding-top: calc(var(--space-4) + env(safe-area-inset-top, 0));
-  }
-  /* Reduce top padding when main already reserves space for sticky header */
-  .customer-main .page-wrap,
-  .customer-main .page-wrap-wide {
-    padding-top: var(--space-2);
   }
 }
 

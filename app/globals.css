@@ -438,6 +438,21 @@ body {
   border-top: 1px solid var(--color-border);
 }
 
+/* Mobile: help block sits right below content (no large gap); override inline minHeight */
+@media (max-width: 768px) {
+  .customer-flow {
+    min-height: auto !important;
+  }
+  .customer-main .page-wrap,
+  .customer-main .page-wrap-wide {
+    padding-bottom: var(--space-3);
+  }
+  .help-block {
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+}
+
 .help-block-link {
   color: var(--color-primary);
   font-weight: 600;
@@ -633,20 +648,26 @@ body {
   .customer-header-logo { max-height: 64px; }
   .customer-header-title { font-size: 1.2rem; }
 }
-/* Mobile: sticky header and progress bar; reserve space so body isn't covered */
+/* Mobile: sticky header and progress bar; reserve space so body isn't covered. Header visible on iOS. */
 @media (max-width: 768px) {
   .customer-header {
     position: sticky;
     top: 0;
     z-index: 10;
+    flex-shrink: 0;
+    min-height: 1px;
     background: var(--color-surface-elevated);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
   .customer-main {
-    padding-top: 100px; /* reserve space for sticky header so first content isn't under it */
+    padding-top: 72px; /* tighter gap below header so progress bar is closer */
   }
   .customer-main .stepper {
     position: sticky;
-    top: 100px;
+    top: 72px;
     z-index: 5;
     background: var(--color-surface);
     margin-bottom: 0;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { totalDeliveryFee } from "@/lib/delivery-fee";
 
 type Branch = {
   id: string;
@@ -88,12 +89,13 @@ export default function ShippingForm() {
   const [wazeUrls, setWazeUrls] = useState<Record<string, string>>({});
   const [deliveryOrBranch, setDeliveryOrBranch] = useState<"delivery" | "branch" | "callback">("delivery");
   const [selectedBranchId, setSelectedBranchId] = useState<string>("");
-  const [shippingFee, setShippingFee] = useState(0);
+  const [shippingFee, setShippingFee] = useState(85);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [branchesLoadError, setBranchesLoadError] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [submittingCallback, setSubmittingCallback] = useState(false);
   const [onlyCallback, setOnlyCallback] = useState(false);
+  const [deliveryFeeLoading, setDeliveryFeeLoading] = useState(true);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("returns_wizard");
@@ -106,6 +108,54 @@ export default function ShippingForm() {
         setDeliveryOrBranch("callback");
       }
     } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("returns_wizard");
+    if (!raw) {
+      setDeliveryFeeLoading(false);
+      setShippingFee(85);
+      return;
+    }
+    const wizard = JSON.parse(raw);
+    const orderItems = wizard.order?.items || wizard.order?.line_items || [];
+    const choices: Array<{ action?: string; sku?: string }> = wizard.choices || [];
+    // Only products that user is returning or replacing count toward delivery fee
+    const returnOrReplaceChoices = choices.filter(
+      (c: { action?: string }) => c.action === "return" || c.action === "replace"
+    );
+    if (returnOrReplaceChoices.length === 0) {
+      setDeliveryFeeLoading(false);
+      setShippingFee(85);
+      return;
+    }
+    const skus = [...new Set(returnOrReplaceChoices.map((c: { sku?: string }) => String(c.sku ?? "").trim()).filter(Boolean))];
+    if (skus.length === 0) {
+      setDeliveryFeeLoading(false);
+      setShippingFee(85);
+      return;
+    }
+    fetch("/api/sizes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ Items: skus }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        const labsCsqr: Record<string, number> = d.labsCsqr || {};
+        const items = returnOrReplaceChoices.map((c: { sku?: string }) => {
+          const sku = String(c.sku ?? "").trim();
+          const orderItem = orderItems.find((i: { sku?: string }) => String(i.sku ?? "").trim() === sku) as { product_name?: string; partname?: string } | undefined;
+          return {
+            productName: String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
+            labsCsqr: labsCsqr[sku] ?? null,
+          };
+        });
+        const fee = totalDeliveryFee(items);
+        setShippingFee(fee);
+      })
+      .catch(() => setShippingFee(85))
+      .finally(() => setDeliveryFeeLoading(false));
   }, []);
 
   useEffect(() => {
@@ -131,23 +181,6 @@ export default function ShippingForm() {
         setWazeUrls(waze);
       });
   }, []);
-
-  useEffect(() => {
-    const raw = sessionStorage.getItem("returns_wizard");
-    if (!raw || shippingTiers.length === 0) return;
-    const wizard = JSON.parse(raw);
-    const choices = wizard.choices || [];
-    let total = 0;
-    for (const c of choices) {
-      if (c.action === "return" && wizard.order?.items) {
-        const item = wizard.order.items.find((i: { sku: string }) => i.sku === c.sku);
-        if (item?.price) total += Number(item.price);
-      }
-      if (c.action === "replace" && c.size_price != null) total += Number(c.size_price);
-    }
-    // Fixed cost for home delivery: 84.90 ILS
-    setShippingFee(84.9);
-  }, [shippingTiers]);
 
   const selectedBranch = branches.find((b) => b.id === selectedBranchId);
 
@@ -216,7 +249,9 @@ export default function ShippingForm() {
               <input type="radio" name="shipping" checked={deliveryOrBranch === "delivery"} onChange={() => setDeliveryOrBranch("delivery")} />
               <div>
                 <strong>שליח עד הבית</strong>
-                <span style={{ color: "var(--color-primary)", fontWeight: 600 }}> — ₪84.90</span>
+                <span style={{ color: "var(--color-primary)", fontWeight: 600 }}>
+                  — {deliveryFeeLoading ? "טוען…" : `₪${Number(shippingFee).toFixed(2)}`}
+                </span>
                 <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
                   מערך השליחים שלנו יאסוף את המוצר מביתכם
                 </p>

@@ -87,13 +87,18 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
 
 /**
  * Normalize the batch GetSizes response.
- * Expected: [ { sku: "...", sizes: [...] }, ... ] or wrapped in { data: [...] }.
+ * Expected: [ { sku: "...", LABS_CSQR?: number, sizes: [...] }, ... ] or wrapped in { data: [...] }.
  * Also handles legacy: { sizes: [...] } or [ { sizes: [...] } ] for a single SKU.
+ * Returns both sizes map and LABS_CSQR per SKU (for delivery fee calculation).
  */
-function normalizeSizesBatchResponse(data: unknown, fallbackSku?: string): Record<string, SizeOption[]> {
+function normalizeSizesBatchResponse(
+  data: unknown,
+  fallbackSku?: string
+): { result: Record<string, SizeOption[]>; labsCsqr: Record<string, number> } {
   const result: Record<string, SizeOption[]> = {};
+  const labsCsqr: Record<string, number> = {};
 
-  // Unwrap common gateway wrappers: { data: [...] }, { body: [...] }, { result: [...] }, { output: [...] }, { json: [...] }
+  // Unwrap common gateway wrappers: { data: [...] }, { body: [...] }, etc.
   let arr: unknown[] | null = null;
   if (data != null && typeof data === "object" && !Array.isArray(data)) {
     const d = data as Record<string, unknown>;
@@ -107,20 +112,22 @@ function normalizeSizesBatchResponse(data: unknown, fallbackSku?: string): Recor
 
   if (arr && arr.length > 0) {
     const first = arr[0] as Record<string, unknown>;
-    // Batch format: [ { sku, sizes }, ... ]
+    // Batch format: [ { sku, LABS_CSQR?, sizes }, ... ]
     if (typeof first.sku === "string") {
       for (const entry of arr as Record<string, unknown>[]) {
         if (typeof entry.sku === "string") {
           result[entry.sku] = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
+          const sq = entry.LABS_CSQR ?? entry.labs_csqr;
+          if (sq != null && Number.isFinite(Number(sq))) labsCsqr[entry.sku] = Number(sq);
         }
       }
-      return result;
+      return { result, labsCsqr };
     }
     // Legacy array wrapper: [ { sizes: [...] } ]
     if ("sizes" in first || "Sizes" in first) {
       const sizes = normalizeSizeList(first.sizes ?? first.Sizes ?? []);
       if (fallbackSku) result[fallbackSku] = sizes;
-      return result;
+      return { result, labsCsqr };
     }
   }
 
@@ -131,23 +138,26 @@ function normalizeSizesBatchResponse(data: unknown, fallbackSku?: string): Recor
     if (fallbackSku) result[fallbackSku] = sizes;
   }
 
-  return result;
+  return { result, labsCsqr };
 }
 
 /**
- * Batch call: POST { Items: ["sku1","sku2",...] }, returns map of sku → SizeOption[].
+ * Batch call: POST { Items: ["sku1","sku2",...] }, returns map of sku → SizeOption[] and labsCsqr per SKU.
  */
-export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise<Record<string, SizeOption[]>> {
-  if (skus.length === 0) return {};
+export async function fetchSizesBatch(
+  skus: string[],
+  sizesUrl: string
+): Promise<{ results: Record<string, SizeOption[]>; labsCsqr: Record<string, number> }> {
+  if (skus.length === 0) return { results: {}, labsCsqr: {} };
   try {
     const res = await fetch(sizesUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ Items: skus }),
     });
-    if (!res.ok) return {};
+    if (!res.ok) return { results: {}, labsCsqr: {} };
     const data = await res.json();
-    let out = normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
+    let { result: out, labsCsqr } = normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
     // Fallback: if webhook returns array in same order as Items, map by index when key is missing
     let arr: unknown[] | null = null;
     if (Array.isArray(data)) arr = data;
@@ -167,6 +177,8 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
           const key = typeof entry.sku === "string" ? entry.sku : skus[i];
           if (key && !out[key]?.length && entry.sizes != null) {
             out = { ...out, [key]: normalizeSizeList(entry.sizes ?? entry.Sizes ?? []) };
+            const sq = entry.LABS_CSQR ?? entry.labs_csqr;
+            if (sq != null && Number.isFinite(Number(sq))) labsCsqr[key] = Number(sq);
           }
         }
       } else if (("sizes" in first || "Sizes" in first) && arr.length >= skus.length) {
@@ -176,13 +188,15 @@ export async function fetchSizesBatch(skus: string[], sizesUrl: string): Promise
           const list = entry.sizes ?? entry.Sizes ?? [];
           if (Array.isArray(list) && list.length > 0) {
             out = { ...out, [skus[i]]: normalizeSizeList(list) };
+            const sq = entry.LABS_CSQR ?? entry.labs_csqr;
+            if (sq != null && Number.isFinite(Number(sq))) labsCsqr[skus[i]] = Number(sq);
           }
         }
       }
     }
-    return out;
+    return { results: out, labsCsqr };
   } catch {
-    return {};
+    return { results: {}, labsCsqr: {} };
   }
 }
 

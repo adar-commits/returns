@@ -62,3 +62,15 @@ export function formatOrderDateYMD(ivdate: string | undefined | null): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}/${month}/${day}`;
 }
+
+/**
+ * Format order/invoice date for display as mm/dd/yyyy (order card).
+ */
+export function formatOrderDateMD(ivdate: string | undefined | null): string {
+  const d = parseOrderDate(ivdate);
+  if (!d) return ivdate != null ? String(ivdate) : "";
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${month}/${day}/${year}`;
+}

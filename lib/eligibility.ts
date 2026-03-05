@@ -44,7 +44,8 @@ function isOrderCancelled(order: Record<string, unknown>): boolean {
 }
 
 /**
- * When webhook provides daysPassed: returnable only if daysPassed >= 20 (and no existing request, not cancelled).
+ * When webhook provides daysPassed: returnable only if daysPassed < 20 (still within return window).
+ * daysPassed >= 20 means past the window → not returnable (button disabled).
  * If daysPassed is missing, fall back to date-based eligibility (within eligibility_days).
  */
 function isOrderWithinReturnWindow(
@@ -53,14 +54,14 @@ function isOrderWithinReturnWindow(
 ): boolean {
   const daysPassed = order.daysPassed ?? order.days_passed;
   if (daysPassed != null && typeof daysPassed === "number") {
-    return daysPassed >= 20;
+    return daysPassed < 20;
   }
   return isOrderWithinEligibilityDays(order, eligibilityDays);
 }
 
 /**
  * Mark orders with eligible (no existing return request) and set isReturnable:
- * true only when order is within return window (daysPassed >= 20 or date fallback) AND has no existing return request AND is not cancelled.
+ * true only when order is within return window (daysPassed < 20 or date fallback) AND has no existing return request AND is not cancelled.
  * Orders past the period or cancelled are still included; they get isReturnable: false so the UI
  * shows them with the replace/return button disabled and the note.
  */

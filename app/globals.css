@@ -633,11 +633,27 @@ body {
   .customer-header-logo { max-height: 64px; }
   .customer-header-title { font-size: 1.2rem; }
 }
+/* Mobile: sticky header and progress bar; reserve space so body isn't covered */
 @media (max-width: 768px) {
   .customer-header {
     position: sticky;
     top: 0;
     z-index: 10;
+    background: var(--color-surface-elevated);
+  }
+  .customer-main {
+    padding-top: 100px; /* reserve space for sticky header so first content isn't under it */
+  }
+  .customer-main .stepper {
+    position: sticky;
+    top: 100px;
+    z-index: 5;
+    background: var(--color-surface);
+    margin-bottom: 0;
+    padding-bottom: var(--space-3);
+  }
+  .customer-main .stepper + * {
+    padding-top: var(--space-3);
   }
 }
 
@@ -650,6 +666,11 @@ body {
   .page-wrap,
   .page-wrap-wide {
     padding-top: calc(var(--space-4) + env(safe-area-inset-top, 0));
+  }
+  /* Reduce top padding when main already reserves space for sticky header */
+  .customer-main .page-wrap,
+  .customer-main .page-wrap-wide {
+    padding-top: var(--space-2);
   }
 }
 

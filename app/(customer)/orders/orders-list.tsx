@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { formatOrderDateYMD } from "@/lib/format";
+import { formatOrderDate } from "@/lib/format";
 
 type Order = {
   order_id?: string;
@@ -132,7 +132,7 @@ export default function OrdersList() {
                 </strong>
                 {(order.IVDATE || order.ivdate) && (
                   <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
-                    {formatOrderDateYMD(String(order.IVDATE ?? order.ivdate))}
+                    {formatOrderDate(String(order.IVDATE ?? order.ivdate))}
                   </span>
                 )}
               </div>

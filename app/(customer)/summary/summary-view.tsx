@@ -226,11 +226,6 @@ export default function SummaryView() {
                     {row.action === "return" && (
                       <span style={{ fontWeight: 600, color: "var(--color-success)" }}>זיכוי: {fmt(row.paidPrice)} ₪</span>
                     )}
-                    {row.action === "replace" && row.diff !== 0 && (
-                      <span style={{ fontWeight: 600, color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)" }}>
-                        {row.diff > 0 ? `תוספת תשלום: ${fmt(row.diff)} ₪` : `זיכוי: ${fmt(Math.abs(row.diff))} ₪`}
-                      </span>
-                    )}
                     {row.action === "replace" && row.diff === 0 && (
                       <span style={{ color: "var(--color-text-muted)" }}>ללא הפרש</span>
                     )}

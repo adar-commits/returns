@@ -53,9 +53,9 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
   }
 }
 
-export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
+export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number };
 
-/** Normalize a single sizes array from the webhook (one SKU's variants). */
+/** Normalize a single sizes array from the webhook (one SKU's variants). Per-size labs_csqr used for replace delivery fee. */
 function normalizeSizeList(raw: unknown): SizeOption[] {
   const list: unknown[] = Array.isArray(raw) ? raw : [];
   return list.map((item, index) => {
@@ -64,6 +64,8 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
     const id = (typeof o.id === "string" && o.id.trim() ? o.id : typeof name === "string" ? name : String(index));
     const price = o.price != null ? Number(o.price) : undefined;
     const compareAtPrice = o.compare_at_price != null ? Number(o.compare_at_price) : undefined;
+    const labsSq = o.labs_csqr ?? o.LABS_CSQR;
+    const labsCsqr = labsSq != null && Number.isFinite(Number(labsSq)) ? Number(labsSq) : undefined;
     const img = o.image ?? o.Image;
     const imgList = o.images ?? o.Images;
     const imageUrls: string[] = Array.isArray(img)
@@ -81,6 +83,7 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
       compare_at_price: Number.isFinite(compareAtPrice) ? compareAtPrice : undefined,
       image: combined[0] ?? undefined,
       images: combined.length > 0 ? combined.slice(0, 10) : undefined,
+      labs_csqr: labsCsqr,
     };
   });
 }

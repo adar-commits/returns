@@ -103,8 +103,8 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
 
 type LineItem = { sku: string; product_name?: string; price?: number; qty?: number | string; [key: string]: unknown };
 type ExpandedLineItem = LineItem & { _lineIdx: number; _qtyIdx: number; _totalQty: number };
-type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep" | "unsure"; reason_id?: string; reason_text?: string; selected_size_id?: string; size_label?: string; size_price?: number };
-type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[] };
+type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep" | "unsure"; reason_id?: string; reason_text?: string; selected_size_id?: string; size_label?: string; size_price?: number; size_labs_csqr?: number };
+type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number };
 
 function expandByQty(items: LineItem[]): ExpandedLineItem[] {
   return items.flatMap((item, lineIdx) => {
@@ -505,7 +505,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                               name={`size-${i}-${item.sku}-${item._lineIdx}-${item._qtyIdx}`}
                               value={s.id}
                               checked={selected}
-                              onChange={() => setChoice(i, { selected_size_id: s.id, size_label: s.label, size_price: s.price })}
+                              onChange={() => setChoice(i, { selected_size_id: s.id, size_label: s.label, size_price: s.price, size_labs_csqr: s.labs_csqr })}
                               style={{ accentColor: "var(--color-primary, #9b2d30)", marginTop: 2 }}
                             />
                           </label>

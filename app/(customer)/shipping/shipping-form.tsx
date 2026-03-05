@@ -119,7 +119,7 @@ export default function ShippingForm() {
     }
     const wizard = JSON.parse(raw);
     const orderItems = wizard.order?.items || wizard.order?.line_items || [];
-    const choices: Array<{ action?: string; sku?: string }> = wizard.choices || [];
+    const choices: Array<{ action?: string; sku?: string; size_label?: string; size_labs_csqr?: number }> = wizard.choices || [];
     // Only products that user is returning or replacing count toward delivery fee
     const returnOrReplaceChoices = choices.filter(
       (c: { action?: string }) => c.action === "return" || c.action === "replace"
@@ -143,12 +143,20 @@ export default function ShippingForm() {
       .then((r) => r.json())
       .then((d) => {
         const labsCsqr: Record<string, number> = d.labsCsqr || {};
-        const items = returnOrReplaceChoices.map((c: { sku?: string }) => {
+        const items = returnOrReplaceChoices.map((c: { action?: string; sku?: string; size_label?: string; size_labs_csqr?: number }) => {
           const sku = String(c.sku ?? "").trim();
           const orderItem = orderItems.find((i: { sku?: string }) => String(i.sku ?? "").trim() === sku) as { product_name?: string; partname?: string } | undefined;
+          if (c.action === "return") {
+            // Return: use original (returned) product for charging
+            return {
+              productName: String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
+              labsCsqr: labsCsqr[sku] ?? null,
+            };
+          }
+          // Replace: use new required product (selected size) for charging
           return {
-            productName: String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
-            labsCsqr: labsCsqr[sku] ?? null,
+            productName: String(c.size_label ?? orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
+            labsCsqr: c.size_labs_csqr != null ? c.size_labs_csqr : (labsCsqr[sku] ?? null),
           };
         });
         const fee = totalDeliveryFee(items);

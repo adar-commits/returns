@@ -129,7 +129,7 @@ export default function ShippingForm() {
       setShippingFee(85);
       return;
     }
-    const skus = [...new Set(returnOrReplaceChoices.map((c: { sku?: string }) => String(c.sku ?? "").trim()).filter(Boolean))];
+    const skus = Array.from(new Set(returnOrReplaceChoices.map((c: { sku?: string }) => String(c.sku ?? "").trim()).filter(Boolean)));
     if (skus.length === 0) {
       setDeliveryFeeLoading(false);
       setShippingFee(85);

@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { formatOrderDateMD } from "@/lib/format";
 
+type DisabledReason = "cancelled" | "existing_request" | "past_window" | null;
+
 type Order = {
   order_id?: string;
   id?: string;
@@ -12,6 +14,9 @@ type Order = {
   status?: string;
   isReturnable?: boolean | string;
   is_returnable?: boolean | string;
+  daysPassed?: number;
+  days_passed?: number;
+  disabledReason?: DisabledReason;
   total_price?: number | string;
   total?: number | string;
   BRANCHDES?: string;
@@ -54,6 +59,19 @@ function isReturnableValue(v: unknown): boolean {
   if (v === true || v === 1) return true;
   if (typeof v === "string") return v.toLowerCase() === "true" || v === "1";
   return false;
+}
+
+function orderDaysPassed(order: Order): number | null {
+  const d = order.daysPassed ?? order.days_passed;
+  if (d != null && typeof d === "number" && Number.isFinite(d)) return d;
+  return null;
+}
+
+function disabledReasonMessage(reason: DisabledReason | undefined): string {
+  if (reason === "cancelled") return "חשבונית זו מבוטלת";
+  if (reason === "existing_request") return "כבר קיימת בקשה פתוחה להזמנה זו";
+  if (reason === "past_window") return "חלפה התקופה בה ניתן לבצע החזרה / החלפה";
+  return "";
 }
 
 const PREFETCH_KEY = "orders_prefetch";
@@ -123,18 +141,25 @@ export default function OrdersList() {
           const hasTotal = Number.isFinite(totalNum) && totalNum > 0;
           const exVat = hasTotal ? Math.round(totalNum / ISRAEL_VAT) : 0;
 
+          const daysPassed = orderDaysPassed(order);
+          const disabledMsg = disabledReasonMessage(order.disabledReason);
+
           return (
             <li key={id} className="list-item-card">
-              {/* Row 1: order ID (right) + iv-date (left) on same line */}
+              {/* Row 1: order ID (right) + age "לפני x ימים" or date (left) */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-1)" }}>
                 <strong style={{ fontSize: "var(--text-body)" }}>
                   הזמנה {id}{cancelled ? " (מבוטלת)" : ""}
                 </strong>
-                {(order.IVDATE || order.ivdate) && (
+                {daysPassed != null ? (
+                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
+                    לפני {daysPassed} ימים
+                  </span>
+                ) : (order.IVDATE || order.ivdate) ? (
                   <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>
                     {formatOrderDateMD(String(order.IVDATE ?? order.ivdate))}
                   </span>
-                )}
+                ) : null}
               </div>
 
               {/* Row 2: branch — below iv-date, aligned left */}
@@ -184,9 +209,9 @@ export default function OrdersList() {
                     צפה בחשבונית
                   </button>
                   </div>
-                  {!canReturn && (
+                  {!canReturn && disabledMsg && (
                     <p style={{ margin: 0, fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-                      {cancelled ? "ההזמנה מבוטלת" : "חלפה התקופה בה ניתן לבצע החזרה / החלפה"}
+                      {disabledMsg}
                     </p>
                   )}
                 </div>

@@ -59,28 +59,37 @@ function isOrderWithinReturnWindow(
   return isOrderWithinEligibilityDays(order, eligibilityDays);
 }
 
+/** Reason the return/replace button is disabled (null = enabled). Priority: cancelled > existing_request > past_window. */
+export type DisabledReason = "cancelled" | "existing_request" | "past_window" | null;
+
 /**
- * Mark orders with eligible (no existing return request) and set isReturnable:
+ * Mark orders with eligible (no existing return request) and set isReturnable and disabledReason:
  * true only when order is within return window (daysPassed < 20 or date fallback) AND has no existing return request AND is not cancelled.
- * Orders past the period or cancelled are still included; they get isReturnable: false so the UI
- * shows them with the replace/return button disabled and the note.
+ * disabledReason tells the UI which message to show when disabled.
  */
 export function filterOrdersByEligibility(
   orders: Array<Record<string, unknown>>,
   eligibleOrderIds: Set<string>,
   eligibilityDays: number
-): Array<Record<string, unknown> & { eligible?: boolean; isReturnable?: boolean; is_returnable?: boolean }> {
+): Array<Record<string, unknown> & { eligible?: boolean; isReturnable?: boolean; is_returnable?: boolean; disabledReason?: DisabledReason }> {
   return orders.map((order) => {
     const orderId = String(order.order_id ?? order.id ?? "");
     const noExistingRequest = eligibleOrderIds.has(orderId);
     const withinWindow = isOrderWithinReturnWindow(order, eligibilityDays);
     const cancelled = isOrderCancelled(order);
     const isReturnable = !cancelled && withinWindow && noExistingRequest;
+    let disabledReason: DisabledReason = null;
+    if (!isReturnable) {
+      if (cancelled) disabledReason = "cancelled";
+      else if (!noExistingRequest) disabledReason = "existing_request";
+      else disabledReason = "past_window";
+    }
     return {
       ...order,
       eligible: isReturnable,
       isReturnable,
       is_returnable: isReturnable,
+      disabledReason,
     };
   });
 }

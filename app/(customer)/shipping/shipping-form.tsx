@@ -143,22 +143,24 @@ export default function ShippingForm() {
       .then((r) => r.json())
       .then((d) => {
         const labsCsqr: Record<string, number> = d.labsCsqr || {};
-        const items = returnOrReplaceChoices.map((c: { action?: string; sku?: string; size_label?: string; size_labs_csqr?: number }) => {
+        const items: Array<{ productName: string; labsCsqr: number | null }> = [];
+        for (const c of returnOrReplaceChoices) {
           const sku = String(c.sku ?? "").trim();
           const orderItem = orderItems.find((i: { sku?: string }) => String(i.sku ?? "").trim() === sku) as { product_name?: string; partname?: string } | undefined;
+          const originalName = String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim();
+          const originalLabs = labsCsqr[sku] ?? null;
           if (c.action === "return") {
-            // Return: use original (returned) product for charging
-            return {
-              productName: String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
-              labsCsqr: labsCsqr[sku] ?? null,
-            };
+            // Return: one fee item — the returned product (pickup)
+            items.push({ productName: originalName, labsCsqr: originalLabs });
+          } else {
+            // Replace: two fee items — returned product (pickup) + new product (delivery)
+            items.push({ productName: originalName, labsCsqr: originalLabs });
+            items.push({
+              productName: String(c.size_label ?? originalName).trim(),
+              labsCsqr: c.size_labs_csqr != null ? c.size_labs_csqr : originalLabs,
+            });
           }
-          // Replace: use new required product (selected size) for charging
-          return {
-            productName: String(c.size_label ?? orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
-            labsCsqr: c.size_labs_csqr != null ? c.size_labs_csqr : (labsCsqr[sku] ?? null),
-          };
-        });
+        }
         const fee = totalDeliveryFee(items);
         setShippingFee(fee);
       })

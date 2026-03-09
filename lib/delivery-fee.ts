@@ -1,13 +1,13 @@
 /**
  * Delivery fee for "שליח עד הבית" based on LABS_CSQR (sq meters) and product name.
- * Applied to both returned products (pickup) and new/replacement products (delivery).
+ * Only returned products (items being picked up) count; same highest + 50% rest logic.
  * - If product name contains "פוף" → 99 ILS
  * - Otherwise by LABS_CSQR:
  *   0 < x ≤ 3.8 → 85 ILS
  *   3.8 < x ≤ 5.8 → 100 ILS
  *   5.8 < x ≤ 8.16 → 150 ILS
  *   x > 8.16 → 300 ILS
- * Multiple products (all returned + new): highest fee + 50% of the sum of the other fees.
+ * Multiple returned products: highest fee + 50% of the sum of the other fees.
  */
 
 export function deliveryFeeForProduct(productName: string, labsCsqr: number | null | undefined): number {

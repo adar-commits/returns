@@ -143,10 +143,10 @@ export default function ShippingForm() {
       .then((r) => r.json())
       .then((d) => {
         const labsCsqr: Record<string, number> = d.labsCsqr || {};
-        const results: Record<string, Array<{ label?: string; labs_csqr?: number }>> = d.results || {};
+        const results: Record<string, Array<{ label?: string; labs_csqr?: number; sku?: string }>> = d.results || {};
         const normKey = (s: string) => s.replace(/_/g, "-").trim();
-        // Helper: get LABS_CSQR for returned product; if missing at SKU level, match size by dimensions in product name or SKU suffix
-        const getLabsCsqrForReturned = (sku: string, orderItem: { product_name?: string; partname?: string } | undefined): number | null => {
+        // Helper: get LABS_CSQR for returned product. Match by size.sku === returned product SKU (webhook sends sku per size).
+        const getLabsCsqrForReturned = (sku: string, _orderItem: { product_name?: string; partname?: string } | undefined): number | null => {
           let fromApi = labsCsqr[sku];
           if (fromApi == null) {
             const n = normKey(sku);
@@ -162,27 +162,9 @@ export default function ShippingForm() {
             else sizes = [];
           }
           if (sizes.length === 0) return null;
-          const partname = String(orderItem?.product_name ?? orderItem?.partname ?? "").trim();
-          let dims: string[] = [];
-          const partnameDimMatch = partname.match(/\d{2,4}\s*[*×xX]\s*\d{2,4}/);
-          if (partnameDimMatch) {
-            const dimStr = partnameDimMatch[0].replace(/\s/g, "");
-            dims = dimStr.split(/[*×xX]/).map((n) => n.trim()).filter(Boolean);
-          }
-          if (dims.length === 0 && /-\d{5,6}$/.test(sku)) {
-            const suffix = sku.split("-").pop() ?? "";
-            if (suffix.length === 6) dims = [suffix.slice(0, 3), suffix.slice(3)]; // e.g. 200290 → 200, 290
-            else if (suffix.length === 5) dims = [suffix.slice(0, 2), suffix.slice(2)]; // e.g. 160230 → 160, 230
-          }
-          if (dims.length >= 2) {
-            const sizeWithDim = sizes.find((s) => {
-              const label = String(s?.label ?? "").trim();
-              return label.includes(dims[0]) && label.includes(dims[1]);
-            });
-            if (sizeWithDim?.labs_csqr != null && Number.isFinite(sizeWithDim.labs_csqr)) return sizeWithDim.labs_csqr;
-          }
-          const firstWithLabs = sizes.find((s) => s?.labs_csqr != null && Number.isFinite(s.labs_csqr));
-          return firstWithLabs?.labs_csqr ?? null;
+          const sizeWithSku = sizes.find((s) => normKey(String(s?.sku ?? "")) === normKey(sku));
+          if (sizeWithSku?.labs_csqr != null && Number.isFinite(sizeWithSku.labs_csqr)) return sizeWithSku.labs_csqr;
+          return null;
         };
         // Fee based only on returned/replaced products (original items); new size is not used. Same highest + 50% rest.
         const items = returnOrReplaceChoices.map((c: { action?: string; sku?: string }) => {

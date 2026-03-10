@@ -53,7 +53,7 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
   }
 }
 
-export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number };
+export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number; sku?: string };
 
 /** Normalize a single sizes array from the webhook (one SKU's variants). Per-size labs_csqr used for replace delivery fee. */
 function normalizeSizeList(raw: unknown): SizeOption[] {
@@ -76,6 +76,7 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
     const extra = Array.isArray(imgList) ? imgList.filter((u): u is string => typeof u === "string") : [];
     const combined = imageUrls.length ? [...imageUrls] : [...extra];
     for (const u of extra) if (u && !combined.includes(u)) combined.push(u);
+    const skuVal = typeof o.sku === "string" && o.sku.trim() ? o.sku.trim() : undefined;
     return {
       id,
       label: String(name),
@@ -84,6 +85,7 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
       image: combined[0] ?? undefined,
       images: combined.length > 0 ? combined.slice(0, 10) : undefined,
       labs_csqr: labsCsqr,
+      sku: skuVal,
     };
   });
 }
@@ -124,11 +126,9 @@ function normalizeSizesBatchResponse(
           const sq = entry.LABS_CSQR ?? entry.labs_csqr;
           if (sq != null && Number.isFinite(Number(sq))) {
             labsCsqr[entry.sku] = Number(sq);
-          } else if (sizeList.length > 0) {
-            // Webhook may only send per-size labs_csqr; use first size's value so we have a value for fee calculation
-            const firstWithLabs = sizeList.find((s) => s.labs_csqr != null && Number.isFinite(s.labs_csqr));
-            if (firstWithLabs != null) labsCsqr[entry.sku] = firstWithLabs.labs_csqr as number;
           }
+          // Do NOT fall back to first size's labs_csqr: sizes are ordered arbitrarily (e.g. largest first).
+          // Client matches returned product dimensions (e.g. SKU suffix 200290 → 200*290) to the right size.
         }
       }
       return { result, labsCsqr };
@@ -202,10 +202,8 @@ export async function fetchSizesBatch(
             const sq = entry.LABS_CSQR ?? entry.labs_csqr;
             if (sq != null && Number.isFinite(Number(sq))) {
               labsCsqr[skus[i]] = Number(sq);
-            } else {
-              const firstWithLabs = sizeList.find((s) => s.labs_csqr != null && Number.isFinite(s.labs_csqr));
-              if (firstWithLabs != null) labsCsqr[skus[i]] = firstWithLabs.labs_csqr as number;
             }
+            // Do NOT use first size's labs_csqr; client matches by dimensions (SKU suffix).
           }
         }
       }

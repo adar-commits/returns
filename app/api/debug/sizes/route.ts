@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
     if (Array.isArray(body.Items) && body.Items.length > 0) {
-      skus = body.Items.filter((s: unknown) => typeof s === "string" && String(s).trim()).map((s) => String(s).trim());
+      skus = body.Items.filter((s: unknown) => typeof s === "string" && String(s).trim()).map((s: unknown) => String(s).trim());
     } else if (typeof body.sku === "string" && body.sku.trim()) {
       skus = [body.sku.trim()];
     }

@@ -143,21 +143,13 @@ export default function ShippingForm() {
       .then((r) => r.json())
       .then((d) => {
         const labsCsqr: Record<string, number> = d.labsCsqr || {};
-        // Return: use returned product (original). Replace: use new product (selected size) for fee. Same highest + 50% rest.
-        const items = returnOrReplaceChoices.map((c: { action?: string; sku?: string; size_label?: string; size_labs_csqr?: number }) => {
+        // Fee based only on returned/replaced products (original items); new size is not used. Same highest + 50% rest.
+        const items = returnOrReplaceChoices.map((c: { action?: string; sku?: string }) => {
           const sku = String(c.sku ?? "").trim();
           const orderItem = orderItems.find((i: { sku?: string }) => String(i.sku ?? "").trim() === sku) as { product_name?: string; partname?: string } | undefined;
-          const originalName = String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim();
-          if (c.action === "return") {
-            return {
-              productName: originalName,
-              labsCsqr: labsCsqr[sku] ?? null,
-            };
-          }
-          // Replace: use new product (selected size) so fee reflects delivered size LABS_CSQR (e.g. 5.8 → 100 ILS)
           return {
-            productName: String(c.size_label ?? originalName).trim(),
-            labsCsqr: c.size_labs_csqr != null ? c.size_labs_csqr : (labsCsqr[sku] ?? null),
+            productName: String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
+            labsCsqr: labsCsqr[sku] ?? null,
           };
         });
         const fee = totalDeliveryFee(items);

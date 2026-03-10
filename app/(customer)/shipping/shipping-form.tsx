@@ -151,13 +151,21 @@ export default function ShippingForm() {
           const sizes = results[sku];
           if (!Array.isArray(sizes) || sizes.length === 0) return null;
           const partname = String(orderItem?.product_name ?? orderItem?.partname ?? "").trim();
-          const dimMatch = partname.match(/\d{2,4}\s*[*×xX]\s*\d{2,4}/);
-          if (dimMatch) {
-            const dimStr = dimMatch[0].replace(/\s/g, "");
-            const a = dimStr.split(/[*×xX]/).map((n) => n.trim()).filter(Boolean);
+          let dims: string[] = [];
+          const partnameDimMatch = partname.match(/\d{2,4}\s*[*×xX]\s*\d{2,4}/);
+          if (partnameDimMatch) {
+            const dimStr = partnameDimMatch[0].replace(/\s/g, "");
+            dims = dimStr.split(/[*×xX]/).map((n) => n.trim()).filter(Boolean);
+          }
+          if (dims.length === 0 && /-\d{5,6}$/.test(sku)) {
+            const suffix = sku.split("-").pop() ?? "";
+            if (suffix.length === 6) dims = [suffix.slice(0, 3), suffix.slice(3)]; // e.g. 200290 → 200, 290
+            else if (suffix.length === 5) dims = [suffix.slice(0, 2), suffix.slice(2)]; // e.g. 160230 → 160, 230
+          }
+          if (dims.length >= 2) {
             const sizeWithDim = sizes.find((s) => {
               const label = String(s?.label ?? "").trim();
-              return a.length >= 2 && label.includes(a[0]) && label.includes(a[1]);
+              return label.includes(dims[0]) && label.includes(dims[1]);
             });
             if (sizeWithDim?.labs_csqr != null && Number.isFinite(sizeWithDim.labs_csqr)) return sizeWithDim.labs_csqr;
           }

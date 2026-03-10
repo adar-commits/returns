@@ -196,10 +196,16 @@ export async function fetchSizesBatch(
         for (let i = 0; i < skus.length; i++) {
           const entry = (arr[i] as Record<string, unknown>) ?? {};
           const list = entry.sizes ?? entry.Sizes ?? [];
-          if (Array.isArray(list) && list.length > 0) {
-            out = { ...out, [skus[i]]: normalizeSizeList(list) };
+          const sizeList = Array.isArray(list) && list.length > 0 ? normalizeSizeList(list) : [];
+          if (sizeList.length > 0) {
+            out = { ...out, [skus[i]]: sizeList };
             const sq = entry.LABS_CSQR ?? entry.labs_csqr;
-            if (sq != null && Number.isFinite(Number(sq))) labsCsqr[skus[i]] = Number(sq);
+            if (sq != null && Number.isFinite(Number(sq))) {
+              labsCsqr[skus[i]] = Number(sq);
+            } else {
+              const firstWithLabs = sizeList.find((s) => s.labs_csqr != null && Number.isFinite(s.labs_csqr));
+              if (firstWithLabs != null) labsCsqr[skus[i]] = firstWithLabs.labs_csqr as number;
+            }
           }
         }
       }

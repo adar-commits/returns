@@ -143,13 +143,34 @@ export default function ShippingForm() {
       .then((r) => r.json())
       .then((d) => {
         const labsCsqr: Record<string, number> = d.labsCsqr || {};
+        const results: Record<string, Array<{ label?: string; labs_csqr?: number }>> = d.results || {};
+        // Helper: get LABS_CSQR for returned product; if missing at SKU level, match size by dimensions in product name
+        const getLabsCsqrForReturned = (sku: string, orderItem: { product_name?: string; partname?: string } | undefined): number | null => {
+          const fromApi = labsCsqr[sku];
+          if (fromApi != null && Number.isFinite(fromApi)) return fromApi;
+          const sizes = results[sku];
+          if (!Array.isArray(sizes) || sizes.length === 0) return null;
+          const partname = String(orderItem?.product_name ?? orderItem?.partname ?? "").trim();
+          const dimMatch = partname.match(/\d{2,4}\s*[*×xX]\s*\d{2,4}/);
+          if (dimMatch) {
+            const dimStr = dimMatch[0].replace(/\s/g, "");
+            const a = dimStr.split(/[*×xX]/).map((n) => n.trim()).filter(Boolean);
+            const sizeWithDim = sizes.find((s) => {
+              const label = String(s?.label ?? "").trim();
+              return a.length >= 2 && label.includes(a[0]) && label.includes(a[1]);
+            });
+            if (sizeWithDim?.labs_csqr != null && Number.isFinite(sizeWithDim.labs_csqr)) return sizeWithDim.labs_csqr;
+          }
+          const firstWithLabs = sizes.find((s) => s?.labs_csqr != null && Number.isFinite(s.labs_csqr));
+          return firstWithLabs?.labs_csqr ?? null;
+        };
         // Fee based only on returned/replaced products (original items); new size is not used. Same highest + 50% rest.
         const items = returnOrReplaceChoices.map((c: { action?: string; sku?: string }) => {
           const sku = String(c.sku ?? "").trim();
           const orderItem = orderItems.find((i: { sku?: string }) => String(i.sku ?? "").trim() === sku) as { product_name?: string; partname?: string } | undefined;
           return {
             productName: String(orderItem?.product_name ?? orderItem?.partname ?? sku).trim(),
-            labsCsqr: labsCsqr[sku] ?? null,
+            labsCsqr: getLabsCsqrForReturned(sku, orderItem),
           };
         });
         const fee = totalDeliveryFee(items);

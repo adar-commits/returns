@@ -119,9 +119,16 @@ function normalizeSizesBatchResponse(
     if (typeof first.sku === "string") {
       for (const entry of arr as Record<string, unknown>[]) {
         if (typeof entry.sku === "string") {
-          result[entry.sku] = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
+          const sizeList = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
+          result[entry.sku] = sizeList;
           const sq = entry.LABS_CSQR ?? entry.labs_csqr;
-          if (sq != null && Number.isFinite(Number(sq))) labsCsqr[entry.sku] = Number(sq);
+          if (sq != null && Number.isFinite(Number(sq))) {
+            labsCsqr[entry.sku] = Number(sq);
+          } else if (sizeList.length > 0) {
+            // Webhook may only send per-size labs_csqr; use first size's value so we have a value for fee calculation
+            const firstWithLabs = sizeList.find((s) => s.labs_csqr != null && Number.isFinite(s.labs_csqr));
+            if (firstWithLabs != null) labsCsqr[entry.sku] = firstWithLabs.labs_csqr as number;
+          }
         }
       }
       return { result, labsCsqr };

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { totalDeliveryFee } from "@/lib/delivery-fee";
+import { formatMoney } from "@/lib/format";
 
 type Branch = {
   id: string;
@@ -274,7 +275,7 @@ export default function ShippingForm() {
               <div>
                 <strong>שליח עד הבית</strong>
                 <span style={{ color: "var(--color-primary)", fontWeight: 600 }}>
-                  — {deliveryFeeLoading ? "טוען…" : `₪${Number(shippingFee).toFixed(2)}`}
+                  — {deliveryFeeLoading ? "טוען…" : `₪${formatMoney(Number(shippingFee))}`}
                 </span>
                 <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
                   מערך השליחים שלנו יאסוף את המוצר מביתכם

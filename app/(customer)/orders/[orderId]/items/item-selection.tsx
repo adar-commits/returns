@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_RESTRICTED_SKUS } from "@/lib/constants";
+import { formatMoney } from "@/lib/format";
 
 const GALLERY_SIZE = 160;
 const SIZE_GUIDE_URL =
@@ -337,7 +338,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                 </p>
                 {item.price != null && Number(item.price) > 0 && (
                   <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-                    מחיר ששולם: <strong style={{ color: "var(--color-text)" }}>₪{Number(item.price).toLocaleString("he-IL")}</strong>
+                    מחיר ששולם: <strong style={{ color: "var(--color-text)" }}>₪{formatMoney(Number(item.price))}</strong>
                   </p>
                 )}
               </div>
@@ -478,12 +479,12 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                             <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                               {s.compare_at_price != null && (
                                 <span style={{ fontSize: "var(--text-small)", color: "var(--color-primary, #9b2d30)", textDecoration: "line-through", opacity: 0.7 }}>
-                                  ₪{s.compare_at_price}
+                                  ₪{formatMoney(Number(s.compare_at_price))}
                                 </span>
                               )}
                               {sizePrice != null && (
                                 <span style={{ fontSize: "var(--text-caption)", fontWeight: 700, color: "var(--color-primary, #9b2d30)" }}>
-                                  ₪{sizePrice}
+                                  ₪{formatMoney(sizePrice)}
                                 </span>
                               )}
                             </span>
@@ -496,7 +497,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                                 textAlign: "center",
                                 lineHeight: 1.2,
                               }}>
-                                {diff > 0 ? `תוספת: ₪${diff}` : `זיכוי: ₪${Math.abs(diff)}`}
+                                {diff > 0 ? `תוספת: ₪${formatMoney(diff)}` : `זיכוי: ₪${formatMoney(Math.abs(diff))}`}
                               </span>
                             )}
 

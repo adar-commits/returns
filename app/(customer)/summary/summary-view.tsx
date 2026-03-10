@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatMoney } from "@/lib/format";
 
 type LineItem = { sku: string; product_name?: string; partname?: string; price?: number; qty?: number };
 type Choice = {
@@ -31,7 +32,7 @@ type ItemRow = {
 };
 
 function fmt(n: number) {
-  return n.toLocaleString("he-IL");
+  return formatMoney(n);
 }
 
 function Divider() {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { formatOrderDateMD } from "@/lib/format";
+import { formatOrderDateMD, formatMoney } from "@/lib/format";
 
 type DisabledReason = "cancelled" | "existing_request" | "past_window" | null;
 
@@ -220,10 +220,10 @@ export default function OrdersList() {
                 {hasTotal && (
                   <div className="order-price" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
                     <span style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary)", lineHeight: 1.2 }}>
-                      ₪{totalNum.toLocaleString("he-IL")}
+                      ₪{formatMoney(totalNum)}
                     </span>
                     <span style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-                      ללא מע״מ: {exVat.toLocaleString("he-IL")} ₪
+                      ללא מע״מ: {formatMoney(exVat)} ₪
                     </span>
                   </div>
                 )}

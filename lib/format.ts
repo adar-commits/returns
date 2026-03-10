@@ -74,3 +74,12 @@ export function formatOrderDateMD(ivdate: string | undefined | null): string {
   const year = d.getFullYear();
   return `${month}/${day}/${year}`;
 }
+
+/**
+ * Format number for display: at most 2 decimal places (e.g. 27.41).
+ * Use for all currency and decimal display to avoid floating-point noise.
+ */
+export function formatMoney(n: number): string {
+  const rounded = Math.round(n * 100) / 100;
+  return rounded.toLocaleString("he-IL", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}

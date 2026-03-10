@@ -144,12 +144,24 @@ export default function ShippingForm() {
       .then((d) => {
         const labsCsqr: Record<string, number> = d.labsCsqr || {};
         const results: Record<string, Array<{ label?: string; labs_csqr?: number }>> = d.results || {};
-        // Helper: get LABS_CSQR for returned product; if missing at SKU level, match size by dimensions in product name
+        const normKey = (s: string) => s.replace(/_/g, "-").trim();
+        // Helper: get LABS_CSQR for returned product; if missing at SKU level, match size by dimensions in product name or SKU suffix
         const getLabsCsqrForReturned = (sku: string, orderItem: { product_name?: string; partname?: string } | undefined): number | null => {
-          const fromApi = labsCsqr[sku];
+          let fromApi = labsCsqr[sku];
+          if (fromApi == null) {
+            const n = normKey(sku);
+            const key = Object.keys(labsCsqr).find((k) => normKey(k) === n);
+            if (key != null) fromApi = labsCsqr[key];
+          }
           if (fromApi != null && Number.isFinite(fromApi)) return fromApi;
-          const sizes = results[sku];
-          if (!Array.isArray(sizes) || sizes.length === 0) return null;
+          let sizes = results[sku];
+          if (!Array.isArray(sizes) || sizes.length === 0) {
+            const n = normKey(sku);
+            const key = Object.keys(results).find((k) => normKey(k) === n);
+            if (key != null && Array.isArray(results[key])) sizes = results[key];
+            else sizes = [];
+          }
+          if (sizes.length === 0) return null;
           const partname = String(orderItem?.product_name ?? orderItem?.partname ?? "").trim();
           let dims: string[] = [];
           const partnameDimMatch = partname.match(/\d{2,4}\s*[*×xX]\s*\d{2,4}/);

@@ -78,6 +78,7 @@ export function formatOrderDateMD(ivdate: string | undefined | null): string {
 /**
  * Format number for display: at most 2 decimal places (e.g. 27.41).
  * Use for all currency and decimal display to avoid floating-point noise.
+ * Rounds then formats with he-IL locale.
  */
 export function formatMoney(n: number): string {
   const rounded = Math.round(n * 100) / 100;

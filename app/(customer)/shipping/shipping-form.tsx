@@ -66,7 +66,7 @@ function BranchWarningModal({ onConfirm, onCancel }: { onConfirm: () => void; on
       >
         <p style={{ fontSize: "1.3rem", marginBottom: "var(--space-2)" }}>🕐 שימו לב</p>
         <p style={{ fontSize: "var(--text-body)", color: "var(--color-text)", lineHeight: 1.7, marginBottom: "var(--space-5)" }}>
-          במקרה של החזרה לסניף יש לתאם עד 24 שעות לפני הגעה בכדי להבטיח מלאי תקין להזמנה.
+          במקרה של החזרה לסניף יש לתאם הגעתך בכדי להבטיח מלאי תקין להזמנה.
         </p>
         <div style={{ display: "flex", gap: "var(--space-3)", flexDirection: "row-reverse" }}>
           <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={onConfirm}>
@@ -185,7 +185,7 @@ export default function ShippingForm() {
 
   useEffect(() => {
     setBranchesLoadError(false);
-    fetch("/api/branches")
+    fetch("/api/branches", { cache: "no-store" })
       .then((r) => {
         if (!r.ok) setBranchesLoadError(true);
         return r.json();
@@ -278,7 +278,7 @@ export default function ShippingForm() {
                   — {deliveryFeeLoading ? "טוען…" : `₪${formatMoney(Number(shippingFee))}`}
                 </span>
                 <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-                  מערך השליחים שלנו יאסוף את המוצר מביתכם
+                  מערך השליחים שלנו לשירותך — איסוף / החלפה מבית הלקוח
                 </p>
               </div>
             </label>

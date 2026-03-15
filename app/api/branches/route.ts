@@ -11,7 +11,9 @@ export async function GET() {
       process.env.BRANCHES_WEBHOOK_URL ||
       DEFAULT_BRANCHES_WEBHOOK_URL;
     const branches = await fetchBranches(url);
-    return NextResponse.json({ branches });
+    return NextResponse.json({ branches }, {
+      headers: { "Cache-Control": "no-store, max-age=0" },
+    });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

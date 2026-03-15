@@ -293,7 +293,7 @@ export default function SummaryView() {
         )}
         {netRefund > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong style={{ fontSize: "var(--text-subtitle)" }}>זיכוי צפוי</strong>
+            <strong style={{ fontSize: "var(--text-subtitle)", color: "var(--color-error, #c00)" }}>זיכוי צפוי</strong>
             <strong style={{ fontSize: "var(--text-subtitle)", color: "var(--color-success)", direction: "ltr" }}>
               {fmt(netRefund)} ₪
             </strong>
@@ -306,7 +306,7 @@ export default function SummaryView() {
         )}
         {netRefund > 0 && (
           <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-            הזיכוי יוחזר לאמצעי התשלום המקורי בכפוף לבדיקה
+            הזיכוי יוחזר לאמצעי התשלום המקורי בכפוף לבדיקת המוצר
           </p>
         )}
       </div>

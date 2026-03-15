@@ -53,7 +53,7 @@ export async function fetchOrders(phone: string, ordersUrl: string): Promise<Rec
   }
 }
 
-export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number; sku?: string };
+export type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number; sku?: string; inventory_quantity?: number };
 
 /** Normalize a single sizes array from the webhook (one SKU's variants). Per-size labs_csqr used for replace delivery fee. */
 function normalizeSizeList(raw: unknown): SizeOption[] {
@@ -77,6 +77,8 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
     const combined = imageUrls.length ? [...imageUrls] : [...extra];
     for (const u of extra) if (u && !combined.includes(u)) combined.push(u);
     const skuVal = typeof o.sku === "string" && o.sku.trim() ? o.sku.trim() : undefined;
+    const invQ = o.inventoryQuantity ?? o.inventory_quantity ?? o.quantity;
+    const inventoryQuantity = invQ != null && Number.isFinite(Number(invQ)) ? Number(invQ) : undefined;
     return {
       id,
       label: String(name),
@@ -86,6 +88,7 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
       images: combined.length > 0 ? combined.slice(0, 10) : undefined,
       labs_csqr: labsCsqr,
       sku: skuVal,
+      inventory_quantity: inventoryQuantity,
     };
   });
 }
@@ -273,7 +276,7 @@ function normalizeBranchesResponse(data: unknown): Branch[] {
 
 export async function fetchBranches(branchesUrl: string): Promise<Branch[]> {
   try {
-    const res = await fetch(branchesUrl, { method: "GET", next: { revalidate: 300 } } as RequestInit);
+    const res = await fetch(branchesUrl, { method: "GET", cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
     return normalizeBranchesResponse(data);

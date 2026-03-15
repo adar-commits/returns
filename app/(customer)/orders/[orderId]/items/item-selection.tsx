@@ -105,7 +105,7 @@ function SizeGuideModal({ onClose }: { onClose: () => void }) {
 type LineItem = { sku: string; product_name?: string; price?: number; qty?: number | string; [key: string]: unknown };
 type ExpandedLineItem = LineItem & { _lineIdx: number; _qtyIdx: number; _totalQty: number };
 type ItemChoice = { sku: string; action: "" | "return" | "replace" | "keep" | "unsure"; reason_id?: string; reason_text?: string; selected_size_id?: string; size_label?: string; size_price?: number; size_labs_csqr?: number };
-type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number };
+type SizeOption = { id: string; label?: string; price?: number; compare_at_price?: number; image?: string; images?: string[]; labs_csqr?: number; inventory_quantity?: number };
 
 function expandByQty(items: LineItem[]): ExpandedLineItem[] {
   return items.flatMap((item, lineIdx) => {
@@ -221,7 +221,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
     if (validationError) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [validationError]);
 
-  // Clear replacement selection when it points to same-size option (same SKU)
+  // Clear replacement selection when it points to same-size option (same SKU) or out-of-stock size
   useEffect(() => {
     if (expandedItems.length === 0 || Object.keys(sizesCache).length === 0) return;
     let changed = false;
@@ -231,6 +231,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const sizes = getSizesForSku(expandedItems[i].sku || "", sizesCache);
       const opt = sizes.find((s) => s.id === next[i].selected_size_id);
       if (opt && isSameSizeAsItem(expandedItems[i].sku || "", opt)) {
+        next[i] = { ...next[i], selected_size_id: "", size_label: undefined, size_price: undefined };
+        changed = true;
+      } else if (opt && (opt.inventory_quantity ?? 0) <= 0) {
         next[i] = { ...next[i], selected_size_id: "", size_label: undefined, size_price: undefined };
         changed = true;
       }
@@ -249,7 +252,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const handleContinue = () => {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
-      setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה עדיין או ללא שינוי.");
+      setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה עדיין או איני בטוח/ה - זקוק/ה לסיוע טלפוני.");
       errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -268,6 +271,16 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       setValidationError("נא לבחור גודל לכל פריט שמוחלף.");
       errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
+    }
+    // Do not allow replace with out-of-stock size
+    for (let idx = 0; idx < expandedItems.length; idx++) {
+      if (choices[idx]?.action !== "replace" || !choices[idx].selected_size_id) continue;
+      const sz = getSizesForSku(expandedItems[idx].sku || "", sizesCache).find((s) => s.id === choices[idx].selected_size_id);
+      if (sz && (sz.inventory_quantity ?? 0) <= 0) {
+        setValidationError("נא לבחור מידה במלאי. המידה שנבחרה אזלה מהמלאי.");
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
     }
     // Do not allow replace with same item (same SKU/size)
     for (let idx = 0; idx < expandedItems.length; idx++) {
@@ -362,7 +375,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   <option value="return">החזרת מוצר</option>
                   <option value="replace">החלפת מידה</option>
                   <option value="unsure">איני בטוח/ה עדיין</option>
-                  <option value="keep">ללא שינוי</option>
+                  <option value="keep">איני בטוח/ה - זקוק/ה לסיוע טלפוני</option>
                 </select>
               </div>
 
@@ -408,6 +421,9 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
               {/* Replace — size picker (boxes only, no dropdown) */}
               {choices[i]?.action === "replace" && (
                 <div className="input-wrap">
+                  <p style={{ margin: "0 0 var(--space-2)", fontSize: "var(--text-small)", fontWeight: 600, color: "var(--color-error, #c00)", textAlign: "center", lineHeight: 1.4 }}>
+                    * בפורטל זה ניתן לבצע החלפת מידה בלבד — עבור החלפת דגם יש לפנות לשירות הלקוחות *3076
+                  </p>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-2)" }}>
                     <label className="input-label" style={{ margin: 0 }}>בחר מידה חלופית</label>
                     <button
@@ -450,6 +466,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                         const origPrice = Number(item.price ?? 0);
                         const sizePrice = s.price != null ? Number(s.price) : null;
                         const diff = sizePrice != null && origPrice > 0 ? sizePrice - origPrice : null;
+                        const outOfStock = (s.inventory_quantity ?? 0) <= 0;
                         return (
                           <label
                             key={s.id}
@@ -460,36 +477,44 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                               justifyContent: "space-between",
                               gap: 4,
                               padding: "var(--space-2) var(--space-3)",
-                              border: selected
+                              border: selected && !outOfStock
                                 ? "2px solid var(--color-primary, #9b2d30)"
                                 : "1px solid var(--color-border)",
                               borderRadius: "var(--radius-md, 8px)",
-                              cursor: "pointer",
+                              cursor: outOfStock ? "not-allowed" : "pointer",
                               width: 100,
                               minHeight: 132,
                               boxSizing: "border-box",
-                              background: selected ? "rgba(155,45,48,0.06)" : "var(--color-surface)",
+                              background: selected && !outOfStock ? "rgba(155,45,48,0.06)" : "var(--color-surface)",
                               transition: "border-color 0.15s, background 0.15s",
+                              opacity: outOfStock ? 0.85 : 1,
                             }}
                           >
-                            <span style={{ fontSize: "var(--text-body)", fontWeight: 600, color: "var(--color-text)" }}>
+                            <span style={{ fontSize: "var(--text-body)", fontWeight: 600, color: "var(--color-text)", textDecoration: outOfStock ? "line-through" : undefined }}>
                               {s.label || s.id}
                             </span>
 
-                            <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                            <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, textDecoration: outOfStock ? "line-through" : undefined }}>
                               {s.compare_at_price != null && (
-                                <span style={{ fontSize: "var(--text-small)", color: "var(--color-primary, #9b2d30)", textDecoration: "line-through", opacity: 0.7 }}>
+                                <span style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", textDecoration: "line-through" }}>
                                   ₪{formatMoney(Number(s.compare_at_price))}
                                 </span>
                               )}
                               {sizePrice != null && (
-                                <span style={{ fontSize: "var(--text-caption)", fontWeight: 700, color: "var(--color-primary, #9b2d30)" }}>
-                                  ₪{formatMoney(sizePrice)}
-                                </span>
+                                <>
+                                  <span style={{ fontSize: "0.65rem", color: "var(--color-text-muted)", fontWeight: 500 }}>מחיר לאחר הנחה</span>
+                                  <span style={{ fontSize: "var(--text-caption)", fontWeight: 700, color: "var(--color-primary, #9b2d30)" }}>
+                                    ₪{formatMoney(sizePrice)}
+                                  </span>
+                                </>
                               )}
                             </span>
 
-                            {diff != null && diff !== 0 && (
+                            {outOfStock ? (
+                              <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--color-text-muted)", textAlign: "center", lineHeight: 1.2 }}>
+                                אזל המלאי
+                              </span>
+                            ) : diff != null && diff !== 0 ? (
                               <span style={{
                                 fontSize: "0.7rem",
                                 fontWeight: 600,
@@ -499,14 +524,15 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                               }}>
                                 {diff > 0 ? `תוספת: ₪${formatMoney(diff)}` : `זיכוי: ₪${formatMoney(Math.abs(diff))}`}
                               </span>
-                            )}
+                            ) : null}
 
                             <input
                               type="radio"
                               name={`size-${i}-${item.sku}-${item._lineIdx}-${item._qtyIdx}`}
                               value={s.id}
                               checked={selected}
-                              onChange={() => setChoice(i, { selected_size_id: s.id, size_label: s.label, size_price: s.price, size_labs_csqr: s.labs_csqr })}
+                              disabled={outOfStock}
+                              onChange={() => !outOfStock && setChoice(i, { selected_size_id: s.id, size_label: s.label, size_price: s.price, size_labs_csqr: s.labs_csqr })}
                               style={{ accentColor: "var(--color-primary, #9b2d30)", marginTop: 2 }}
                             />
                           </label>

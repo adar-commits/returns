@@ -252,7 +252,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const handleContinue = () => {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
-      setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה עדיין או איני בטוח/ה - זקוק/ה לסיוע טלפוני.");
+      setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה - זקוק/ה לסיוע טלפוני או ללא שינוי.");
       errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -374,8 +374,8 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                   <option value="">בחר פעולה</option>
                   <option value="return">החזרת מוצר</option>
                   <option value="replace">החלפת מידה</option>
-                  <option value="unsure">איני בטוח/ה עדיין</option>
-                  <option value="keep">איני בטוח/ה - זקוק/ה לסיוע טלפוני</option>
+                  <option value="unsure">איני בטוח/ה - זקוק/ה לסיוע טלפוני</option>
+                  <option value="keep">ללא שינוי</option>
                 </select>
               </div>
 
@@ -482,7 +482,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                                 : "1px solid var(--color-border)",
                               borderRadius: "var(--radius-md, 8px)",
                               cursor: outOfStock ? "not-allowed" : "pointer",
-                              width: 100,
+                              width: 150,
                               minHeight: 132,
                               boxSizing: "border-box",
                               background: selected && !outOfStock ? "rgba(155,45,48,0.06)" : "var(--color-surface)",
@@ -502,7 +502,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                               )}
                               {sizePrice != null && (
                                 <>
-                                  <span style={{ fontSize: "0.65rem", color: "var(--color-text-muted)", fontWeight: 500 }}>מחיר לאחר הנחה</span>
+                                  <span style={{ fontSize: "0.65rem", color: "var(--color-text-muted)", fontWeight: 500, whiteSpace: "nowrap" }}>מחיר לאחר הנחה</span>
                                   <span style={{ fontSize: "var(--text-caption)", fontWeight: 700, color: "var(--color-primary, #9b2d30)" }}>
                                     ₪{formatMoney(sizePrice)}
                                   </span>

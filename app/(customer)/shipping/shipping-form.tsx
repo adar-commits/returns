@@ -66,7 +66,7 @@ function BranchWarningModal({ onConfirm, onCancel }: { onConfirm: () => void; on
       >
         <p style={{ fontSize: "1.3rem", marginBottom: "var(--space-2)" }}>🕐 שימו לב</p>
         <p style={{ fontSize: "var(--text-body)", color: "var(--color-text)", lineHeight: 1.7, marginBottom: "var(--space-5)" }}>
-          במקרה של החזרה לסניף יש לתאם הגעתך בכדי להבטיח מלאי תקין להזמנה.
+          במקרה של החלפה/החזרה לסניף יש לתאם הגעתך בכדי להבטיח מלאי תקין להזמנה.
         </p>
         <div style={{ display: "flex", gap: "var(--space-3)", flexDirection: "row-reverse" }}>
           <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={onConfirm}>

@@ -21,7 +21,7 @@ export default function StaffFlashMessage() {
         marginBottom: "var(--bo-space-4, 1rem)",
         padding: "var(--bo-space-3, 0.75rem) var(--bo-space-4, 1rem)",
         borderRadius: 14,
-        background: "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)",
+        background: "#fff1f2",
         border: "1px solid #fecdd3",
         color: "#881337",
         fontSize: "0.875rem",

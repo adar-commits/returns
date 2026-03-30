@@ -210,7 +210,7 @@ function RequestCardItemsTable({ row }: { row: ListRow }) {
           <thead>
             <tr>
               <th>פריט מוחזר</th>
-              <th>כמות 1</th>
+              <th>כמות</th>
               <th>סיבת החזרה</th>
               <th>זיכוי כספי</th>
             </tr>

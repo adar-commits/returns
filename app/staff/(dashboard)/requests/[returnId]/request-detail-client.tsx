@@ -54,6 +54,7 @@ type DetailRow = {
   replacement_order_id: string | null;
   customer_address: Record<string, unknown> | null;
   webhook_payload: Record<string, unknown> | null;
+  internal_notes: string | null;
   created_at: string;
   updated_at: string;
   updated_by_user_id: string | null;
@@ -103,6 +104,12 @@ function paymentStatusPillClass(status: string | null | undefined, m: Record<str
   return m.statusPillNeutral;
 }
 
+function typePillClass(type: string): string {
+  if (type === "return") return styles.typePillReturn;
+  if (type === "replacement") return styles.typePillReplace;
+  return styles.typePillMixed;
+}
+
 function shippingMethodHe(method: string | undefined): string {
   if (method === "courier") return "משלוח עד הבית";
   if (method === "branch") return "איסוף מסניף";
@@ -126,6 +133,8 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [internalNotesDraft, setInternalNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -151,6 +160,10 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (row) setInternalNotesDraft(row.internal_notes ?? "");
+  }, [row]);
+
   const patchHandling = (staff_handling: "in_progress" | "completed") => {
     setSaving(true);
     fetch(`/api/staff/requests/${encodeURIComponent(returnId)}`, {
@@ -166,6 +179,8 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
               ? {
                   ...prev,
                   staff_handling: d.request.staff_handling,
+                  internal_notes:
+                    d.request.internal_notes !== undefined ? d.request.internal_notes : prev.internal_notes,
                   updated_at: d.request.updated_at,
                   updated_by_user_id: d.request.updated_by_user_id ?? prev.updated_by_user_id,
                   updated_by_display_name: d.request.updated_by_display_name ?? prev.updated_by_display_name,
@@ -175,6 +190,33 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
         } else if (d?.error) setErr(d.error);
       })
       .finally(() => setSaving(false));
+  };
+
+  const saveInternalNotes = () => {
+    setSavingNotes(true);
+    setErr(null);
+    fetch(`/api/staff/requests/${encodeURIComponent(returnId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ internal_notes: internalNotesDraft }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.request) {
+          setRow((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  internal_notes: d.request.internal_notes ?? null,
+                  updated_at: d.request.updated_at,
+                  updated_by_user_id: d.request.updated_by_user_id ?? prev.updated_by_user_id,
+                  updated_by_display_name: d.request.updated_by_display_name ?? prev.updated_by_display_name,
+                }
+              : prev
+          );
+        } else if (d?.error) setErr(d.error);
+      })
+      .finally(() => setSavingNotes(false));
   };
 
   if (loading) {
@@ -231,18 +273,71 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
 
   return (
     <div className={styles.detailPageWrap}>
-      <Link href="/staff/requests" className={styles.backLink}>
-        ← חזרה לכל הבקשות
-      </Link>
+      <div className={styles.detailToolbar} dir="ltr">
+        <div className={styles.detailToolbarStatus}>
+          <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
+            סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
+          </span>
+        </div>
+        <div className={styles.detailToolbarActions}>
+          <Link href="/staff/requests" className={styles.backLink}>
+            ← חזרה לכל הבקשות
+          </Link>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand}`}
+              disabled={saving}
+              onClick={() => patchHandling("in_progress")}
+            >
+              <svg
+                className={styles.actionBtnIcon}
+                width={18}
+                height={18}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              סמן בטיפול
+            </button>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+              disabled={saving}
+              onClick={() => patchHandling("completed")}
+            >
+              <svg
+                className={styles.actionBtnIcon}
+                width={18}
+                height={18}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+              סמן הושלם
+            </button>
+          </div>
+        </div>
+      </div>
 
       <header className={styles.detailHeroCard}>
         <div className={styles.detailHeroTop}>
           <div className={styles.detailHeroMain}>
-            <div className={styles.detailHeroTitleBar} dir="ltr">
-              <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
-                סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
-              </span>
-              <div className={styles.detailHeroRefGroup} dir="rtl">
+            <div className={styles.detailHeroHeadline} dir="rtl">
+              <div className={styles.detailHeroRefGroup}>
                 <h1 className={styles.detailHeroId}>{row.reference_code || row.return_id}</h1>
                 <button
                   type="button"
@@ -264,31 +359,6 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
               </span>
             </div>
           </div>
-          <div className={styles.actions}>
-          <button
-            type="button"
-            className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand}`}
-            disabled={saving}
-            onClick={() => patchHandling("in_progress")}
-          >
-            <svg className={styles.actionBtnIcon} width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 6v6l4 2" />
-            </svg>
-            סמן בטיפול
-          </button>
-          <button
-            type="button"
-            className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-            disabled={saving}
-            onClick={() => patchHandling("completed")}
-          >
-            <svg className={styles.actionBtnIcon} width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
-            סמן הושלם
-          </button>
-        </div>
         </div>
         {row.staff_handling ? (
           <div className={styles.detailHeroBadges}>
@@ -302,10 +372,14 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
       <div className={styles.twoCol}>
         <div>
           <section className={styles.detailSection}>
-            <h2 className={styles.detailSectionTitle}>סיכום בקשה</h2>
+            <div className={styles.detailSectionTitleRow} dir="rtl">
+              <h2 className={styles.detailSectionTitle}>סיכום בקשה</h2>
+              <span className={`${styles.typePill} ${typePillClass(row.type)}`}>
+                {RETURN_TYPE_HE[row.type] || row.type}
+              </span>
+            </div>
             <p className={styles.detailSectionLead}>
-              סוג: {RETURN_TYPE_HE[row.type] || row.type} · הזמנה:{" "}
-              <span dir="ltr">{row.order_id}</span>
+              הזמנה: <span dir="ltr">{row.order_id}</span>
             </p>
             <div className={styles.itemLineList} dir="rtl">
               {(row.items || []).map((it, i) => {
@@ -335,13 +409,7 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                   typeof detail?.replacement_sku === "string" && detail.replacement_sku.trim()
                     ? detail.replacement_sku.trim()
                     : null;
-                const replacementParts = [
-                  isReplace ? detail?.new_size_label || it.size_label : null,
-                  isReplace && replSku ? `מזהה: ${replSku}` : null,
-                  isReplace && detail?.new_size_price != null ? `מחיר: ${formatIlsDetailed(Number(detail.new_size_price))}` : null,
-                ].filter(Boolean);
-                const replacementLine =
-                  isReplace && replacementParts.length > 0 ? replacementParts.join(" · ") : isReplace ? "החלפה" : "—";
+                const newSizeLabel = detail?.new_size_label || it.size_label || null;
                 const imageUrl = typeof detail?.image_url === "string" ? detail.image_url.trim() : "";
                 const productUrl = typeof detail?.product_url === "string" ? detail.product_url.trim() : "";
                 const unitPaid = qty > 0 ? paid / qty : paid;
@@ -371,7 +439,19 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                       </span>
                       {isReplace ? (
                         <div className={styles.itemLineSub}>
-                          <strong>החלפה:</strong> {replacementLine}
+                          <strong>מידה חדשה:</strong> {newSizeLabel || "—"}
+                          {replSku ? (
+                            <>
+                              {" · "}
+                              מזהה: {replSku}
+                            </>
+                          ) : null}
+                          {detail?.new_size_price != null ? (
+                            <>
+                              {" · "}
+                              מחיר: {formatIlsDetailed(Number(detail.new_size_price))}
+                            </>
+                          ) : null}
                         </div>
                       ) : null}
                       {productUrl ? (
@@ -511,6 +591,29 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
         </div>
 
         <div>
+          <section className={styles.detailSection}>
+            <h2 className={styles.detailSectionTitle}>הערות פנימיות</h2>
+            <textarea
+              className={styles.internalNotesTextarea}
+              dir="rtl"
+              rows={5}
+              value={internalNotesDraft}
+              onChange={(e) => setInternalNotesDraft(e.target.value)}
+              placeholder="הערות לצוות בלבד — לא מוצגות ללקוח"
+              aria-label="הערות פנימיות"
+            />
+            <div className={styles.internalNotesActions}>
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                disabled={savingNotes}
+                onClick={saveInternalNotes}
+              >
+                שמירה
+              </button>
+            </div>
+          </section>
+
           <section className={styles.detailSection}>
             <h2 className={styles.detailSectionTitle}>הערות להזמנה</h2>
             <div className={styles.notesBoxElevated}>{notes || "אין הערות"}</div>

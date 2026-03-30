@@ -49,22 +49,47 @@ export async function PATCH(request: Request, context: { params: { returnId: str
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const sh = (body as { staff_handling?: string }).staff_handling;
-  if (sh !== "in_progress" && sh !== "completed") {
+  if (typeof body !== "object" || body === null) {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
+  const b = body as { staff_handling?: string; internal_notes?: unknown };
+  const hasNotesKey = "internal_notes" in b;
+  const notesOk =
+    !hasNotesKey || b.internal_notes === null || typeof b.internal_notes === "string";
+  if (!notesOk) {
+    return NextResponse.json({ error: "internal_notes must be a string or null" }, { status: 400 });
+  }
+  const hasStaff = b.staff_handling === "in_progress" || b.staff_handling === "completed";
+  if (b.staff_handling !== undefined && !hasStaff) {
     return NextResponse.json({ error: "staff_handling must be in_progress or completed" }, { status: 400 });
+  }
+  if (!hasStaff && !hasNotesKey) {
+    return NextResponse.json({ error: "Provide staff_handling and/or internal_notes" }, { status: 400 });
   }
   const supabase = createServerClient();
   const updatedByName = await resolveStaffDisplayName(supabase, staff.userId);
   const { key, byReference } = normalizeStaffRequestLookupKey(decodeURIComponent(returnId));
-  let updateQuery = supabase.from("return_requests").update({
-    staff_handling: sh as StaffHandlingStatus,
+  const updatePayload: {
+    updated_by_user_id: string;
+    updated_by_display_name: string;
+    staff_handling?: StaffHandlingStatus;
+    internal_notes?: string | null;
+  } = {
     updated_by_user_id: staff.userId,
     updated_by_display_name: updatedByName,
-  });
+  };
+  if (hasStaff) updatePayload.staff_handling = b.staff_handling as StaffHandlingStatus;
+  if (hasNotesKey) {
+    const n = b.internal_notes;
+    updatePayload.internal_notes = n === null || n === undefined ? null : String(n);
+  }
+  let updateQuery = supabase.from("return_requests").update(updatePayload);
   updateQuery = byReference ? updateQuery.eq("reference_code", key) : updateQuery.eq("return_id", key);
   updateQuery = applyStaffBranchFilter(updateQuery, staff);
   const { data, error } = await updateQuery
-    .select("return_id, staff_handling, status, updated_at, updated_by_user_id, updated_by_display_name")
+    .select(
+      "return_id, staff_handling, status, updated_at, updated_by_user_id, updated_by_display_name, internal_notes"
+    )
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) {

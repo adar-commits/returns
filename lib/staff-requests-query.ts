@@ -5,7 +5,7 @@ import type { StaffPayload } from "@/lib/staff-session";
 const LIST_SELECT =
   "return_id, reference_code, order_id, phone, branch_id, status, staff_handling, type, items, amount_refund, amount_to_pay, shipping_fee, customer_address, webhook_payload, payplus_payment_id, payment_status, replacement_order_id, created_at, updated_at";
 
-const DETAIL_SELECT = `${LIST_SELECT}, id, updated_by_user_id, updated_by_display_name`;
+const DETAIL_SELECT = `${LIST_SELECT}, id, updated_by_user_id, updated_by_display_name, internal_notes`;
 
 export function applyStaffBranchFilter<T extends { eq: (a: string, b: string) => T }>(
   query: T,

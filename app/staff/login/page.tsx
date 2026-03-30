@@ -34,11 +34,23 @@ const ERROR_HE: Record<string, string> = {
   missing_code: "חסר קוד אימות. נסו שוב.",
 };
 
+function supabaseGoogleRedirectUri(): string | null {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) return null;
+  try {
+    const base = raw.replace(/\/$/, "");
+    return `${base}/auth/v1/callback`;
+  } catch {
+    return null;
+  }
+}
+
 function StaffLoginForm() {
   const searchParams = useSearchParams();
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const expectedGoogleRedirect = supabaseGoogleRedirectUri();
 
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -96,6 +108,17 @@ function StaffLoginForm() {
         {error ? (
           <div ref={errorRef} className={styles.error} role="alert">
             {error}
+          </div>
+        ) : null}
+
+        {process.env.NODE_ENV === "development" && expectedGoogleRedirect ? (
+          <div className={styles.devOauthHint} dir="ltr">
+            <strong>Dev — Google Cloud Console</strong>
+            <p className={styles.devOauthHintP}>
+              Authorized redirect URIs → add this line exactly (same OAuth client as in Supabase → Auth → Google):
+            </p>
+            <code className={styles.devOauthCode}>{expectedGoogleRedirect}</code>
+            <p className={styles.devOauthHintP}>Must be <code>.supabase.co</code>, not <code>.supabase.co.il</code>.</p>
           </div>
         ) : null}
 

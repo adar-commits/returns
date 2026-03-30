@@ -6,7 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { STAFF_OAUTH_NEXT_PATH_KEY } from "@/lib/staff-oauth-redirect";
 
 function safeNext(path: string | null): string {
-  const n = path && path.startsWith("/") && !path.startsWith("//") ? path : "/staff";
+  const fallback = "/staff/requests?preset=today";
+  const n = path && path.startsWith("/") && !path.startsWith("//") ? path : fallback;
   return n;
 }
 

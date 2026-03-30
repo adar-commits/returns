@@ -47,6 +47,17 @@ function displayName(row: ListRow): string {
   return "—";
 }
 
+function createdDaysLabel(iso: string): string {
+  const created = new Date(iso);
+  if (Number.isNaN(created.getTime())) return "—";
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const days = Math.floor(diffMs / 86400000);
+  if (days <= 0) return "נוצר היום";
+  if (days === 1) return "נוצר לפני יום אחד";
+  return `נוצר לפני ${days} ימים`;
+}
+
 function statusBadgeClass(status: string): string {
   if (status === "awaiting_payment") return styles.badgeYellow;
   if (status === "refunded" || status === "delivered") return styles.badgeGreen;
@@ -58,6 +69,54 @@ function staffBadgeClass(h: string | null): string | null {
   if (h === "completed") return styles.badgeGreen;
   if (h === "in_progress") return styles.badgeBlue;
   return styles.badgeMuted;
+}
+
+type DiffKind = "pay" | "refund" | "neutral";
+
+function lineMoney(it: ReturnRequestItem): { text: string; kind: DiffKind } {
+  const paid = it.price != null ? Number(it.price) : null;
+  if (it.action === "return") {
+    if (paid != null && paid > 0) return { text: `${formatIls(paid)} זיכוי`, kind: "refund" };
+    return { text: "—", kind: "neutral" };
+  }
+  const newP = it.size_price != null ? Number(it.size_price) : null;
+  if (paid != null && newP != null) {
+    const d = newP - paid;
+    if (d > 0) return { text: `+${formatIls(d)}`, kind: "pay" };
+    if (d < 0) return { text: `−${formatIls(-d)}`, kind: "refund" };
+    return { text: formatIls(0), kind: "neutral" };
+  }
+  if (newP != null) return { text: formatIls(newP), kind: "neutral" };
+  return { text: "—", kind: "neutral" };
+}
+
+function itemQty(it: ReturnRequestItem): number {
+  const q = (it as { qty?: number }).qty;
+  return typeof q === "number" && q > 0 ? q : 1;
+}
+
+function newItemLabel(it: ReturnRequestItem): string {
+  if (it.action !== "replace") return "—";
+  const label = it.size_label?.trim();
+  if (label) return label;
+  if (it.selected_size_id?.trim()) return it.selected_size_id.trim();
+  return "—";
+}
+
+function RequestsSkeleton() {
+  return (
+    <div className={styles.cardGrid} aria-busy="true" aria-label="טוען בקשות">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className={styles.skeletonCard}>
+          <div className={styles.skeletonPill} />
+          <div className={styles.skeletonLineWide} />
+          <div className={styles.skeletonLine} />
+          <div className={styles.skeletonLine} />
+          <div className={styles.skeletonTable} />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function StaffRequestsPageClient() {
@@ -158,8 +217,10 @@ export default function StaffRequestsPageClient() {
 
   return (
     <>
-      <h1 className={styles.pageTitle}>כל בקשות ההחזרה</h1>
-      <p className={styles.subtitle}>סינון לפי תאריך יצירה (שעון ישראל) וחיפוש לפי טלפון, שם, מספר הזמנה או מזהה בקשה</p>
+      <h1 className={styles.pageTitle}>כל בקשות ההחזרה וההחלפה</h1>
+      <p className={styles.subtitle}>
+        סינון לפי תאריך יצירה (שעון ישראל) וחיפוש לפי טלפון, שם, מספר הזמנה או מזהה בקשה
+      </p>
 
       <form onSubmit={submitSearch}>
         <input
@@ -211,26 +272,29 @@ export default function StaffRequestsPageClient() {
               onChange={(e) => setParams({ preset: "custom", from: from || e.target.value, to: e.target.value })}
             />
           </label>
-          <button type="button" className="btn btn-primary" onClick={applyCustomDates} disabled={!from || !to}>
+          <button type="button" className={styles.customApplyBtn} onClick={applyCustomDates} disabled={!from || !to}>
             החל טווח
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="loading-block">
-          <div className="loader" />
-          <span>טוען…</span>
-        </div>
+        <RequestsSkeleton />
       ) : rows.length === 0 ? (
-        <div className="card">
-          <p style={{ margin: 0, color: "var(--color-text-muted)" }}>אין בקשות בתצוגה זו</p>
+        <div className={styles.emptyCard}>
+          <p className={styles.emptyCardText}>אין בקשות בתצוגה זו</p>
         </div>
       ) : (
         <div className={styles.cardGrid}>
-          {rows.map((row) => (
-            <Link key={row.return_id} href={`/staff/requests/${encodeURIComponent(row.return_id)}`} className={styles.requestCard}>
-              <div className={styles.cardHeader}>
+          {rows.map((row, i) => (
+            <Link
+              key={row.return_id}
+              href={`/staff/requests/${encodeURIComponent(row.return_id)}`}
+              className={styles.requestCard}
+              style={{ animationDelay: `${Math.min(i, 12) * 55}ms` }}
+            >
+              <div className={styles.cardTopBar}>
+                <span className={styles.agePill}>{createdDaysLabel(row.created_at)}</span>
                 <div className={styles.badges}>
                   <span className={`${styles.badge} ${statusBadgeClass(row.status)}`}>
                     {RETURN_STATUS_HE[row.status] || row.status}
@@ -241,59 +305,78 @@ export default function StaffRequestsPageClient() {
                     </span>
                   ) : null}
                 </div>
-                <h2 className={styles.cardName}>{displayName(row)}</h2>
               </div>
-              <table className={styles.miniTable}>
-                <thead>
-                  <tr>
-                    <th>מחיר</th>
-                    <th>פרטים</th>
-                    <th>כמות</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(row.items || []).slice(0, 4).map((it, i) => (
-                    <tr key={`${it.sku}-${i}`}>
-                      <td>{it.price != null ? formatIls(Number(it.price)) : "—"}</td>
-                      <td>{it.product_name || it.sku}</td>
-                      <td>1</td>
-                    </tr>
-                  ))}
-                  <tr>
-                    <td style={{ fontWeight: 700 }}>
-                      {row.amount_to_pay > 0
-                        ? formatIls(row.amount_to_pay)
-                        : row.amount_refund > 0
-                          ? formatIls(row.amount_refund)
-                          : "—"}
-                    </td>
-                    <td colSpan={2} style={{ fontWeight: 700 }}>
-                      {row.amount_to_pay > 0 ? "סה״כ לתשלום" : row.amount_refund > 0 ? "סה״כ זיכוי" : "סה״כ"}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className={styles.cardMeta}>
-                <div className={styles.cardMetaRow}>
-                  <span>תאריך</span>
-                  <span>{new Date(row.created_at).toLocaleDateString("he-IL")}</span>
+
+              <dl className={styles.fieldList}>
+                <div className={styles.fieldRow}>
+                  <dt className={styles.fieldLabel}>תאריך-שעה</dt>
+                  <dd className={styles.fieldValue}>
+                    {new Date(row.created_at).toLocaleString("he-IL", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </dd>
                 </div>
-                <div className={styles.cardMetaRow}>
-                  <span>הזמנה</span>
-                  <span dir="ltr" style={{ textAlign: "left" }}>
+                <div className={styles.fieldRow}>
+                  <dt className={styles.fieldLabel}>הזמנה</dt>
+                  <dd className={styles.fieldValueMono} dir="ltr">
                     {row.order_id}
-                  </span>
+                  </dd>
                 </div>
-                <div className={styles.cardMetaRow}>
-                  <span>טלפון</span>
-                  <span dir="ltr" style={{ textAlign: "left" }}>
-                    {row.phone}
-                  </span>
+                <div className={styles.fieldRow}>
+                  <dt className={styles.fieldLabel}>שם הלקוח</dt>
+                  <dd className={styles.fieldValueStrong}>{displayName(row)}</dd>
                 </div>
-                <div className={styles.cardMetaRow}>
-                  <span>סוג</span>
-                  <span>{RETURN_TYPE_HE[row.type] || row.type}</span>
+                <div className={styles.fieldRow}>
+                  <dt className={styles.fieldLabel}>סוג הבקשה</dt>
+                  <dd className={styles.fieldValue}>{RETURN_TYPE_HE[row.type] || row.type}</dd>
                 </div>
+              </dl>
+
+              <div className={styles.itemsBlock}>
+                <table className={styles.itemsTable}>
+                  <thead>
+                    <tr>
+                      <th>שם הפריט מוחזר</th>
+                      <th>שם פריט חדש</th>
+                      <th>כמות</th>
+                      <th>הפרש כספי</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(row.items || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className={styles.itemsEmpty}>
+                          אין פריטים ברשומה
+                        </td>
+                      </tr>
+                    ) : (
+                      (row.items || []).map((it, j) => {
+                        const money = lineMoney(it);
+                        return (
+                          <tr key={`${it.sku}-${j}`}>
+                            <td>{it.product_name?.trim() || it.sku}</td>
+                            <td>{newItemLabel(it)}</td>
+                            <td>{itemQty(it)}</td>
+                            <td>
+                              <span
+                                className={
+                                  money.kind === "pay"
+                                    ? styles.moneyPay
+                                    : money.kind === "refund"
+                                      ? styles.moneyRefund
+                                      : styles.moneyNeutral
+                                }
+                              >
+                                {money.text}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </Link>
           ))}

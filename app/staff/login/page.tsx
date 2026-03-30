@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import {
   getStaffOAuthRedirectBase,
   getStaffOAuthRedirectTo,
+  getStaffProductionLoginHref,
+  shouldOfferProductionStaffLoginOnly,
   STAFF_OAUTH_NEXT_PATH_KEY,
 } from "@/lib/staff-oauth-redirect";
 import styles from "./staff-login.module.css";
@@ -61,6 +63,10 @@ function StaffLoginForm() {
   const oauthRedirectToFull =
     typeof window !== "undefined" ? getStaffOAuthRedirectTo() : "";
   const envOverride = Boolean(process.env.NEXT_PUBLIC_STAFF_OAUTH_REDIRECT_ORIGIN?.trim());
+  const productionOnlyLocal =
+    typeof window !== "undefined" ? shouldOfferProductionStaffLoginOnly() : false;
+  const productionStaffLoginHref =
+    typeof window !== "undefined" ? getStaffProductionLoginHref() : null;
 
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -73,6 +79,10 @@ function StaffLoginForm() {
   }, [searchParams]);
 
   async function signInWithGoogle() {
+    if (shouldOfferProductionStaffLoginOnly()) {
+      setError("במצב פיתוח יש להתחבר דרך הקישור לאתר הייצור למעלה.");
+      return;
+    }
     setError(null);
     setGoogleLoading(true);
     try {
@@ -109,9 +119,42 @@ function StaffLoginForm() {
           RETURNS HUB
         </p>
         <h1 className={styles.headline}>ברוך הבא</h1>
-        <p className={styles.sub}>התחברו עם Google כדי לגשת לאזור הצוות</p>
+        <p className={styles.sub}>
+          {productionOnlyLocal
+            ? "התחברות Google לאזור הצוות מתבצעת באתר הייצור בלבד (אותו מקור לדפדפן ול־Supabase)."
+            : "התחברו עם Google כדי לגשת לאזור הצוות"}
+        </p>
 
-        <button type="button" className={styles.googleBtn} onClick={signInWithGoogle} disabled={googleLoading}>
+        {productionOnlyLocal ? (
+          <div className={styles.prodOnlyBanner}>
+            <p className={styles.prodOnlyBannerTitle}>מצב פיתוח — כניסת צוות בייצור</p>
+            <p className={styles.prodOnlyBannerP}>
+              לא ניתן להשלים OAuth מ־localhost: מפתח ה־PKCE נשמר בדפדפן רק באותו אתר שאליו חוזרים אחרי Google.
+              פתחו את האתר החי והתחברו משם.
+            </p>
+            {productionStaffLoginHref ? (
+              <>
+                <a className={styles.prodPortalBtn} href={productionStaffLoginHref}>
+                  מעבר להתחברות באתר הייצור
+                </a>
+                <p className={styles.prodOnlyNote} dir="ltr">
+                  {productionStaffLoginHref}
+                </p>
+              </>
+            ) : (
+              <p className={styles.error} role="alert" style={{ marginTop: 0 }}>
+                הגדרו <code dir="ltr">NEXT_PUBLIC_APP_URL</code> לאתר הייצור (ב־<code dir="ltr">.env.local</code>).
+              </p>
+            )}
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          className={styles.googleBtn}
+          onClick={signInWithGoogle}
+          disabled={googleLoading || productionOnlyLocal}
+        >
           <GoogleIcon />
           {googleLoading ? "מפנים…" : "כניסה עם Google"}
         </button>
@@ -122,7 +165,7 @@ function StaffLoginForm() {
           </div>
         ) : null}
 
-        {process.env.NODE_ENV === "development" && expectedGoogleRedirect ? (
+        {process.env.NODE_ENV === "development" && expectedGoogleRedirect && !productionOnlyLocal ? (
           <div className={styles.devOauthHint} dir="ltr">
             <strong>Dev — stay on localhost after Google</strong>
             <p className={styles.devOauthHintP}>
@@ -157,6 +200,24 @@ function StaffLoginForm() {
             </p>
             <code className={styles.devOauthCode}>{expectedGoogleRedirect}</code>
             <p className={styles.devOauthHintP}>Must be <code>.supabase.co</code>, not <code>.supabase.co.il</code>.</p>
+          </div>
+        ) : null}
+
+        {process.env.NODE_ENV === "development" && productionOnlyLocal && expectedGoogleRedirect ? (
+          <div className={styles.devOauthHint} dir="ltr">
+            <strong>Dev — Supabase (production staff only)</strong>
+            <p className={styles.devOauthHintP}>
+              Whitelist this app callback on your <strong>production</strong> host (no localhost needed for staff OAuth):
+            </p>
+            <code className={styles.devOauthCode}>
+              {productionStaffLoginHref
+                ? new URL("/auth/callback", new URL(productionStaffLoginHref).origin).href
+                : "—"}
+            </code>
+            <p className={styles.devOauthHintP}>
+              Google Cloud → Authorized redirect URIs → Supabase callback (must be <code>.supabase.co</code>):
+            </p>
+            <code className={styles.devOauthCode}>{expectedGoogleRedirect}</code>
           </div>
         ) : null}
 

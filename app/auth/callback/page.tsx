@@ -36,47 +36,11 @@ function AuthCallbackInner() {
         return;
       }
 
-      // #region agent log
-      fetch("http://127.0.0.1:7660/ingest/150c9065-00fc-43fb-bb54-57177d17712e", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "3b3c00" },
-        body: JSON.stringify({
-          sessionId: "3b3c00",
-          runId: "verify",
-          hypothesisId: "H1",
-          location: "app/auth/callback/page.tsx:exchange-start",
-          message: "callback run",
-          data: {
-            hasCode: Boolean(code),
-            fromSessionLen: fromSession?.length ?? 0,
-            nextPath,
-            qpNext: searchParams.get("next"),
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
-
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error || !data.session?.access_token) {
         console.error("exchangeCodeForSession:", error);
         sessionStorage.removeItem(STAFF_OAUTH_NEXT_PATH_KEY);
-        // #region agent log
-        fetch("http://127.0.0.1:7660/ingest/150c9065-00fc-43fb-bb54-57177d17712e", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "3b3c00" },
-          body: JSON.stringify({
-            sessionId: "3b3c00",
-            runId: "verify",
-            hypothesisId: "H2",
-            location: "app/auth/callback/page.tsx:exchange-fail",
-            message: "exchange failed",
-            data: { errMsg: error?.message ?? "no_session" },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
         router.replace("/staff/login?error=exchange_failed");
         return;
       }
@@ -99,21 +63,6 @@ function AuthCallbackInner() {
       }
 
       if (typeof window !== "undefined") sessionStorage.removeItem(STAFF_OAUTH_NEXT_PATH_KEY);
-      // #region agent log
-      fetch("http://127.0.0.1:7660/ingest/150c9065-00fc-43fb-bb54-57177d17712e", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "3b3c00" },
-        body: JSON.stringify({
-          sessionId: "3b3c00",
-          runId: "verify",
-          hypothesisId: "H3",
-          location: "app/auth/callback/page.tsx:success",
-          message: "navigating after staff session",
-          data: { nextPath, ok: res.ok },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       router.replace(nextPath);
       router.refresh();
     }

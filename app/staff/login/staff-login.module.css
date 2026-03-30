@@ -193,3 +193,57 @@
   color: #fde68a;
   line-height: 1.45;
 }
+
+.prodOnlyBanner {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(94, 234, 212, 0.1);
+  border: 1px solid rgba(94, 234, 212, 0.28);
+  text-align: center;
+}
+
+.prodOnlyBannerTitle {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-small);
+  font-weight: 700;
+  color: #5eead4;
+}
+
+.prodOnlyBannerP {
+  margin: 0 0 var(--space-4);
+  font-size: 0.8rem;
+  color: rgba(244, 244, 245, 0.72);
+  line-height: 1.5;
+}
+
+.prodPortalBtn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(45, 120, 115, 0.95) 0%, rgba(30, 90, 86, 0.98) 100%);
+  color: #ecfeff;
+  font-family: inherit;
+  font-size: var(--text-body);
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid rgba(94, 234, 212, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.prodPortalBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.prodOnlyNote {
+  margin-top: var(--space-4);
+  font-size: 0.72rem;
+  color: rgba(244, 244, 245, 0.45);
+  line-height: 1.45;
+  text-align: center;
+}

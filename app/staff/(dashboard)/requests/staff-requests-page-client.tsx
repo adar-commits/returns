@@ -370,7 +370,7 @@ export default function StaffRequestsPageClient() {
               <dl className={styles.fieldList}>
                 <div className={styles.fieldRow}>
                   <dt className={styles.fieldLabel}>מספר בקשה</dt>
-                  <dd className={styles.fieldValueStrong} style={{ letterSpacing: "0.05em" }}>
+                  <dd className={styles.fieldValue} dir="ltr">
                     {row.reference_code || "—"}
                   </dd>
                 </div>
@@ -385,13 +385,13 @@ export default function StaffRequestsPageClient() {
                 </div>
                 <div className={styles.fieldRow}>
                   <dt className={styles.fieldLabel}>הזמנה</dt>
-                  <dd className={styles.fieldValueMono} dir="ltr">
+                  <dd className={styles.fieldValue} dir="ltr">
                     {row.order_id}
                   </dd>
                 </div>
                 <div className={styles.fieldRow}>
                   <dt className={styles.fieldLabel}>שם הלקוח</dt>
-                  <dd className={styles.fieldValueStrong}>{displayName(row)}</dd>
+                  <dd className={styles.fieldValue}>{displayName(row)}</dd>
                 </div>
                 <div className={styles.fieldRow}>
                   <dt className={styles.fieldLabel}>סוג הבקשה</dt>

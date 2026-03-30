@@ -239,6 +239,7 @@
     0 12px 28px rgba(15, 23, 42, 0.06);
   text-decoration: none;
   color: inherit;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
   transition:
     box-shadow 0.25s ease,
     border-color 0.25s ease,
@@ -334,27 +335,20 @@
 
 .fieldLabel {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #94a3b8;
 }
 
+/* One rhythm for all summary values (no mono / no extra-bold vs regular mix). */
 .fieldValue,
 .fieldValueMono,
 .fieldValueStrong {
   margin: 0;
+  font-family: inherit;
   font-size: 0.8125rem;
+  font-weight: 600;
   color: #334155;
-}
-
-.fieldValueStrong {
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.fieldValueMono {
-  font-family: ui-monospace, monospace;
-  font-size: 0.8rem;
 }
 
 .fieldValuePillCell {
@@ -369,8 +363,9 @@
   align-items: center;
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
   white-space: nowrap;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
@@ -403,7 +398,9 @@
 .itemsTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.75rem;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .itemsTable th,
@@ -412,12 +409,13 @@
   text-align: right;
   border-bottom: 1px solid rgba(226, 232, 240, 0.85);
   vertical-align: top;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .itemsTable th {
-  color: #64748b;
-  font-weight: 700;
-  font-size: 0.68rem;
+  color: #94a3b8;
   background: rgba(255, 255, 255, 0.65);
 }
 
@@ -432,12 +430,12 @@
 }
 
 .moneyPay {
-  font-weight: 800;
+  font-weight: 600;
   color: #b91c1c;
 }
 
 .moneyRefund {
-  font-weight: 800;
+  font-weight: 600;
   color: #9b2d30;
 }
 

@@ -579,38 +579,42 @@
   margin: 0 auto;
 }
 
-/* Back link: own row, aligned to physical right (RTL flex-start). */
+/* Top bar: back link (physical right) + actions (physical left) in RTL. */
 .detailBackRow {
   width: 100%;
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 0.75rem;
-}
-
-.detailBackRow .backLink {
-  margin-bottom: 0;
-}
-
-/* Hero title row: RET + status on the right; actions on the left (RTL). */
-.detailHeroRow {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem 1rem;
-  margin-bottom: 0.65rem;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
 }
 
+.detailBackRow .backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  direction: ltr;
+  margin-bottom: 0;
+}
+
+.backLinkArrow {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+/* Card header: RET + status on the right (RTL flex-start). */
 .detailHeroRefStatus {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 0.65rem 0.85rem;
+  width: 100%;
   min-width: 0;
-  flex: 1 1 auto;
+  margin-bottom: 0.65rem;
 }
 
 .detailHeroActions {

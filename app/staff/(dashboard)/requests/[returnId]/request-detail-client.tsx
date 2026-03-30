@@ -293,47 +293,48 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
     <div className={styles.detailPageWrap}>
       <div className={styles.detailBackRow} dir="rtl">
         <Link href="/staff/requests" className={styles.backLink}>
-          חזרה לכל הבקשות →
+          <span dir="rtl">חזרה לכל הבקשות</span>
+          <span className={styles.backLinkArrow} aria-hidden>
+            →
+          </span>
         </Link>
+        <div className={styles.detailHeroActions}>
+          <button
+            type="button"
+            className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand} ${styles.actionBtnToolbar}`}
+            disabled={saving}
+            onClick={() => patchHandling("in_progress")}
+          >
+            סמן בטיפול
+          </button>
+          <button
+            type="button"
+            className={`${styles.actionBtn} ${styles.actionBtnPrimary} ${styles.actionBtnToolbar}`}
+            disabled={saving}
+            onClick={() => patchHandling("completed")}
+          >
+            סמן הושלם
+          </button>
+        </div>
       </div>
 
       <header className={styles.detailHeroCard}>
         <div className={styles.detailHeroMain}>
-          <div className={styles.detailHeroRow} dir="rtl">
-            <div className={styles.detailHeroRefStatus}>
-              <div className={styles.detailHeroRefGroup}>
-                <h1 className={styles.detailHeroId}>{row.reference_code || row.return_id}</h1>
-                <button
-                  type="button"
-                  className={styles.detailHeroIdHint}
-                  title={`מזהה מערכת: ${row.return_id}`}
-                  aria-label={`מזהה מערכת: ${row.return_id}`}
-                >
-                  ⓘ
-                </button>
-              </div>
-              <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
-                סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
-              </span>
-            </div>
-            <div className={styles.detailHeroActions}>
+          <div className={styles.detailHeroRefStatus} dir="rtl">
+            <div className={styles.detailHeroRefGroup}>
+              <h1 className={styles.detailHeroId}>{row.reference_code || row.return_id}</h1>
               <button
                 type="button"
-                className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand} ${styles.actionBtnToolbar}`}
-                disabled={saving}
-                onClick={() => patchHandling("in_progress")}
+                className={styles.detailHeroIdHint}
+                title={`מזהה מערכת: ${row.return_id}`}
+                aria-label={`מזהה מערכת: ${row.return_id}`}
               >
-                סמן בטיפול
-              </button>
-              <button
-                type="button"
-                className={`${styles.actionBtn} ${styles.actionBtnPrimary} ${styles.actionBtnToolbar}`}
-                disabled={saving}
-                onClick={() => patchHandling("completed")}
-              >
-                סמן הושלם
+                ⓘ
               </button>
             </div>
+            <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
+              סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
+            </span>
           </div>
           <div className={styles.detailHeroSubRow} dir="rtl">
             <span className={styles.detailHeroDate}>{createdShort}</span>

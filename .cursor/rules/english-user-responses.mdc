@@ -1,10 +1,15 @@
 ---
-description: All assistant communication with the user must be in English
+description: Assistant must communicate with the operator in English only (chat, questions, summaries)
 alwaysApply: true
 ---
 
-# User-facing language: English only
+# Language: English only in this chat
 
-- **Always write replies to the operator in English**, including explanations, summaries, commit messages described in chat, and any clarifying question blocks.
-- **Code, UI copy, and user-visible strings** in the product may stay in the language required by the product (e.g. Hebrew for customer-facing UI) when that is the correct choice for the codebase — but the **conversation with you** stays in English.
-- If a file, comment, or doc must be in another language for business reasons, say so briefly in English and proceed.
+**Talk English with the user.** Unless they explicitly ask for another language for a *specific* message, assume all dialogue is English.
+
+- **Replies, explanations, step-by-step help, errors, and “what I changed” summaries** → English.
+- **Clarifying question blocks** at the end of responses → English (see `clarifying-questions.mdc`).
+- **Codebase content** (UI strings, RTL layouts, Hebrew customer copy, Hebrew comments where the team already uses them) → follow existing product/repo conventions; do not translate the product to English unless asked.
+- **Commit messages / PR descriptions in git** → English (per project convention), unless the user explicitly requests otherwise.
+
+If the user writes in another language, still respond in **English**, unless they clearly ask for a reply in that language.

@@ -658,6 +658,54 @@
   justify-content: flex-end;
 }
 
+.internalNotesStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.internalNotesEmpty {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.internalNoteCard {
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.internalNoteMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.internalNoteWhen {
+  font-variant-numeric: tabular-nums;
+}
+
+.internalNoteAuthor {
+  font-weight: 600;
+  color: #475569;
+}
+
+.internalNoteBody {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .detailHeroCard {
   background: #fff;
   border: 1px solid rgba(148, 163, 184, 0.22);

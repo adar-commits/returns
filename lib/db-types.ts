@@ -69,8 +69,8 @@ export interface ReturnRequestRow {
   /** Set when staff updates the row (e.g. staff_handling). */
   updated_by_user_id?: string | null;
   updated_by_display_name?: string | null;
-  /** Staff-only; not shown in customer-facing flows. */
-  internal_notes?: string | null;
+  /** Staff-only append-only log; not shown in customer-facing flows. */
+  internal_notes_log?: unknown;
   created_at: string;
   updated_at: string;
 }

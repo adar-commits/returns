@@ -8,6 +8,7 @@ import {
   fetchReturnRequestByReturnId,
   normalizeStaffRequestLookupKey,
 } from "@/lib/staff-requests-query";
+import { parseInternalNotesLog } from "@/lib/internal-notes-log";
 import type { StaffHandlingStatus } from "@/lib/db-types";
 
 export async function GET(_request: Request, context: { params: { returnId: string } }) {
@@ -52,19 +53,19 @@ export async function PATCH(request: Request, context: { params: { returnId: str
   if (typeof body !== "object" || body === null) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
-  const b = body as { staff_handling?: string; internal_notes?: unknown };
-  const hasNotesKey = "internal_notes" in b;
-  const notesOk =
-    !hasNotesKey || b.internal_notes === null || typeof b.internal_notes === "string";
-  if (!notesOk) {
-    return NextResponse.json({ error: "internal_notes must be a string or null" }, { status: 400 });
+  const b = body as { staff_handling?: string; append_internal_note?: unknown };
+  const hasAppendKey = "append_internal_note" in b;
+  const appendRaw = hasAppendKey ? b.append_internal_note : undefined;
+  const appendText = typeof appendRaw === "string" ? appendRaw.trim() : "";
+  if (hasAppendKey && !appendText) {
+    return NextResponse.json({ error: "append_internal_note must be a non-empty string" }, { status: 400 });
   }
   const hasStaff = b.staff_handling === "in_progress" || b.staff_handling === "completed";
   if (b.staff_handling !== undefined && !hasStaff) {
     return NextResponse.json({ error: "staff_handling must be in_progress or completed" }, { status: 400 });
   }
-  if (!hasStaff && !hasNotesKey) {
-    return NextResponse.json({ error: "Provide staff_handling and/or internal_notes" }, { status: 400 });
+  if (!hasStaff && !hasAppendKey) {
+    return NextResponse.json({ error: "Provide staff_handling and/or append_internal_note" }, { status: 400 });
   }
   const supabase = createServerClient();
   const updatedByName = await resolveStaffDisplayName(supabase, staff.userId);
@@ -73,22 +74,37 @@ export async function PATCH(request: Request, context: { params: { returnId: str
     updated_by_user_id: string;
     updated_by_display_name: string;
     staff_handling?: StaffHandlingStatus;
-    internal_notes?: string | null;
+    internal_notes_log?: unknown;
   } = {
     updated_by_user_id: staff.userId,
     updated_by_display_name: updatedByName,
   };
   if (hasStaff) updatePayload.staff_handling = b.staff_handling as StaffHandlingStatus;
-  if (hasNotesKey) {
-    const n = b.internal_notes;
-    updatePayload.internal_notes = n === null || n === undefined ? null : String(n);
+  if (hasAppendKey) {
+    const decoded = decodeURIComponent(returnId);
+    const { data: existing, error: fetchErr } = await fetchReturnRequestByReturnId(supabase, staff, decoded);
+    if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+    if (!existing) {
+      return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });
+    }
+    const prev = parseInternalNotesLog(existing.internal_notes_log);
+    const next = [
+      ...prev,
+      {
+        text: appendText,
+        created_at: new Date().toISOString(),
+        user_id: staff.userId,
+        user_name: updatedByName,
+      },
+    ];
+    updatePayload.internal_notes_log = next;
   }
   let updateQuery = supabase.from("return_requests").update(updatePayload);
   updateQuery = byReference ? updateQuery.eq("reference_code", key) : updateQuery.eq("return_id", key);
   updateQuery = applyStaffBranchFilter(updateQuery, staff);
   const { data, error } = await updateQuery
     .select(
-      "return_id, staff_handling, status, updated_at, updated_by_user_id, updated_by_display_name, internal_notes"
+      "return_id, staff_handling, status, updated_at, updated_by_user_id, updated_by_display_name, internal_notes_log"
     )
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

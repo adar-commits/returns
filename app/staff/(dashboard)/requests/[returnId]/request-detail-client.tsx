@@ -10,6 +10,7 @@ import {
   formatIlsDetailed,
 } from "@/lib/staff-backoffice-he";
 import type { ReturnRequestItem } from "@/lib/db-types";
+import { parseInternalNotesLog } from "@/lib/internal-notes-log";
 
 type RawOrderLine = {
   sku?: string;
@@ -54,7 +55,7 @@ type DetailRow = {
   replacement_order_id: string | null;
   customer_address: Record<string, unknown> | null;
   webhook_payload: Record<string, unknown> | null;
-  internal_notes: string | null;
+  internal_notes_log: unknown;
   created_at: string;
   updated_at: string;
   updated_by_user_id: string | null;
@@ -133,7 +134,7 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [internalNotesDraft, setInternalNotesDraft] = useState("");
+  const [newInternalNoteDraft, setNewInternalNoteDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
 
   const load = useCallback(() => {
@@ -160,10 +161,6 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (row) setInternalNotesDraft(row.internal_notes ?? "");
-  }, [row]);
-
   const patchHandling = (staff_handling: "in_progress" | "completed") => {
     setSaving(true);
     fetch(`/api/staff/requests/${encodeURIComponent(returnId)}`, {
@@ -179,8 +176,10 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
               ? {
                   ...prev,
                   staff_handling: d.request.staff_handling,
-                  internal_notes:
-                    d.request.internal_notes !== undefined ? d.request.internal_notes : prev.internal_notes,
+                  internal_notes_log:
+                    d.request.internal_notes_log !== undefined
+                      ? d.request.internal_notes_log
+                      : prev.internal_notes_log,
                   updated_at: d.request.updated_at,
                   updated_by_user_id: d.request.updated_by_user_id ?? prev.updated_by_user_id,
                   updated_by_display_name: d.request.updated_by_display_name ?? prev.updated_by_display_name,
@@ -192,22 +191,28 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
       .finally(() => setSaving(false));
   };
 
-  const saveInternalNotes = () => {
+  const appendInternalNote = () => {
+    const text = newInternalNoteDraft.trim();
+    if (!text) return;
     setSavingNotes(true);
     setErr(null);
     fetch(`/api/staff/requests/${encodeURIComponent(returnId)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ internal_notes: internalNotesDraft }),
+      body: JSON.stringify({ append_internal_note: text }),
     })
       .then((r) => r.json())
       .then((d) => {
         if (d?.request) {
+          setNewInternalNoteDraft("");
           setRow((prev) =>
             prev
               ? {
                   ...prev,
-                  internal_notes: d.request.internal_notes ?? null,
+                  internal_notes_log:
+                    d.request.internal_notes_log !== undefined
+                      ? d.request.internal_notes_log
+                      : prev.internal_notes_log,
                   updated_at: d.request.updated_at,
                   updated_by_user_id: d.request.updated_by_user_id ?? prev.updated_by_user_id,
                   updated_by_display_name: d.request.updated_by_display_name ?? prev.updated_by_display_name,
@@ -218,6 +223,12 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
       })
       .finally(() => setSavingNotes(false));
   };
+
+  function formatNoteTimestamp(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+  }
 
   if (loading) {
     return (
@@ -266,6 +277,7 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
     (order?.branch != null ? String(order.branch) : null) || (row.branch_id ? String(row.branch_id) : null);
 
   const branchInfo = (shipping?.branch as ShippingBranchInfo | undefined) || undefined;
+  const internalNotesList = parseInternalNotesLog(row.internal_notes_log);
   const deliveryAddr = (shipping?.customer_delivery_address as Record<string, unknown> | null | undefined) || null;
   const shipMethod = typeof shipping?.method === "string" ? shipping.method : undefined;
   const shipFeeFromPayload = shipping?.fee != null ? Number(shipping.fee) : null;
@@ -590,23 +602,40 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
         <div>
           <section className={styles.detailSection}>
             <h2 className={styles.detailSectionTitle}>הערות פנימיות</h2>
+            <div className={styles.internalNotesStack} dir="rtl">
+              {internalNotesList.length === 0 ? (
+                <p className={styles.internalNotesEmpty}>אין עדיין הערות פנימיות</p>
+              ) : (
+                internalNotesList.map((entry, idx) => (
+                  <div key={`${entry.created_at}-${idx}`} className={styles.internalNoteCard}>
+                    <div className={styles.internalNoteMeta}>
+                      <span className={styles.internalNoteWhen}>{formatNoteTimestamp(entry.created_at)}</span>
+                      <span className={styles.internalNoteAuthor}>
+                        {entry.user_name?.trim() || "משתמש (ללא שם)"}
+                      </span>
+                    </div>
+                    <div className={styles.internalNoteBody}>{entry.text}</div>
+                  </div>
+                ))
+              )}
+            </div>
             <textarea
               className={styles.internalNotesTextarea}
               dir="rtl"
-              rows={5}
-              value={internalNotesDraft}
-              onChange={(e) => setInternalNotesDraft(e.target.value)}
-              placeholder="הערות לצוות בלבד — לא מוצגות ללקוח"
-              aria-label="הערות פנימיות"
+              rows={4}
+              value={newInternalNoteDraft}
+              onChange={(e) => setNewInternalNoteDraft(e.target.value)}
+              placeholder="הוספת הערה חדשה (נשמרת בנפרד — לא דורסת הערות קודמות)"
+              aria-label="הוספת הערה פנימית"
             />
             <div className={styles.internalNotesActions}>
               <button
                 type="button"
                 className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-                disabled={savingNotes}
-                onClick={saveInternalNotes}
+                disabled={savingNotes || !newInternalNoteDraft.trim()}
+                onClick={appendInternalNote}
               >
-                שמירה
+                הוספת הערה
               </button>
             </div>
           </section>

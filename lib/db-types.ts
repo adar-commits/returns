@@ -12,6 +12,8 @@ export type ReturnRequestStatus =
 
 export type ReturnRequestType = "return" | "replacement" | "mixed";
 
+export type StaffHandlingStatus = "in_progress" | "completed";
+
 export interface ShippingTier {
   min: number;
   max: number;
@@ -61,6 +63,7 @@ export interface ReturnRequestRow {
   replacement_order_id: string | null;
   customer_address: CustomerAddress | null;
   webhook_payload: Record<string, unknown> | null;
+  staff_handling: StaffHandlingStatus | null;
   created_at: string;
   updated_at: string;
 }

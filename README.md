@@ -32,8 +32,12 @@ Entering the code **0000** at the OTP step logs the customer in without calling 
 
 ## Staff
 
-- **Login:** `/staff/login` — Email/password (Supabase Auth) or **Sign in with Google**. Users must exist in `auth.users` and have a row in `staff_roles` (role: `admin`, `csr`, or `store_manager`; `branch_id` required for store_manager).
-- **Google OAuth setup:** In Supabase Dashboard → Authentication → Providers, enable Google and set Client ID + Client Secret (from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)). Under Authentication → URL Configuration, add to **Redirect URLs**: `http://localhost:3000/auth/callback` and `https://your-production-domain.com/auth/callback`. If you get **redirect_uri_mismatch (400)** from Google, add Supabase’s callback URL in Google Cloud Console: open your Supabase project → Authentication → URL Configuration, copy the **Site URL** or the redirect URL Supabase shows (e.g. `https://<project-ref>.supabase.co/auth/v1/callback`), then in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → your OAuth 2.0 Client ID → **Authorized redirect URIs**, add that exact URL.
+- **Login:** `/staff/login` — **Sign in with Google** only. Users must exist in `auth.users` and have a row in `staff_roles` (role: `admin`, `csr`, or `store_manager`; `branch_id` required for store_manager).
+- **Google OAuth setup:** In Supabase Dashboard → Authentication → Providers, enable Google and set Client ID + Client Secret (from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)). Under Authentication → URL Configuration, add to **Redirect URLs**: `http://localhost:3000/auth/callback` and `https://your-production-domain.com/auth/callback`.
+- **`redirect_uri_mismatch` (400) from Google:** Google only accepts redirect URIs you list on the OAuth client. For Supabase, you must add **exactly**:
+  - `https://<project-ref>.supabase.co/auth/v1/callback`
+  - Use **`.supabase.co`** — not `.supabase.co.il` and not your app domain. A typo like `https://bocvfsrhhyxwjakbzdyy.supabase.co.il/auth/v1/callback` will always fail. Remove the bad entry in Google Cloud Console → APIs & Services → Credentials → your Web client → **Authorized redirect URIs**, and save the correct `.supabase.co` URL.
+- **Optional:** Remove redirect URIs for old Supabase projects if you no longer use them, so you only whitelist the project tied to `NEXT_PUBLIC_SUPABASE_URL`.
 - **Dashboard:** `/staff` — list return requests (filtered by branch for Store Manager).
 - **Settings:** `/staff/settings` — Admin only; eligibility days, return reasons, shipping tiers, help banner, etc.
 

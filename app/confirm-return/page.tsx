@@ -32,7 +32,14 @@ export default async function ConfirmReturnPage({
         <div style={{ fontSize: "3rem", marginBottom: "var(--space-4)" }} aria-hidden>✓</div>
         <h1 className="page-title">אושר</h1>
         <p className="page-subtitle">בקשת ההחזרה אושרה בהצלחה.</p>
-        <p style={{ fontFamily: "monospace", background: "var(--color-surface)", padding: "var(--space-3)", borderRadius: "var(--radius-sm)", margin: 0 }}>מזהה: {result.return_id}</p>
+        <div style={{ background: "var(--color-surface)", padding: "var(--space-3)", borderRadius: "var(--radius-sm)", margin: 0 }}>
+          {result.reference_code ? (
+            <p style={{ margin: 0, fontWeight: 700, fontSize: "var(--text-body)" }}>מספר בקשה: {result.reference_code}</p>
+          ) : null}
+          <p style={{ margin: result.reference_code ? "var(--space-2) 0 0" : 0, fontFamily: "monospace", fontSize: "var(--text-small)", color: "var(--color-text-muted)", wordBreak: "break-all" }}>
+            מזהה מערכת: {result.return_id}
+          </p>
+        </div>
       </div>
     </main>
   );

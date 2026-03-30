@@ -42,8 +42,10 @@ export async function PATCH(request: Request, context: { params: { returnId: str
     return NextResponse.json({ error: "staff_handling must be in_progress or completed" }, { status: 400 });
   }
   const supabase = createServerClient();
-  const rid = decodeURIComponent(returnId);
-  let updateQuery = supabase.from("return_requests").update({ staff_handling: sh as StaffHandlingStatus }).eq("return_id", rid);
+  const rid = decodeURIComponent(returnId).trim();
+  const byReference = rid.toUpperCase().startsWith("RET-");
+  let updateQuery = supabase.from("return_requests").update({ staff_handling: sh as StaffHandlingStatus });
+  updateQuery = byReference ? updateQuery.eq("reference_code", rid) : updateQuery.eq("return_id", rid);
   updateQuery = applyStaffBranchFilter(updateQuery, staff);
   const { data, error } = await updateQuery.select("return_id, staff_handling, status, updated_at").maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_APP_URL } from "@/lib/constants";
+import { createServerClient } from "@/lib/supabase-server";
 
 /**
  * PayPlus redirects the user here after failed or cancelled payment.
@@ -33,7 +34,16 @@ async function handleFailureRedirect(request: Request) {
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : DEFAULT_APP_URL);
   const failureUrl = new URL("/payment-failed", baseUrl);
-  if (return_id) failureUrl.searchParams.set("return_id", return_id);
+  if (return_id) {
+    failureUrl.searchParams.set("return_id", return_id);
+    const supabase = createServerClient();
+    const { data: refRow } = await supabase
+      .from("return_requests")
+      .select("reference_code")
+      .eq("return_id", return_id)
+      .maybeSingle();
+    if (refRow?.reference_code) failureUrl.searchParams.set("reference_code", String(refRow.reference_code));
+  }
 
   return NextResponse.redirect(failureUrl.toString());
 }

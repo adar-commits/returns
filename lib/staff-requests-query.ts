@@ -3,7 +3,7 @@ import { resolvePresetRange, type DatePreset, jerusalemDayStart, jerusalemNextDa
 import type { StaffPayload } from "@/lib/staff-session";
 
 const LIST_SELECT =
-  "return_id, order_id, phone, branch_id, status, staff_handling, type, items, amount_refund, amount_to_pay, shipping_fee, customer_address, webhook_payload, payplus_payment_id, payment_status, replacement_order_id, created_at, updated_at";
+  "return_id, reference_code, order_id, phone, branch_id, status, staff_handling, type, items, amount_refund, amount_to_pay, shipping_fee, customer_address, webhook_payload, payplus_payment_id, payment_status, replacement_order_id, created_at, updated_at";
 
 const DETAIL_SELECT = `${LIST_SELECT}, id`;
 
@@ -58,6 +58,7 @@ export function buildSearchOrFilter(q: string): string | null {
     `phone.ilike.${p}`,
     `order_id.ilike.${p}`,
     `return_id.ilike.${p}`,
+    `reference_code.ilike.${p}`,
     `customer_address->>full_name.ilike.${p}`,
     `webhook_payload->customer->>full_name.ilike.${p}`,
   ].join(",");
@@ -88,9 +89,12 @@ export async function fetchReturnRequestsForStaff(
 export function fetchReturnRequestByReturnId(
   supabase: SupabaseClient,
   staff: StaffPayload,
-  returnId: string
+  returnIdOrReferenceCode: string
 ) {
-  let query = supabase.from("return_requests").select(DETAIL_SELECT).eq("return_id", returnId);
+  const raw = returnIdOrReferenceCode.trim();
+  const byReference = raw.toUpperCase().startsWith("RET-");
+  let query = supabase.from("return_requests").select(DETAIL_SELECT);
+  query = byReference ? query.eq("reference_code", raw) : query.eq("return_id", raw);
   query = applyStaffBranchFilter(query, staff);
   return query.maybeSingle();
 }

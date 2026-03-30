@@ -48,9 +48,17 @@ async function handleSuccessRedirect(request: Request) {
 
   if (row.status !== "awaiting_payment") {
     await persistDisplayMediaForReturnIfNeeded(return_id);
-    return NextResponse.redirect(
-      new URL(`/success?returnId=${encodeURIComponent(return_id)}&shippingType=courier&branchName=`, request.url)
-    );
+    const { data: refRow } = await supabase
+      .from("return_requests")
+      .select("reference_code")
+      .eq("return_id", return_id)
+      .maybeSingle();
+    const early = new URL("/success", request.url);
+    early.searchParams.set("returnId", return_id);
+    if (refRow?.reference_code) early.searchParams.set("referenceCode", String(refRow.reference_code));
+    early.searchParams.set("shippingType", "courier");
+    early.searchParams.set("branchName", "");
+    return NextResponse.redirect(early.toString());
   }
 
   const payload = row.webhook_payload as Record<string, unknown> | null;
@@ -63,7 +71,7 @@ async function handleSuccessRedirect(request: Request) {
 
   const { data: rowWithPayload } = await supabase
     .from("return_requests")
-    .select("webhook_payload")
+    .select("webhook_payload, reference_code")
     .eq("return_id", return_id)
     .single();
 
@@ -107,6 +115,9 @@ async function handleSuccessRedirect(request: Request) {
   const origin = new URL(request.url).origin;
   const successUrl = new URL("/success", origin);
   successUrl.searchParams.set("returnId", return_id);
+  if (rowWithPayload?.reference_code) {
+    successUrl.searchParams.set("referenceCode", String(rowWithPayload.reference_code));
+  }
   successUrl.searchParams.set("shippingType", shippingType);
   successUrl.searchParams.set("branchName", branchName);
   return NextResponse.redirect(successUrl.toString());

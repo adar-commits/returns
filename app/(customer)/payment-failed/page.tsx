@@ -5,11 +5,11 @@ import { getCustomerSession } from "@/lib/customer-session";
 export default async function PaymentFailedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ return_id?: string }>;
+  searchParams: Promise<{ return_id?: string; reference_code?: string }>;
 }) {
   const session = await getCustomerSession();
   if (!session) redirect("/");
-  const { return_id } = await searchParams;
+  const { return_id, reference_code } = await searchParams;
 
   return (
     <main className="page-wrap">
@@ -49,10 +49,19 @@ export default async function PaymentFailedPage({
           לא הצלחנו לסיים את התשלום. תוכל/י לחזור ולנסות שוב, או ליצור קשר עם שירות הלקוחות.
         </p>
 
-        {return_id && (
-          <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-4)" }}>
-            מספר בקשה: <strong style={{ fontFamily: "monospace" }}>{return_id}</strong>
-          </p>
+        {(reference_code || return_id) && (
+          <div style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-4)", maxWidth: 400 }}>
+            {reference_code ? (
+              <p style={{ margin: "0 0 var(--space-2)", fontSize: "var(--text-body)", color: "var(--color-text)" }}>
+                מספר בקשה: <strong style={{ letterSpacing: "0.06em" }}>{reference_code}</strong>
+              </p>
+            ) : null}
+            {return_id ? (
+              <p style={{ margin: 0, wordBreak: "break-all" }}>
+                מזהה מערכת: <strong style={{ fontFamily: "monospace", fontSize: "var(--text-small)" }}>{return_id}</strong>
+              </p>
+            ) : null}
+          </div>
         )}
 
         <Link

@@ -5,6 +5,7 @@ import Link from "next/link";
 
 type ReturnRow = {
   return_id: string;
+  reference_code?: string;
   order_id: string;
   status: string;
   status_label: string;
@@ -37,7 +38,18 @@ export default function MyReturnsList() {
       {list.map((r) => (
         <li key={r.return_id} className="list-item-card">
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
-            <strong style={{ fontFamily: "monospace", fontSize: "var(--text-body)" }}>{r.return_id}</strong>
+            <div style={{ minWidth: 0 }}>
+              {r.reference_code ? (
+                <strong style={{ fontSize: "var(--text-body)", letterSpacing: "0.05em" }}>{r.reference_code}</strong>
+              ) : (
+                <strong style={{ fontFamily: "monospace", fontSize: "var(--text-body)" }}>{r.return_id}</strong>
+              )}
+              {r.reference_code ? (
+                <p style={{ margin: "4px 0 0", fontFamily: "monospace", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", wordBreak: "break-all" }}>
+                  {r.return_id}
+                </p>
+              ) : null}
+            </div>
             <span style={{ fontSize: "var(--text-caption)", fontWeight: 600, color: "var(--color-primary)" }}>{r.status_label}</span>
           </div>
           <p style={{ margin: 0, fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>

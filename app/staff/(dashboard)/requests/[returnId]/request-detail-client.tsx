@@ -38,6 +38,7 @@ type ItemsDetailRow = {
 type DetailRow = {
   id: string;
   return_id: string;
+  reference_code: string;
   order_id: string;
   phone: string;
   branch_id: string | null;
@@ -181,8 +182,10 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
 
       <header className={styles.detailHeader}>
         <div>
-          <h1 className={styles.detailTitle}>בקשה {row.return_id}</h1>
+          <h1 className={styles.detailTitle}>בקשה {row.reference_code || row.return_id}</h1>
           <p className={styles.detailMeta}>
+            מזהה מערכת: <span dir="ltr">{row.return_id}</span>
+            {" · "}
             נוצר: {new Date(row.created_at).toLocaleString("he-IL")} · עודכן: {new Date(row.updated_at).toLocaleString("he-IL")}
             {row.branch_id ? ` · סניף: ${row.branch_id}` : ""}
           </p>

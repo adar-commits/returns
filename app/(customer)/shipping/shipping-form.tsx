@@ -246,8 +246,9 @@ export default function ShippingForm() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) return;
         sessionStorage.removeItem("returns_wizard");
+        const refQ = data.reference_code ? `&referenceCode=${encodeURIComponent(data.reference_code)}` : "";
         router.push(
-          `/success?returnId=${encodeURIComponent(data.return_id || "")}&shippingType=callback&branchName=`
+          `/success?returnId=${encodeURIComponent(data.return_id || "")}${refQ}&shippingType=callback&branchName=`
         );
       } finally {
         setSubmittingCallback(false);

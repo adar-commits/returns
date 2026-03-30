@@ -14,6 +14,7 @@ import type { ReturnRequestItem } from "@/lib/db-types";
 
 type ListRow = {
   return_id: string;
+  reference_code: string;
   order_id: string;
   phone: string;
   branch_id: string | null;
@@ -219,14 +220,14 @@ export default function StaffRequestsPageClient() {
     <>
       <h1 className={styles.pageTitle}>כל בקשות ההחזרה וההחלפה</h1>
       <p className={styles.subtitle}>
-        סינון לפי תאריך יצירה (שעון ישראל) וחיפוש לפי טלפון, שם, מספר הזמנה או מזהה בקשה
+        סינון לפי תאריך יצירה (שעון ישראל) וחיפוש לפי טלפון, שם, מספר הזמנה, מספר בקשה (RET-…) או מזהה מערכת
       </p>
 
       <form onSubmit={submitSearch}>
         <input
           className={styles.search}
           dir="rtl"
-          placeholder="הזן טלפון, שם, מספר הזמנה או מזהה בקשה"
+          placeholder="טלפון, שם, הזמנה, RET-00042 או מזהה מערכת"
           value={searchDraft}
           onChange={(e) => setSearchDraft(e.target.value)}
           aria-label="חיפוש"
@@ -289,7 +290,7 @@ export default function StaffRequestsPageClient() {
           {rows.map((row, i) => (
             <Link
               key={row.return_id}
-              href={`/staff/requests/${encodeURIComponent(row.return_id)}`}
+              href={`/staff/requests/${encodeURIComponent(row.reference_code || row.return_id)}`}
               className={styles.requestCard}
               style={{ animationDelay: `${Math.min(i, 12) * 55}ms` }}
             >
@@ -308,6 +309,12 @@ export default function StaffRequestsPageClient() {
               </div>
 
               <dl className={styles.fieldList}>
+                <div className={styles.fieldRow}>
+                  <dt className={styles.fieldLabel}>מספר בקשה</dt>
+                  <dd className={styles.fieldValueStrong} style={{ letterSpacing: "0.05em" }}>
+                    {row.reference_code || "—"}
+                  </dd>
+                </div>
                 <div className={styles.fieldRow}>
                   <dt className={styles.fieldLabel}>תאריך-שעה</dt>
                   <dd className={styles.fieldValue}>

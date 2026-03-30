@@ -164,8 +164,9 @@ export default function SummaryView() {
       const shippingType = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
       const branchName = wizard.shipping?.branch?.name || "";
       sessionStorage.removeItem("returns_wizard");
+      const refQ = data.reference_code ? `&referenceCode=${encodeURIComponent(data.reference_code)}` : "";
       router.push(
-        `/success?returnId=${encodeURIComponent(data.return_id || "")}&shippingType=${shippingType}&branchName=${encodeURIComponent(branchName)}`
+        `/success?returnId=${encodeURIComponent(data.return_id || "")}${refQ}&shippingType=${shippingType}&branchName=${encodeURIComponent(branchName)}`
       );
     } finally {
       setSubmitting(false);

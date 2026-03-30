@@ -48,6 +48,8 @@ export interface AppSettingsRow {
 export interface ReturnRequestRow {
   id: string;
   return_id: string;
+  /** Customer-facing short id, e.g. RET-00042 (unique). */
+  reference_code: string;
   phone: string;
   order_id: string;
   branch_id: string | null;

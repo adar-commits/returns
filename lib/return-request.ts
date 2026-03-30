@@ -53,11 +53,16 @@ export async function createReturnRequest(params: {
       confirm_token,
       ...(params.webhook_payload != null && { webhook_payload: params.webhook_payload }),
     })
-    .select("id, return_id")
+    .select("id, return_id, reference_code")
     .single();
 
   if (error) throw error;
-  return { id: data.id, return_id: data.return_id, confirm_token };
+  return {
+    id: data.id,
+    return_id: data.return_id,
+    reference_code: data.reference_code as string,
+    confirm_token,
+  };
 }
 
 export async function updateReturnRequestReplacementOrderId(returnId: string, replacementOrderId: string) {
@@ -87,14 +92,14 @@ export async function updateReturnRequestWebhookPayload(returnId: string, payloa
   if (error) throw error;
 }
 
-export async function confirmByToken(token: string): Promise<{ return_id: string } | null> {
+export async function confirmByToken(token: string): Promise<{ return_id: string; reference_code: string | null } | null> {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("return_requests")
     .update({ status: "confirmed" })
     .eq("confirm_token", token)
-    .select("return_id")
+    .select("return_id, reference_code")
     .single();
   if (error || !data) return null;
-  return { return_id: data.return_id };
+  return { return_id: data.return_id, reference_code: (data.reference_code as string | null) ?? null };
 }

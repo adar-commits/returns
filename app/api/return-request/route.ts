@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     const totalToPay = Math.max(0, amountToPay + shippingFee - amountRefund);
     const netRefund = Math.max(0, amountRefund - amountToPay - shippingFee);
 
-    const { return_id, confirm_token } = await createReturnRequest({
+    const { return_id, confirm_token, reference_code } = await createReturnRequest({
       phone: session.phone,
       order_id: wizard.orderId,
       branch_id: wizard.shipping?.branch_id ?? wizard.shipping?.branch?.id ?? null,
@@ -196,6 +196,7 @@ export async function POST(request: Request) {
 
     const payload = {
       return_id,
+      reference_code,
       created_at: new Date().toISOString(),
       type,
       status: "pending_approval",
@@ -252,7 +253,7 @@ export async function POST(request: Request) {
             .update({ payplus_payment_id: linkResult.page_request_uid })
             .eq("return_id", return_id);
         }
-        return NextResponse.json({ return_id, payment_link: linkResult.payment_page_link });
+        return NextResponse.json({ return_id, reference_code, payment_link: linkResult.payment_page_link });
       }
       const errorMessage =
         linkResult && "error" in linkResult
@@ -289,7 +290,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ return_id });
+    return NextResponse.json({ return_id, reference_code });
   } catch (e) {
     console.error(e);
     return NextResponse.json(

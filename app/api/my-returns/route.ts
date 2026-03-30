@@ -23,7 +23,7 @@ export async function GET() {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("return_requests")
-    .select("return_id, order_id, status, type, amount_refund, amount_to_pay, replacement_order_id, created_at")
+    .select("return_id, reference_code, order_id, status, type, amount_refund, amount_to_pay, replacement_order_id, created_at")
     .eq("phone", session.phone)
     .order("created_at", { ascending: false });
   if (error) {

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getStaffSession } from "@/lib/staff-session";
 import { createServerClient } from "@/lib/supabase-server";
-import { applyStaffBranchFilter, fetchReturnRequestByReturnId } from "@/lib/staff-requests-query";
+import {
+  applyStaffBranchFilter,
+  fetchReturnRequestByReturnId,
+  normalizeStaffRequestLookupKey,
+} from "@/lib/staff-requests-query";
 import type { StaffHandlingStatus } from "@/lib/db-types";
 
 export async function GET(_request: Request, context: { params: { returnId: string } }) {
@@ -42,10 +46,9 @@ export async function PATCH(request: Request, context: { params: { returnId: str
     return NextResponse.json({ error: "staff_handling must be in_progress or completed" }, { status: 400 });
   }
   const supabase = createServerClient();
-  const rid = decodeURIComponent(returnId).trim();
-  const byReference = rid.toUpperCase().startsWith("RET-");
+  const { key, byReference } = normalizeStaffRequestLookupKey(decodeURIComponent(returnId));
   let updateQuery = supabase.from("return_requests").update({ staff_handling: sh as StaffHandlingStatus });
-  updateQuery = byReference ? updateQuery.eq("reference_code", rid) : updateQuery.eq("return_id", rid);
+  updateQuery = byReference ? updateQuery.eq("reference_code", key) : updateQuery.eq("return_id", key);
   updateQuery = applyStaffBranchFilter(updateQuery, staff);
   const { data, error } = await updateQuery.select("return_id, staff_handling, status, updated_at").maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

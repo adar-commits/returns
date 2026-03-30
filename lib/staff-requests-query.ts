@@ -130,15 +130,23 @@ export async function fetchReturnRequestsForStaff(
   return { data, error };
 }
 
+/** Normalize URL segment: RET-* is case-insensitive and stored uppercase (RET-00002). */
+export function normalizeStaffRequestLookupKey(returnIdOrReferenceCode: string): { key: string; byReference: boolean } {
+  const raw = returnIdOrReferenceCode.trim();
+  if (!raw) return { key: raw, byReference: false };
+  const byReference = raw.toUpperCase().startsWith("RET-");
+  if (byReference) return { key: raw.toUpperCase(), byReference: true };
+  return { key: raw, byReference: false };
+}
+
 export function fetchReturnRequestByReturnId(
   supabase: SupabaseClient,
   staff: StaffPayload,
   returnIdOrReferenceCode: string
 ) {
-  const raw = returnIdOrReferenceCode.trim();
-  const byReference = raw.toUpperCase().startsWith("RET-");
+  const { key, byReference } = normalizeStaffRequestLookupKey(returnIdOrReferenceCode);
   let query = supabase.from("return_requests").select(DETAIL_SELECT);
-  query = byReference ? query.eq("reference_code", raw) : query.eq("return_id", raw);
+  query = byReference ? query.eq("reference_code", key) : query.eq("return_id", key);
   query = applyStaffBranchFilter(query, staff);
   return query.maybeSingle();
 }

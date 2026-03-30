@@ -11,6 +11,7 @@ import {
 } from "@/lib/staff-backoffice-he";
 import type { ReturnRequestItem } from "@/lib/db-types";
 import { parseInternalNotesLog } from "@/lib/internal-notes-log";
+import { buildStaffCustomerDetailRows } from "@/lib/staff-customer-details";
 
 type RawOrderLine = {
   sku?: string;
@@ -61,15 +62,6 @@ type DetailRow = {
   updated_by_user_id: string | null;
   updated_by_display_name: string | null;
 };
-
-function displayName(addr: Record<string, unknown> | null, payload: Record<string, unknown> | null): string {
-  const a = (addr?.full_name as string | undefined)?.trim();
-  if (a) return a;
-  const c = payload?.customer as { full_name?: string } | undefined;
-  const w = c?.full_name?.trim();
-  if (w) return w;
-  return "—";
-}
 
 function notesText(addr: Record<string, unknown> | null, payload: Record<string, unknown> | null): string {
   const n = (addr?.notes as string | undefined)?.trim();
@@ -246,7 +238,6 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
     );
   }
 
-  const name = displayName(row.customer_address, row.webhook_payload);
   const notes = notesText(row.customer_address, row.webhook_payload);
   const order = row.webhook_payload?.order as Record<string, unknown> | undefined;
   const shipping = row.webhook_payload?.shipping as Record<string, unknown> | undefined;
@@ -278,6 +269,15 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
 
   const branchInfo = (shipping?.branch as ShippingBranchInfo | undefined) || undefined;
   const internalNotesList = parseInternalNotesLog(row.internal_notes_log);
+  const customerDetailRows = buildStaffCustomerDetailRows({
+    phone: row.phone,
+    customer_address: row.customer_address,
+    webhook_payload: row.webhook_payload,
+  });
+  const customerFieldDir = (key: string): "ltr" | undefined =>
+    ["phone", "phone_account", "mobile", "tel", "zip", "postal_code", "email", "vat_id"].includes(key)
+      ? "ltr"
+      : undefined;
   const deliveryAddr = (shipping?.customer_delivery_address as Record<string, unknown> | null | undefined) || null;
   const shipMethod = typeof shipping?.method === "string" ? shipping.method : undefined;
   const shipFeeFromPayload = shipping?.fee != null ? Number(shipping.fee) : null;
@@ -648,26 +648,18 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
           <section className={styles.detailSection}>
             <h2 className={styles.detailSectionTitle}>פרטי לקוח</h2>
             <div className={styles.cardMeta} style={{ border: "none", padding: 0 }}>
-              <div className={styles.cardMetaRow}>
-                <span>שם</span>
-                <span>{name}</span>
-              </div>
-              <div className={styles.cardMetaRow}>
-                <span>טלפון</span>
-                <span dir="ltr">{row.phone}</span>
-              </div>
-              {row.customer_address?.address ? (
-                <div className={styles.cardMetaRow}>
-                  <span>כתובת</span>
-                  <span>{String(row.customer_address.address)}</span>
-                </div>
-              ) : null}
-              {row.customer_address?.city ? (
-                <div className={styles.cardMetaRow}>
-                  <span>עיר</span>
-                  <span>{String(row.customer_address.city)}</span>
-                </div>
-              ) : null}
+              {customerDetailRows.length === 0 ? (
+                <p className={styles.detailSectionLead} style={{ margin: 0 }}>
+                  אין פרטי לקוח שנשמרו בבקשה (או שהנתונים ריקים).
+                </p>
+              ) : (
+                customerDetailRows.map((r) => (
+                  <div key={r.key} className={styles.cardMetaRow}>
+                    <span>{r.label}</span>
+                    <span dir={customerFieldDir(r.key)}>{r.value}</span>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 

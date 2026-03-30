@@ -285,70 +285,16 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
 
   return (
     <div className={styles.detailPageWrap}>
-      <div className={styles.detailToolbar} dir="ltr">
-        <div className={styles.detailToolbarStatus}>
-          <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
-            סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
-          </span>
-        </div>
-        <div className={styles.detailToolbarActions}>
-          <Link href="/staff/requests" className={styles.backLink}>
-            ← חזרה לכל הבקשות
-          </Link>
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand}`}
-              disabled={saving}
-              onClick={() => patchHandling("in_progress")}
-            >
-              <svg
-                className={styles.actionBtnIcon}
-                width={18}
-                height={18}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
-              </svg>
-              סמן בטיפול
-            </button>
-            <button
-              type="button"
-              className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-              disabled={saving}
-              onClick={() => patchHandling("completed")}
-            >
-              <svg
-                className={styles.actionBtnIcon}
-                width={18}
-                height={18}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
-              סמן הושלם
-            </button>
-          </div>
-        </div>
+      <div className={styles.detailBackRow} dir="rtl">
+        <Link href="/staff/requests" className={styles.backLink}>
+          חזרה לכל הבקשות →
+        </Link>
       </div>
 
       <header className={styles.detailHeroCard}>
-        <div className={styles.detailHeroTop}>
-          <div className={styles.detailHeroMain}>
-            <div className={styles.detailHeroHeadline} dir="rtl">
+        <div className={styles.detailHeroMain}>
+          <div className={styles.detailHeroRow} dir="rtl">
+            <div className={styles.detailHeroRefStatus}>
               <div className={styles.detailHeroRefGroup}>
                 <h1 className={styles.detailHeroId}>{row.reference_code || row.return_id}</h1>
                 <button
@@ -360,16 +306,37 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                   ⓘ
                 </button>
               </div>
-            </div>
-            <div className={styles.detailHeroSubRow} dir="rtl">
-              <span className={styles.detailHeroDate}>{createdShort}</span>
-              {branchLabel ? <span className={styles.detailHeroDate}>{branchLabel}</span> : null}
-              <span className={styles.detailHeroDate}>
-                עודכן לאחרונה ע״י {row.updated_by_display_name?.trim() || "—"}
-                {" · "}
-                {new Date(row.updated_at).toLocaleString("he-IL")}
+              <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
+                סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
               </span>
             </div>
+            <div className={styles.detailHeroActions}>
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand} ${styles.actionBtnToolbar}`}
+                disabled={saving}
+                onClick={() => patchHandling("in_progress")}
+              >
+                סמן בטיפול
+              </button>
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${styles.actionBtnPrimary} ${styles.actionBtnToolbar}`}
+                disabled={saving}
+                onClick={() => patchHandling("completed")}
+              >
+                סמן הושלם
+              </button>
+            </div>
+          </div>
+          <div className={styles.detailHeroSubRow} dir="rtl">
+            <span className={styles.detailHeroDate}>{createdShort}</span>
+            {branchLabel ? <span className={styles.detailHeroDate}>{branchLabel}</span> : null}
+            <span className={styles.detailHeroDate}>
+              עודכן לאחרונה ע״י {row.updated_by_display_name?.trim() || "—"}
+              {" · "}
+              {new Date(row.updated_at).toLocaleString("he-IL")}
+            </span>
           </div>
         </div>
         {row.staff_handling ? (

@@ -409,13 +409,24 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                   it.sku;
                 const qty = Math.max(1, Number(detail?.qty ?? qtyFromOrder) || 1);
                 const isReplace = it.action === "replace" || detail?.action_type === "replace";
-                let priceDiff = detail?.price_diff;
-                if (priceDiff == null) {
-                  if (it.action === "return" && paid > 0) priceDiff = -paid;
-                  else if (it.action === "replace" && (paid > 0 || it.size_price != null)) {
-                    const np = it.size_price != null ? Number(it.size_price) : paid;
-                    priceDiff = np - paid;
-                  }
+                const paidUnit = qty > 0 ? paid / qty : paid;
+                const newUnitPrice =
+                  detail?.new_size_price != null && !Number.isNaN(Number(detail.new_size_price))
+                    ? Number(detail.new_size_price)
+                    : it.size_price != null && !Number.isNaN(Number(it.size_price))
+                      ? Number(it.size_price)
+                      : null;
+
+                let priceDiff: number | null = null;
+                if (isReplace && newUnitPrice != null && paidUnit >= 0) {
+                  priceDiff = newUnitPrice - paidUnit;
+                } else if (it.action === "return" && paid > 0) {
+                  priceDiff = -paid;
+                } else if (detail?.price_diff != null && !Number.isNaN(Number(detail.price_diff))) {
+                  priceDiff = Number(detail.price_diff);
+                } else if (it.action === "replace" && (paid > 0 || it.size_price != null)) {
+                  const np = it.size_price != null ? Number(it.size_price) : paid;
+                  priceDiff = np - paid;
                 }
                 const replSku =
                   typeof detail?.replacement_sku === "string" && detail.replacement_sku.trim()
@@ -424,7 +435,7 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                 const newSizeLabel = detail?.new_size_label || it.size_label || null;
                 const imageUrl = typeof detail?.image_url === "string" ? detail.image_url.trim() : "";
                 const productUrl = typeof detail?.product_url === "string" ? detail.product_url.trim() : "";
-                const unitPaid = qty > 0 ? paid / qty : paid;
+                const unitPaid = paidUnit;
                 const unitPriceLabel =
                   paid > 0 ? `מחיר: ${formatIlsDetailed(unitPaid)} ₪ × ${qty}` : `כמות: ${qty}`;
                 const lineAlt = i % 2 === 1;
@@ -472,18 +483,33 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                       ) : null}
                     </div>
                     <div className={styles.itemLinePriceCol}>
-                      {hasNumericDiff ? (
-                        <span
-                          className={`${styles.itemDiffLabel} ${
-                            Number(priceDiff) < 0 ? styles.itemDiffLabelCredit : styles.itemDiffLabelPay
-                          }`}
+                      {isReplace && unitPaid > 0 ? (
+                        <div
+                          className={styles.itemLinePricePaidMuted}
+                          dir="ltr"
+                          title="מחיר יחידה ששולם בהזמנה המקורית"
                         >
-                          {Number(priceDiff) < 0 ? "זיכוי" : "תוספת תשלום"}
-                        </span>
+                          ₪ {formatIlsDetailed(unitPaid)}
+                        </div>
                       ) : null}
-                      <div className={styles.itemLinePriceValue} dir="ltr">
-                        {hasNumericDiff ? `₪ ${formatIlsDetailed(Math.abs(Number(priceDiff)))}` : "—"}
-                      </div>
+                      {hasNumericDiff ? (
+                        <>
+                          <span
+                            className={`${styles.itemDiffLabel} ${
+                              Number(priceDiff) < 0 ? styles.itemDiffLabelCredit : styles.itemDiffLabelPay
+                            }`}
+                          >
+                            {Number(priceDiff) < 0 ? "זיכוי" : "תוספת תשלום"}
+                          </span>
+                          <div className={styles.itemLinePriceValue} dir="ltr">
+                            ₪ {formatIlsDetailed(Math.abs(Number(priceDiff)))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className={styles.itemLinePriceValue} dir="ltr">
+                          —
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

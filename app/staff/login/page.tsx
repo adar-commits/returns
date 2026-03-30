@@ -3,7 +3,11 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getStaffOAuthRedirectBase, getStaffOAuthRedirectTo } from "@/lib/staff-oauth-redirect";
+import {
+  getStaffOAuthRedirectBase,
+  getStaffOAuthRedirectTo,
+  STAFF_OAUTH_NEXT_PATH_KEY,
+} from "@/lib/staff-oauth-redirect";
 import styles from "./staff-login.module.css";
 
 function GoogleIcon() {
@@ -72,8 +76,11 @@ function StaffLoginForm() {
     setError(null);
     setGoogleLoading(true);
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(STAFF_OAUTH_NEXT_PATH_KEY, "/staff");
+      }
       const redirectTo =
-        typeof window !== "undefined" ? getStaffOAuthRedirectTo() : "/auth/callback?next=/staff";
+        typeof window !== "undefined" ? getStaffOAuthRedirectTo() : "/auth/callback";
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },

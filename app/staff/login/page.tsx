@@ -103,7 +103,7 @@ function StaffLoginForm() {
         body: JSON.stringify({ email: trimmed, password }),
       });
       if (res.ok) {
-        router.push("/staff/requests?preset=today");
+        router.push("/staff/requests?preset=week");
         router.refresh();
         return;
       }
@@ -126,7 +126,7 @@ function StaffLoginForm() {
     setGoogleLoading(true);
     try {
       if (typeof window !== "undefined") {
-        sessionStorage.setItem(STAFF_OAUTH_NEXT_PATH_KEY, "/staff/requests?preset=today");
+        sessionStorage.setItem(STAFF_OAUTH_NEXT_PATH_KEY, "/staff/requests?preset=week");
       }
       const redirectTo =
         typeof window !== "undefined" ? getStaffOAuthRedirectTo() : "/auth/callback";

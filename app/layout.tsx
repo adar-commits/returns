@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Hebrew } from "next/font/google";
+import { Noto_Sans_Hebrew, Open_Sans } from "next/font/google";
 import "./globals.css";
 
-const notoHebrew = Noto_Sans_Hebrew({
+/** Brand stack: Open Sans + Noto Sans Hebrew (Google Fonts). */
+const notoSans = Noto_Sans_Hebrew({
   subsets: ["hebrew", "latin"],
-  variable: "--font-noto-hebrew",
+  variable: "--font-noto-sans",
+  display: "swap",
+});
+
+const openSans = Open_Sans({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-open-sans",
   display: "swap",
 });
 
@@ -43,8 +50,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className={notoHebrew.variable}>
-      <body className={notoHebrew.className} style={{ fontFamily: "var(--font-noto-hebrew), system-ui, sans-serif" }}>
+    <html lang="he" dir="rtl" className={`${notoSans.variable} ${openSans.variable}`}>
+      <body
+        style={{
+          fontFamily: "var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif",
+        }}
+      >
         {children}
       </body>
     </html>

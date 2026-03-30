@@ -20,8 +20,10 @@
   }
 }
 
+/* Titles: same stack as root (Open Sans + Noto Sans via CSS variables on html). */
 .pageTitle {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.9rem;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
   font-size: clamp(1.35rem, 2.5vw, 1.65rem);
   font-weight: 800;
   color: #0f172a;
@@ -52,8 +54,8 @@
 
 .search:focus {
   outline: none;
-  border-color: #5eead4;
-  box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.25);
+  border-color: rgba(155, 45, 48, 0.55);
+  box-shadow: 0 0 0 3px rgba(155, 45, 48, 0.2);
 }
 
 .search::placeholder {
@@ -97,9 +99,65 @@
 }
 
 .segmentBtnActive {
-  background: linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%);
-  color: #065f46;
-  box-shadow: 0 2px 8px rgba(6, 95, 70, 0.12);
+  background: linear-gradient(180deg, #fecaca 0%, #fca5a5 100%);
+  color: #7f1d1d;
+  box-shadow: 0 2px 8px rgba(127, 29, 29, 0.15);
+}
+
+.handlingRow {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.handlingLabel {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 0.55rem;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
+}
+
+.handlingChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.handlingChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.38rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #f8fafc;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #475569;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
+}
+
+.handlingChip input {
+  accent-color: #9b2d30;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+.handlingChip:has(input:checked) {
+  background: linear-gradient(180deg, #fecaca 0%, #fca5a5 100%);
+  border-color: rgba(155, 45, 48, 0.4);
+  color: #7f1d1d;
 }
 
 .customDates {
@@ -190,7 +248,7 @@
   box-shadow:
     0 4px 12px rgba(15, 23, 42, 0.06),
     0 18px 36px rgba(15, 23, 42, 0.1);
-  border-color: rgba(94, 234, 212, 0.45);
+  border-color: rgba(155, 45, 48, 0.35);
   transform: translateY(-2px);
 }
 
@@ -235,9 +293,15 @@
   color: #854d0e;
 }
 
+/* Brand-forward “success / closed” accent (replaces green). */
+.badgeBrand {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .badgeGreen {
-  background: #d1fae5;
-  color: #047857;
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .badgeBlue {
@@ -290,6 +354,39 @@
   font-size: 0.8rem;
 }
 
+.fieldValuePillCell {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.typePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.typePillReturn {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+}
+
+.typePillReplace {
+  background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+  color: #9a3412;
+}
+
+.typePillMixed {
+  background: linear-gradient(135deg, #ede9fe 0%, #e9d5ff 100%);
+  color: #5b21b6;
+}
+
 .itemsBlock {
   border-radius: 12px;
   background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
@@ -335,7 +432,7 @@
 
 .moneyRefund {
   font-weight: 800;
-  color: #047857;
+  color: #9b2d30;
 }
 
 .moneyNeutral {
@@ -498,6 +595,7 @@
 
 .detailHeroId {
   margin: 0 0 0.35rem;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
   font-size: clamp(1.65rem, 3.5vw, 2rem);
   font-weight: 800;
   color: #0f172a;
@@ -545,9 +643,9 @@
 }
 
 .statusPillOk {
-  background: #ecfdf5;
-  color: #047857;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid rgba(155, 45, 48, 0.28);
 }
 
 .statusPillWarn {
@@ -579,6 +677,7 @@
 
 .detailSectionTitle {
   margin: 0 0 1rem;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
   font-size: 1.05rem;
   font-weight: 800;
   color: #0f172a;
@@ -700,7 +799,7 @@
 }
 
 .itemLineLink a {
-  color: #0d9488;
+  color: #9b2d30;
   text-decoration: none;
 }
 
@@ -777,6 +876,7 @@
 
 .detailTitle {
   margin: 0 0 var(--space-2);
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
   font-size: var(--text-title);
   font-weight: 800;
 }
@@ -898,6 +998,7 @@
 
 .sectionTitle {
   margin: 0 0 var(--space-4);
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
   font-size: var(--text-subtitle);
   font-weight: 700;
 }

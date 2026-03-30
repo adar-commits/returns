@@ -7,7 +7,7 @@ export default async function StaffPage({ searchParams }: Props) {
   const session = await getStaffSession();
   if (!session) redirect("/staff/login");
   const { message } = await searchParams;
-  const base = "/staff/requests?preset=today";
+  const base = "/staff/requests?preset=week";
   if (message) {
     redirect(`${base}&message=${encodeURIComponent(message)}`);
   }

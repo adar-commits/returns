@@ -39,6 +39,43 @@ const PRESETS = [
   { id: "custom", label: "מותאם" },
 ] as const;
 
+const HANDLING_OPTIONS = [
+  { id: "open" as const, label: "פתוח" },
+  { id: "in_progress" as const, label: "בטיפול" },
+  { id: "completed" as const, label: "הושלם" },
+];
+
+const DEFAULT_HANDLING = new Set<string>(["open", "in_progress"]);
+
+function handlingSetFromSearchParams(sp: URLSearchParams): Set<string> {
+  const raw = sp.get("handling");
+  if (raw === "all") return new Set();
+  if (raw == null || raw === "") return new Set(DEFAULT_HANDLING);
+  const next = new Set<string>();
+  for (const part of raw.split(",")) {
+    const p = part.trim();
+    if (p === "open" || p === "in_progress" || p === "completed") next.add(p);
+  }
+  return next.size > 0 ? next : new Set();
+}
+
+function serializeHandlingParam(selected: Set<string>): string | null {
+  if (selected.size === 0) return "all";
+  const order = ["open", "in_progress", "completed"] as const;
+  const parts = order.filter((id) => selected.has(id));
+  if (parts.length === 0) return "all";
+  const isDefault =
+    parts.length === 2 && selected.has("open") && selected.has("in_progress") && !selected.has("completed");
+  if (isDefault) return null;
+  return parts.join(",");
+}
+
+function typePillClass(type: string): string {
+  if (type === "return") return styles.typePillReturn;
+  if (type === "replacement") return styles.typePillReplace;
+  return styles.typePillMixed;
+}
+
 function displayName(row: ListRow): string {
   const a = row.customer_address?.full_name?.trim();
   if (a) return a;
@@ -61,13 +98,13 @@ function createdDaysLabel(iso: string): string {
 
 function statusBadgeClass(status: string): string {
   if (status === "awaiting_payment") return styles.badgeYellow;
-  if (status === "refunded" || status === "delivered") return styles.badgeGreen;
+  if (status === "refunded" || status === "delivered") return styles.badgeBrand;
   return styles.badgeMuted;
 }
 
 function staffBadgeClass(h: string | null): string | null {
   if (!h) return null;
-  if (h === "completed") return styles.badgeGreen;
+  if (h === "completed") return styles.badgeBrand;
   if (h === "in_progress") return styles.badgeBlue;
   return styles.badgeMuted;
 }
@@ -135,8 +172,10 @@ export default function StaffRequestsPageClient() {
   const activePreset = useMemo(() => {
     if (preset && PRESETS.some((p) => p.id === preset)) return preset;
     if (from && to) return "custom";
-    return "today";
+    return "week";
   }, [preset, from, to]);
+
+  const handlingSelected = useMemo(() => handlingSetFromSearchParams(sp), [sp]);
 
   useEffect(() => {
     setSearchDraft(q);
@@ -146,7 +185,7 @@ export default function StaffRequestsPageClient() {
     const hasAny = sp.get("preset") || sp.get("from") || sp.get("to");
     if (!hasAny) {
       const n = new URLSearchParams(sp.toString());
-      n.set("preset", "today");
+      n.set("preset", "week");
       router.replace(`/staff/requests?${n}`, { scroll: false });
     }
   }, [router, sp]);
@@ -168,8 +207,19 @@ export default function StaffRequestsPageClient() {
       qs.set("to", t);
     }
     if (qq) qs.set("q", qq);
+    const h = sp.get("handling");
+    if (h === "all") qs.set("handling", "all");
+    else if (h) qs.set("handling", h);
     return qs.toString();
   }, [sp]);
+ 
+  const toggleHandling = (id: string) => {
+    const n = new Set(handlingSelected);
+    if (n.has(id)) n.delete(id);
+    else n.add(id);
+    const param = serializeHandlingParam(n);
+    setParams({ handling: param });
+  };
 
   useEffect(() => {
     const qs = buildApiQuery();
@@ -219,20 +269,29 @@ export default function StaffRequestsPageClient() {
   return (
     <>
       <h1 className={styles.pageTitle}>כל בקשות ההחזרה וההחלפה</h1>
-      <p className={styles.subtitle}>
-        סינון לפי תאריך יצירה (שעון ישראל) וחיפוש לפי טלפון, שם, מספר הזמנה, מספר בקשה (RET-…) או מזהה מערכת
-      </p>
 
       <form onSubmit={submitSearch}>
         <input
           className={styles.search}
           dir="rtl"
-          placeholder="טלפון, שם, הזמנה, RET-00042 או מזהה מערכת"
+          placeholder="חיפוש חופשי לפי שם לקוח, טלפון, הזמנה או מס׳ בקשה"
           value={searchDraft}
           onChange={(e) => setSearchDraft(e.target.value)}
           aria-label="חיפוש"
         />
       </form>
+
+      <div className={styles.handlingRow} role="group" aria-label="סינון לפי סטטוס טיפול">
+        <span className={styles.handlingLabel}>סטטוס טיפול בקשה</span>
+        <div className={styles.handlingChips}>
+          {HANDLING_OPTIONS.map(({ id, label }) => (
+            <label key={id} className={styles.handlingChip}>
+              <input type="checkbox" checked={handlingSelected.has(id)} onChange={() => toggleHandling(id)} />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
 
       <div className={styles.segmentWrap} role="tablist" aria-label="טווח תאריכים">
         {PRESETS.map(({ id, label }) => (
@@ -336,7 +395,11 @@ export default function StaffRequestsPageClient() {
                 </div>
                 <div className={styles.fieldRow}>
                   <dt className={styles.fieldLabel}>סוג הבקשה</dt>
-                  <dd className={styles.fieldValue}>{RETURN_TYPE_HE[row.type] || row.type}</dd>
+                  <dd className={styles.fieldValuePillCell}>
+                    <span className={`${styles.typePill} ${typePillClass(row.type)}`}>
+                      {RETURN_TYPE_HE[row.type] || row.type}
+                    </span>
+                  </dd>
                 </div>
               </dl>
 

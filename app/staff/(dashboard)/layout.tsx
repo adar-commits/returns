@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Suspense } from "react";
 import StaffFlashMessage from "./staff-flash-message";
 
+const REQUESTS_HOME = "/staff/requests?preset=week";
+
 export default function StaffDashboardLayout({
   children,
 }: {
@@ -16,7 +18,6 @@ export default function StaffDashboardLayout({
         display: "flex",
         flexDirection: "column",
         background: "var(--staff-bg, #eef1f4)",
-        fontFamily: 'system-ui, "Segoe UI", "Rubik", "Heebo", sans-serif',
       }}
     >
       <header
@@ -40,7 +41,7 @@ export default function StaffDashboardLayout({
           }}
         >
           <Link
-            href="/staff/requests?preset=today"
+            href={REQUESTS_HOME}
             style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}
           >
             <Image
@@ -67,7 +68,7 @@ export default function StaffDashboardLayout({
           </Link>
           <nav style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}>
             <Link
-              href="/staff/requests?preset=today"
+              href={REQUESTS_HOME}
               className="staff-nav-pill staff-nav-pill--active"
               style={{
                 padding: "0.45rem 1rem",
@@ -75,9 +76,9 @@ export default function StaffDashboardLayout({
                 fontSize: "0.8125rem",
                 fontWeight: 600,
                 textDecoration: "none",
-                background: "linear-gradient(180deg, #d1fae5 0%, #a7f3d0 100%)",
-                color: "#065f46",
-                boxShadow: "0 1px 2px rgba(6, 95, 70, 0.12)",
+                background: "linear-gradient(180deg, #fecaca 0%, #fca5a5 100%)",
+                color: "#7f1d1d",
+                boxShadow: "0 1px 2px rgba(127, 29, 29, 0.15)",
               }}
             >
               כל הבקשות

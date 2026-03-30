@@ -49,6 +49,51 @@ function escapeIlike(s: string): string {
 }
 
 /** PostgREST .or() filter for free-text search across phone, ids, customer name in JSON. */
+export type StaffHandlingFilterToken = "open" | "in_progress" | "completed";
+
+/** Default: פתוח + בטיפול. `all` = no staff_handling filter. */
+export function parseStaffHandlingFilter(searchParams: URLSearchParams): StaffHandlingFilterToken[] | "all" {
+  const raw = searchParams.get("handling");
+  if (raw === "all") return "all";
+  if (raw == null || raw === "") {
+    return ["open", "in_progress"];
+  }
+  const allowed = new Set<StaffHandlingFilterToken>(["open", "in_progress", "completed"]);
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s): s is StaffHandlingFilterToken => allowed.has(s as StaffHandlingFilterToken));
+  if (parts.length === 0) return "all";
+  return parts;
+}
+
+function buildStaffHandlingOrConditions(tokens: StaffHandlingFilterToken[] | "all"): string | null {
+  if (tokens === "all") return null;
+  const parts: string[] = [];
+  for (const t of tokens) {
+    if (t === "open") parts.push("staff_handling.is.null");
+    if (t === "in_progress") parts.push("staff_handling.eq.in_progress");
+    if (t === "completed") parts.push("staff_handling.eq.completed");
+  }
+  if (parts.length === 0) return null;
+  return parts.join(",");
+}
+
+/** Combine text search OR-group with staff_handling OR-group using AND (PostgREST nested or/and). */
+function applySearchAndHandlingFilters<T extends { or: (filter: string) => T }>(
+  query: T,
+  searchOr: string | null,
+  handlingTokens: StaffHandlingFilterToken[] | "all"
+): T {
+  const handlingOr = buildStaffHandlingOrConditions(handlingTokens);
+  if (searchOr && handlingOr) {
+    return query.or(`and(or(${searchOr}),or(${handlingOr}))`);
+  }
+  if (searchOr) return query.or(searchOr);
+  if (handlingOr) return query.or(handlingOr);
+  return query;
+}
+
 export function buildSearchOrFilter(q: string): string | null {
   const trimmed = q.trim();
   if (!trimmed) return null;
@@ -78,9 +123,8 @@ export async function fetchReturnRequestsForStaff(
   }
 
   const orFilter = buildSearchOrFilter(searchParams.get("q") || "");
-  if (orFilter) {
-    query = query.or(orFilter);
-  }
+  const handling = parseStaffHandlingFilter(searchParams);
+  query = applySearchAndHandlingFilters(query, orFilter, handling);
 
   const { data, error } = await query;
   return { data, error };

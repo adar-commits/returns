@@ -7,7 +7,7 @@ export default async function SettingsLayout({
   const session = await getStaffSession();
   if (!session) redirect("/staff/login");
   if (session.role !== "admin") {
-    redirect("/staff/requests?preset=today&message=settings_admin_only");
+    redirect("/staff/requests?preset=week&message=settings_admin_only");
   }
   return <>{children}</>;
 }

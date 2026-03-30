@@ -44,14 +44,26 @@ export default function StaffDashboardLayout({
             href={REQUESTS_HOME}
             style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}
           >
-            <Image
-              src="/hom-group-logo.png"
-              alt="HōM GROUP"
-              width={132}
-              height={36}
-              priority
-              style={{ height: "auto", width: "clamp(104px, 18vw, 132px)" }}
-            />
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: "#0a0a0a",
+                padding: "6px 12px",
+                borderRadius: 10,
+                lineHeight: 0,
+              }}
+            >
+              <Image
+                src="/hom-group-logo.png"
+                alt="hōM GROUP"
+                width={132}
+                height={31}
+                priority
+                sizes="132px"
+                style={{ height: "auto", width: "clamp(104px, 18vw, 132px)" }}
+              />
+            </span>
             <span
               style={{
                 fontSize: "0.7rem",

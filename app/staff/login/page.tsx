@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import {
   getStaffOAuthRedirectBase,
@@ -151,7 +152,15 @@ function StaffLoginForm() {
       <div className={styles.card}>
         <div className={styles.brandRow}>
           <div className={styles.logo} aria-hidden>
-            🧶
+            <Image
+              src="/hom-group-logo.png"
+              alt=""
+              width={220}
+              height={52}
+              priority
+              sizes="220px"
+              style={{ width: "100%", height: "auto", maxWidth: 220, display: "block" }}
+            />
           </div>
         </div>
         <p className={styles.brandText} style={{ textAlign: "center", marginBottom: "var(--space-2)" }}>

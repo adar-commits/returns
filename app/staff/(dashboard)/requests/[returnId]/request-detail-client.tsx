@@ -90,6 +90,17 @@ function paidAndQtyForSku(rawItems: RawOrderLine[], sku: string): { paid: number
   return { paid, qty: q };
 }
 
+function logisticsStatusPillClass(status: string, m: Record<string, string>): string {
+  if (status === "awaiting_payment") return m.statusPillPay;
+  if (status === "pending_approval" || status === "awaiting_confirm") return m.statusPillNeutral;
+  if (
+    ["confirmed", "pickup_awaiting", "received", "shipped", "in_transit", "delivered", "refunded"].includes(status)
+  ) {
+    return m.statusPillOk;
+  }
+  return m.statusPillNeutral;
+}
+
 export default function RequestDetailClient({ returnId }: { returnId: string }) {
   const [row, setRow] = useState<DetailRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,38 +185,41 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
         : "—";
   const paymentStatus = row.payment_status || (Number(row.amount_to_pay) > 0 ? "ממתין" : "—");
 
+  const createdShort = new Date(row.created_at).toLocaleDateString("he-IL", {
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+  });
+  const branchLabel =
+    (order?.branch != null ? String(order.branch) : null) || (row.branch_id ? String(row.branch_id) : null);
+
   return (
-    <>
+    <div className={styles.detailPageWrap}>
       <Link href="/staff/requests" className={styles.backLink}>
         ← חזרה לכל הבקשות
       </Link>
 
-      <header className={styles.detailHeader}>
-        <div>
-          <h1 className={styles.detailTitle}>בקשה {row.reference_code || row.return_id}</h1>
-          <p className={styles.detailMeta}>
-            מזהה מערכת: <span dir="ltr">{row.return_id}</span>
-            {" · "}
-            נוצר: {new Date(row.created_at).toLocaleString("he-IL")} · עודכן: {new Date(row.updated_at).toLocaleString("he-IL")}
-            {row.branch_id ? ` · סניף: ${row.branch_id}` : ""}
-          </p>
-          <p className={styles.detailMeta} style={{ marginTop: "var(--space-2)" }}>
-            <span className={`${styles.badge} ${styles.badgeMuted}`} style={{ marginInlineEnd: "var(--space-2)" }}>
-              סטטוס מערכת: {RETURN_STATUS_HE[row.status] || row.status}
-            </span>
-            {row.staff_handling ? (
-              <span className={`${styles.badge} ${styles.badgeGreen}`}>
-                טיפול: {STAFF_HANDLING_HE[row.staff_handling] || row.staff_handling}
+      <header className={styles.detailHeroCard}>
+        <div className={styles.detailHeroTop}>
+          <div style={{ minWidth: 0 }}>
+            <h1 className={styles.detailHeroId}>{row.reference_code || row.return_id}</h1>
+            <div className={styles.detailHeroMetaRow}>
+              <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
+                סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
               </span>
-            ) : (
-              <span className={`${styles.badge} ${styles.badgeMuted}`}>טיפול: לא סומן</span>
-            )}
-          </p>
-        </div>
+              <span className={styles.detailHeroDate}>{createdShort}</span>
+              {branchLabel ? <span className={styles.detailHeroDate}>{branchLabel}</span> : null}
+            </div>
+            <p className={styles.detailHeroSystemId}>
+              מזהה מערכת: <span dir="ltr">{row.return_id}</span>
+              {" · "}
+              עודכן: {new Date(row.updated_at).toLocaleString("he-IL")}
+            </p>
+          </div>
         <div className={styles.actions}>
           <button
             type="button"
-            className={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
+            className={`${styles.actionBtn} ${styles.actionBtnOutlineBrand}`}
             disabled={saving}
             onClick={() => patchHandling("in_progress")}
           >
@@ -227,163 +241,158 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
             סמן הושלם
           </button>
         </div>
+        </div>
+        {row.staff_handling ? (
+          <div className={styles.detailHeroBadges}>
+            <span className={`${styles.statusPill} ${styles.statusPillNeutral}`}>
+              טיפול צוות: {STAFF_HANDLING_HE[row.staff_handling] || row.staff_handling}
+            </span>
+          </div>
+        ) : null}
       </header>
 
       <div className={styles.twoCol}>
         <div>
-          <section className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>סיכום בקשה</h2>
-            <p className={styles.detailMeta} style={{ marginBottom: "var(--space-4)" }}>
+          <section className={styles.detailSection}>
+            <h2 className={styles.detailSectionTitle}>סיכום בקשה</h2>
+            <p className={styles.detailSectionLead}>
               סוג: {RETURN_TYPE_HE[row.type] || row.type} · הזמנה:{" "}
-              <span dir="ltr" style={{ display: "inline-block" }}>
-                {row.order_id}
-              </span>
+              <span dir="ltr">{row.order_id}</span>
             </p>
-            <table className={styles.payTable}>
-              <thead>
-                <tr>
-                  <th>פריט מוחזר (מק״ט)</th>
-                  <th>פריט חדש / החלפה</th>
-                  <th style={{ width: 64 }}>כמות</th>
-                  <th style={{ minWidth: 120 }}>הפרש / זיכוי</th>
-                  <th style={{ width: 72 }}>תמונה</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(row.items || []).map((it, i) => {
-                  const detail =
-                    itemsDetail && itemsDetail.length === (row.items?.length ?? 0)
-                      ? itemsDetail[i]
-                      : itemsDetail?.find((x) => String(x.sku) === it.sku);
-                  const { paid, qty: qtyFromOrder } = paidAndQtyForSku(rawItems, it.sku);
-                  const ri = rawItems.find((r) => r.sku === it.sku);
-                  const returnedName =
-                    detail?.product_name ||
-                    it.product_name ||
-                    (ri?.product_name as string | undefined) ||
-                    (ri?.partname as string | undefined) ||
-                    it.sku;
-                  const qty = detail?.qty ?? qtyFromOrder;
-                  const isReplace = it.action === "replace" || detail?.action_type === "replace";
-                  let priceDiff = detail?.price_diff;
-                  if (priceDiff == null) {
-                    if (it.action === "return" && paid > 0) priceDiff = -paid;
-                    else if (it.action === "replace" && (paid > 0 || it.size_price != null)) {
-                      const np = it.size_price != null ? Number(it.size_price) : paid;
-                      priceDiff = np - paid;
-                    }
+            <div className={styles.itemLineList} dir="rtl">
+              {(row.items || []).map((it, i) => {
+                const detail =
+                  itemsDetail && itemsDetail.length === (row.items?.length ?? 0)
+                    ? itemsDetail[i]
+                    : itemsDetail?.find((x) => String(x.sku) === it.sku);
+                const { paid, qty: qtyFromOrder } = paidAndQtyForSku(rawItems, it.sku);
+                const ri = rawItems.find((r) => r.sku === it.sku);
+                const returnedName =
+                  detail?.product_name ||
+                  it.product_name ||
+                  (ri?.product_name as string | undefined) ||
+                  (ri?.partname as string | undefined) ||
+                  it.sku;
+                const qty = Math.max(1, Number(detail?.qty ?? qtyFromOrder) || 1);
+                const isReplace = it.action === "replace" || detail?.action_type === "replace";
+                let priceDiff = detail?.price_diff;
+                if (priceDiff == null) {
+                  if (it.action === "return" && paid > 0) priceDiff = -paid;
+                  else if (it.action === "replace" && (paid > 0 || it.size_price != null)) {
+                    const np = it.size_price != null ? Number(it.size_price) : paid;
+                    priceDiff = np - paid;
                   }
-                  const replacementParts = [
-                    isReplace ? detail?.new_size_label || it.size_label : null,
-                    isReplace && detail?.new_size_id ? `מזהה: ${detail.new_size_id}` : null,
-                    isReplace && detail?.new_size_price != null ? `מחיר: ${formatIlsDetailed(Number(detail.new_size_price))}` : null,
-                  ].filter(Boolean);
-                  const replacementLine =
-                    isReplace && replacementParts.length > 0 ? replacementParts.join(" · ") : isReplace ? "החלפה" : "—";
-                  const imageUrl = typeof detail?.image_url === "string" ? detail.image_url.trim() : "";
-                  const productUrl = typeof detail?.product_url === "string" ? detail.product_url.trim() : "";
-                  return (
-                    <tr key={`${it.sku}-${i}`}>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>
-                          {returnedName}{" "}
-                          <span className={styles.detailMeta} style={{ fontWeight: 500 }}>
-                            (מק״ט: <span dir="ltr">{it.sku}</span>)
-                          </span>
+                }
+                const replacementParts = [
+                  isReplace ? detail?.new_size_label || it.size_label : null,
+                  isReplace && detail?.new_size_id ? `מזהה: ${detail.new_size_id}` : null,
+                  isReplace && detail?.new_size_price != null ? `מחיר: ${formatIlsDetailed(Number(detail.new_size_price))}` : null,
+                ].filter(Boolean);
+                const replacementLine =
+                  isReplace && replacementParts.length > 0 ? replacementParts.join(" · ") : isReplace ? "החלפה" : "—";
+                const imageUrl = typeof detail?.image_url === "string" ? detail.image_url.trim() : "";
+                const productUrl = typeof detail?.product_url === "string" ? detail.product_url.trim() : "";
+                const unitPaid = qty > 0 ? paid / qty : paid;
+                const unitPriceLabel =
+                  paid > 0 ? `מחיר: ${formatIlsDetailed(unitPaid)} ₪ × ${qty}` : `כמות: ${qty}`;
+                const lineAlt = i % 2 === 1;
+                const diffSummary = formatLineDiff(priceDiff ?? null);
+                const hasNumericDiff =
+                  priceDiff != null && !Number.isNaN(Number(priceDiff)) && Number(priceDiff) !== 0;
+                return (
+                  <div key={`${it.sku}-${i}`} className={`${styles.itemLine} ${lineAlt ? styles.itemLineAlt : ""}`}>
+                    <div className={styles.itemLineThumb}>
+                      {imageUrl ? (
+                        <a href={productUrl || imageUrl} target="_blank" rel="noopener noreferrer">
+                          <img src={imageUrl} alt="" />
+                        </a>
+                      ) : (
+                        <span className={styles.itemLinePlaceholder}>אין תמונה</span>
+                      )}
+                    </div>
+                    <div className={styles.itemLineBody}>
+                      <div className={styles.itemLineName}>{returnedName}</div>
+                      <div className={styles.itemLineSku} dir="ltr">
+                        {it.sku}
+                      </div>
+                      <div className={styles.itemLineSub}>{unitPriceLabel}</div>
+                      <span className={`${styles.itemLineTag} ${isReplace ? styles.itemLineTagReplace : ""}`}>
+                        {isReplace ? "החלפה" : "החזרה"}
+                      </span>
+                      {isReplace ? (
+                        <div className={styles.itemLineSub}>
+                          <strong>החלפה:</strong> {replacementLine}
                         </div>
-                        <div className={styles.detailMeta} style={{ marginTop: "var(--space-1)" }}>
-                          {it.action === "replace" ? "החלפה — פריט מקורי מוחזר" : "החזרה"}
-                        </div>
-                        {productUrl ? (
-                          <div className={styles.detailMeta} style={{ marginTop: "var(--space-1)" }}>
-                            <a href={productUrl} target="_blank" rel="noopener noreferrer" dir="ltr">
-                              דף מוצר
-                            </a>
-                          </div>
-                        ) : null}
-                      </td>
-                      <td dir="rtl" style={{ verticalAlign: "top" }}>
-                        <span style={{ fontWeight: isReplace ? 600 : 400, color: isReplace ? "var(--color-text)" : "var(--color-text-muted)" }}>
-                          {replacementLine}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "center", fontWeight: 600 }}>{qty}</td>
-                      <td style={{ fontWeight: 700 }}>{formatLineDiff(priceDiff ?? null)}</td>
-                      <td style={{ width: 72, verticalAlign: "top" }}>
-                        {imageUrl ? (
-                          <a href={productUrl || imageUrl} target="_blank" rel="noopener noreferrer">
-                            <img
-                              src={imageUrl}
-                              alt=""
-                              style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6, display: "block" }}
-                            />
+                      ) : null}
+                      {productUrl ? (
+                        <div className={styles.itemLineLink}>
+                          <a href={productUrl} target="_blank" rel="noopener noreferrer">
+                            דף מוצר
                           </a>
-                        ) : (
-                          <span className={styles.detailMeta}>—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div style={{ marginTop: "var(--space-4)", textAlign: "right" }}>
-              <p className={styles.detailMeta}>דמי משלוח: {formatIlsDetailed(Number(row.shipping_fee))}</p>
-              <p style={{ fontWeight: 800, marginTop: "var(--space-2)" }}>
-                סה״כ לתשלום: {formatIlsDetailed(Number(row.amount_to_pay))}
-              </p>
-              <p className={styles.detailMeta}>זיכוי צפוי: {formatIlsDetailed(Number(row.amount_refund))}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className={styles.itemLinePriceCol}>
+                      <div className={styles.itemLinePriceValue} dir="ltr">
+                        {hasNumericDiff ? `₪ ${formatIlsDetailed(Math.abs(Number(priceDiff)))}` : "—"}
+                      </div>
+                      <div className={styles.itemLineQty}>{diffSummary}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className={styles.summaryTotals}>
+              <p className={styles.summaryTotalsRow}>דמי משלוח: {formatIlsDetailed(Number(row.shipping_fee))}</p>
+              <p className={styles.summaryTotalsStrong}>סה״כ לתשלום: {formatIlsDetailed(Number(row.amount_to_pay))}</p>
+              <p className={styles.summaryTotalsRow}>זיכוי צפוי: {formatIlsDetailed(Number(row.amount_refund))}</p>
               {row.replacement_order_id ? (
-                <p className={styles.detailMeta}>
+                <p className={styles.summaryTotalsRow}>
                   הזמנת החלפה: <span dir="ltr">{row.replacement_order_id}</span>
                 </p>
               ) : null}
             </div>
           </section>
 
-          <section className={styles.sectionCard}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-4)" }}>
-              <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
-                תשלומים בבקשה
-              </h2>
-            </div>
-            <table className={styles.payTable}>
-              <thead>
-                <tr>
-                  <th>סטטוס</th>
-                  <th>סכום</th>
-                  <th>תיאור</th>
-                  <th>סוג</th>
-                  <th>#</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hasPaymentRow ? (
-                  <tr>
-                    <td>{paymentStatus}</td>
-                    <td style={{ fontWeight: 700 }}>{paymentAmount}</td>
-                    <td dir="ltr" style={{ textAlign: "right" }}>
-                      {String(paymentDesc)}
-                    </td>
-                    <td>{paymentTypeLabel}</td>
-                    <td>1</td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-            {!hasPaymentRow ? <div className={styles.payEmpty}>אין עדיין חיובים</div> : null}
+          <section className={styles.detailSection}>
+            <h2 className={styles.detailSectionTitle}>תשלומים בבקשה</h2>
+            {hasPaymentRow ? (
+              <div className={styles.itemLineList} dir="rtl">
+                <div className={styles.itemLine}>
+                  <div className={styles.itemLineBody}>
+                    <div className={styles.itemLineName}>{paymentTypeLabel}</div>
+                    <div className={styles.itemLineSub}>
+                      סטטוס: {paymentStatus}
+                      {paymentDesc && paymentDesc !== "—" ? (
+                        <>
+                          {" · "}
+                          <span dir="ltr">{String(paymentDesc)}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className={styles.itemLinePriceCol}>
+                    <div className={styles.itemLinePriceValue} dir="ltr">
+                      {paymentAmount !== "—" ? paymentAmount : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.payEmpty}>אין עדיין חיובים</div>
+            )}
             <div className={styles.payFooter}>יתרה לתשלום: {formatIlsDetailed(Number(row.amount_to_pay))}</div>
           </section>
         </div>
 
         <div>
-          <section className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>הערות</h2>
-            <div className={styles.notesBox}>{notes || "אין הערות"}</div>
+          <section className={styles.detailSection}>
+            <h2 className={styles.detailSectionTitle}>הערות להזמנה</h2>
+            <div className={styles.notesBoxElevated}>{notes || "אין הערות"}</div>
           </section>
 
-          <section className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>פרטי לקוח</h2>
+          <section className={styles.detailSection}>
+            <h2 className={styles.detailSectionTitle}>פרטי לקוח</h2>
             <div className={styles.cardMeta} style={{ border: "none", padding: 0 }}>
               <div className={styles.cardMetaRow}>
                 <span>שם</span>
@@ -408,8 +417,8 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
             </div>
           </section>
 
-          <section className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>מטא־דאטה</h2>
+          <section className={styles.detailSection}>
+            <h2 className={styles.detailSectionTitle}>מטא־דאטה</h2>
             <div className={styles.cardMeta} style={{ border: "none", padding: 0 }}>
               {order?.branch != null ? (
                 <div className={styles.cardMetaRow}>
@@ -433,6 +442,6 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
           </section>
         </div>
       </div>
-    </>
+    </div>
   );
 }

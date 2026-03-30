@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStaffSession } from "@/lib/staff-session";
 import { createServerClient } from "@/lib/supabase-server";
+import { resolveStaffDisplayName } from "@/lib/staff-display-name";
+import { augmentWebhookPayloadForStaffView } from "@/lib/staff-payload-augment";
 import {
   applyStaffBranchFilter,
   fetchReturnRequestByReturnId,
@@ -23,7 +25,13 @@ export async function GET(_request: Request, context: { params: { returnId: stri
   if (!data) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json({ request: data });
+  const { webhook_payload } = await augmentWebhookPayloadForStaffView(supabase, {
+    return_id: data.return_id,
+    shipping_fee: Number(data.shipping_fee),
+    webhook_payload: data.webhook_payload as Record<string, unknown> | null,
+  });
+  const request = { ...data, webhook_payload };
+  return NextResponse.json({ request });
 }
 
 export async function PATCH(request: Request, context: { params: { returnId: string } }) {
@@ -46,11 +54,18 @@ export async function PATCH(request: Request, context: { params: { returnId: str
     return NextResponse.json({ error: "staff_handling must be in_progress or completed" }, { status: 400 });
   }
   const supabase = createServerClient();
+  const updatedByName = await resolveStaffDisplayName(supabase, staff.userId);
   const { key, byReference } = normalizeStaffRequestLookupKey(decodeURIComponent(returnId));
-  let updateQuery = supabase.from("return_requests").update({ staff_handling: sh as StaffHandlingStatus });
+  let updateQuery = supabase.from("return_requests").update({
+    staff_handling: sh as StaffHandlingStatus,
+    updated_by_user_id: staff.userId,
+    updated_by_display_name: updatedByName,
+  });
   updateQuery = byReference ? updateQuery.eq("reference_code", key) : updateQuery.eq("return_id", key);
   updateQuery = applyStaffBranchFilter(updateQuery, staff);
-  const { data, error } = await updateQuery.select("return_id, staff_handling, status, updated_at").maybeSingle();
+  const { data, error } = await updateQuery
+    .select("return_id, staff_handling, status, updated_at, updated_by_user_id, updated_by_display_name")
+    .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) {
     return NextResponse.json({ error: "Not found or forbidden" }, { status: 404 });

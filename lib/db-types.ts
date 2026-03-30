@@ -66,6 +66,9 @@ export interface ReturnRequestRow {
   customer_address: CustomerAddress | null;
   webhook_payload: Record<string, unknown> | null;
   staff_handling: StaffHandlingStatus | null;
+  /** Set when staff updates the row (e.g. staff_handling). */
+  updated_by_user_id?: string | null;
+  updated_by_display_name?: string | null;
   created_at: string;
   updated_at: string;
 }

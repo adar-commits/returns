@@ -67,6 +67,12 @@ export async function enrichItemsDetailWithDisplayMedia(
     const actionType = typeof row.action_type === "string" ? row.action_type : undefined;
     const raw = rawLineBySku(rawItems, sku);
 
+    let replacementSku: string | undefined;
+    if (actionType === "replace" && newSizeId && sizes.length) {
+      const m = sizes.find((s) => String(s.id) === String(newSizeId));
+      if (m?.sku?.trim()) replacementSku = m.sku.trim();
+    }
+
     let imageUrl = imageForLine(sizes, newSizeId, actionType);
     if (!imageUrl) imageUrl = pickRawLineImage(raw);
 
@@ -75,6 +81,7 @@ export async function enrichItemsDetailWithDisplayMedia(
     const out: ItemsDetailEntry = { ...row };
     if (imageUrl) out.image_url = imageUrl;
     if (productUrl) out.product_url = productUrl;
+    if (replacementSku) out.replacement_sku = replacementSku;
     return out;
   });
 }
@@ -82,10 +89,13 @@ export async function enrichItemsDetailWithDisplayMedia(
 function itemsGainedDisplayFields(prev: ItemsDetailEntry[], next: ItemsDetailEntry[]): boolean {
   return next.some((r, i) => {
     const p = prev[i];
-    if (!p) return Boolean(r.image_url || r.product_url);
+    if (!p) return Boolean(r.image_url || r.product_url || r.replacement_sku);
     const gotImg = Boolean(r.image_url && r.image_url !== p.image_url);
     const gotUrl = Boolean(r.product_url && r.product_url !== p.product_url);
-    return gotImg || gotUrl;
+    const prevSku = p.replacement_sku != null ? String(p.replacement_sku) : "";
+    const nextSku = r.replacement_sku != null ? String(r.replacement_sku) : "";
+    const gotRepl = Boolean(nextSku && nextSku !== prevSku);
+    return gotImg || gotUrl || gotRepl;
   });
 }
 
@@ -94,9 +104,10 @@ function itemsGainedDisplayFields(prev: ItemsDetailEntry[], next: ItemsDetailEnt
  * Only mutates payload when new display fields appear.
  */
 export async function enrichWebhookPayloadDisplayMedia(
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  opts?: { force?: boolean }
 ): Promise<Record<string, unknown>> {
-  if (payload.display_media_enriched_at) return payload;
+  if (!opts?.force && payload.display_media_enriched_at) return payload;
   const items = payload.items_detail;
   if (!Array.isArray(items) || items.length === 0) return payload;
 

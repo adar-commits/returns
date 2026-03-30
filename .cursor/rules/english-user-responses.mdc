@@ -1,0 +1,10 @@
+---
+description: All assistant communication with the user must be in English
+alwaysApply: true
+---
+
+# User-facing language: English only
+
+- **Always write replies to the operator in English**, including explanations, summaries, commit messages described in chat, and any clarifying question blocks.
+- **Code, UI copy, and user-visible strings** in the product may stay in the language required by the product (e.g. Hebrew for customer-facing UI) when that is the correct choice for the codebase — but the **conversation with you** stays in English.
+- If a file, comment, or doc must be in another language for business reasons, say so briefly in English and proceed.

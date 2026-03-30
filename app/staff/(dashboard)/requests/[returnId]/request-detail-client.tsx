@@ -283,6 +283,12 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
   const shipFeeFromPayload = shipping?.fee != null ? Number(shipping.fee) : null;
   const shipFeeDisplay = shipFeeFromPayload != null && !Number.isNaN(shipFeeFromPayload) ? shipFeeFromPayload : Number(row.shipping_fee);
 
+  /** Same net as PayPlus /api/return-request: product delta + shipping − product refunds. */
+  const totalChargeDue = Math.max(
+    0,
+    Number(row.amount_to_pay) + Number(row.shipping_fee) - Number(row.amount_refund)
+  );
+
   return (
     <div className={styles.detailPageWrap}>
       <div className={styles.detailBackRow} dir="rtl">
@@ -404,7 +410,7 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                 const productUrl = typeof detail?.product_url === "string" ? detail.product_url.trim() : "";
                 const unitPaid = paidUnit;
                 const unitPriceLabel =
-                  paid > 0 ? `מחיר: ${formatIlsDetailed(unitPaid)} ₪ × ${qty}` : `כמות: ${qty}`;
+                  paid > 0 ? `מחיר: ${formatIlsDetailed(unitPaid)} × ${qty}` : `כמות: ${qty}`;
                 const lineAlt = i % 2 === 1;
                 const hasNumericDiff =
                   priceDiff != null && !Number.isNaN(Number(priceDiff)) && Number(priceDiff) !== 0;
@@ -418,35 +424,42 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                     </div>
                     <div className={styles.itemLineBody}>
                       <div className={styles.itemLineName}>
-                        {returnedName}{" "}
+                        {productUrl ? (
+                          <a
+                            href={productUrl}
+                            className={styles.itemLineTitleLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {returnedName}
+                          </a>
+                        ) : (
+                          returnedName
+                        )}{" "}
                         <span className={styles.itemLineNameSku} dir="ltr">
                           ({it.sku})
                         </span>
                       </div>
                       <div className={styles.itemLineSub}>{unitPriceLabel}</div>
                       {isReplace ? (
-                        <div className={styles.itemLineSub}>
-                          <strong>מידה חדשה:</strong> {newSizeLabel || "—"}
-                          {replSku ? (
-                            <>
-                              {" · "}
-                              מזהה: {replSku}
-                            </>
-                          ) : null}
+                        <>
+                          <div className={styles.itemLineSub}>
+                            <strong>מידה חדשה:</strong> {newSizeLabel || "—"}
+                            {replSku ? (
+                              <>
+                                {" "}
+                                <span dir="ltr">(מזהה: {replSku})</span>
+                              </>
+                            ) : null}
+                          </div>
                           {detail?.new_size_price != null ? (
-                            <>
-                              {" · "}
-                              מחיר: {formatIlsDetailed(Number(detail.new_size_price))}
-                            </>
+                            <div className={styles.itemLineSub}>
+                              <span className={styles.itemLinePriceWord}>מחיר</span>
+                              {": "}
+                              {formatIlsDetailed(Number(detail.new_size_price))}
+                            </div>
                           ) : null}
-                        </div>
-                      ) : null}
-                      {productUrl ? (
-                        <div className={styles.itemLineLink}>
-                          <a href={productUrl} target="_blank" rel="noopener noreferrer">
-                            דף מוצר
-                          </a>
-                        </div>
+                        </>
                       ) : null}
                     </div>
                     <div className={styles.itemLinePriceCol}>
@@ -456,11 +469,14 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                           dir="ltr"
                           title="מחיר יחידה ששולם בהזמנה המקורית"
                         >
-                          ₪ {formatIlsDetailed(unitPaid)}
+                          {formatIlsDetailed(unitPaid)}
                         </div>
                       ) : null}
                       {hasNumericDiff ? (
                         <>
+                          <div className={styles.itemLinePriceValue} dir="ltr">
+                            {formatIlsDetailed(Math.abs(Number(priceDiff)))}
+                          </div>
                           <span
                             className={`${styles.itemDiffLabel} ${
                               Number(priceDiff) < 0 ? styles.itemDiffLabelCredit : styles.itemDiffLabelPay
@@ -468,9 +484,6 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                           >
                             {Number(priceDiff) < 0 ? "זיכוי" : "תוספת תשלום"}
                           </span>
-                          <div className={styles.itemLinePriceValue} dir="ltr">
-                            ₪ {formatIlsDetailed(Math.abs(Number(priceDiff)))}
-                          </div>
                         </>
                       ) : (
                         <div className={styles.itemLinePriceValue} dir="ltr">
@@ -483,9 +496,12 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
               })}
             </div>
             <div className={styles.summaryTotals}>
+              <p className={styles.summaryTotalsRow}>
+                תוספת מוצרים (סכום שורות): {formatIlsDetailed(Number(row.amount_to_pay))}
+              </p>
               <p className={styles.summaryTotalsRow}>דמי משלוח: {formatIlsDetailed(Number(row.shipping_fee))}</p>
-              <p className={styles.summaryTotalsStrong}>סה״כ לתשלום: {formatIlsDetailed(Number(row.amount_to_pay))}</p>
-              <p className={styles.summaryTotalsRow}>זיכוי צפוי: {formatIlsDetailed(Number(row.amount_refund))}</p>
+              <p className={styles.summaryTotalsStrong}>סה״כ לתשלום: {formatIlsDetailed(totalChargeDue)}</p>
+              <p className={styles.summaryTotalsRow}>זיכוי צפוי (מוצרים): {formatIlsDetailed(Number(row.amount_refund))}</p>
               {row.replacement_order_id ? (
                 <p className={styles.summaryTotalsRow}>
                   הזמנת החלפה: <span dir="ltr">{row.replacement_order_id}</span>
@@ -588,7 +604,7 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
             ) : (
               <div className={styles.payEmpty}>אין עדיין חיובים</div>
             )}
-            <div className={styles.payFooter}>יתרה לתשלום: {formatIlsDetailed(Number(row.amount_to_pay))}</div>
+            <div className={styles.payFooter}>יתרה לתשלום (כולל משלוח): {formatIlsDetailed(totalChargeDue)}</div>
           </section>
         </div>
 

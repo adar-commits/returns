@@ -183,3 +183,13 @@
   border-radius: var(--radius-sm);
   color: #a5f3fc;
 }
+
+.devOauthHintWarn {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #fde68a;
+  line-height: 1.45;
+}

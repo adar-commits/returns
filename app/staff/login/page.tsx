@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { getStaffOAuthRedirectBase, getStaffOAuthRedirectTo } from "@/lib/staff-oauth-redirect";
 import styles from "./staff-login.module.css";
 
 function GoogleIcon() {
@@ -51,6 +52,11 @@ function StaffLoginForm() {
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const expectedGoogleRedirect = supabaseGoogleRedirectUri();
+  const oauthRedirectBase =
+    typeof window !== "undefined" ? getStaffOAuthRedirectBase() : "";
+  const oauthRedirectToFull =
+    typeof window !== "undefined" ? getStaffOAuthRedirectTo() : "";
+  const envOverride = Boolean(process.env.NEXT_PUBLIC_STAFF_OAUTH_REDIRECT_ORIGIN?.trim());
 
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -67,9 +73,7 @@ function StaffLoginForm() {
     setGoogleLoading(true);
     try {
       const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback?next=/staff`
-          : "/auth/callback?next=/staff";
+        typeof window !== "undefined" ? getStaffOAuthRedirectTo() : "/auth/callback?next=/staff";
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo },
@@ -113,9 +117,36 @@ function StaffLoginForm() {
 
         {process.env.NODE_ENV === "development" && expectedGoogleRedirect ? (
           <div className={styles.devOauthHint} dir="ltr">
-            <strong>Dev — Google Cloud Console</strong>
+            <strong>Dev — stay on localhost after Google</strong>
             <p className={styles.devOauthHintP}>
-              Authorized redirect URIs → add this line exactly (same OAuth client as in Supabase → Auth → Google):
+              Supabase → Authentication → URL Configuration → <strong>Redirect URLs</strong> must include this{" "}
+              <strong>exact</strong> app callback (copy/paste):
+            </p>
+            <code className={styles.devOauthCode}>{oauthRedirectToFull}</code>
+            <p className={styles.devOauthHintP}>
+              Browser tab origin: <code>{typeof window !== "undefined" ? window.location.origin : "—"}</code>
+              {envOverride ? (
+                <>
+                  {" "}
+                  · OAuth return base (from <code>NEXT_PUBLIC_STAFF_OAUTH_REDIRECT_ORIGIN</code>):{" "}
+                  <code>{oauthRedirectBase}</code>
+                </>
+              ) : null}
+            </p>
+            {!envOverride &&
+            typeof window !== "undefined" &&
+            window.location.hostname !== "localhost" &&
+            window.location.hostname !== "127.0.0.1" ? (
+              <p className={styles.devOauthHintWarn}>
+                You are not on localhost. If you meant to test locally, open{" "}
+                <code>http://localhost:3000/staff/login</code> or set{" "}
+                <code>NEXT_PUBLIC_STAFF_OAUTH_REDIRECT_ORIGIN=http://localhost:3000</code> in <code>.env.local</code> and
+                whitelist that callback URL above.
+              </p>
+            ) : null}
+            <strong style={{ display: "block", marginTop: "var(--space-3)" }}>Dev — Google Cloud Console</strong>
+            <p className={styles.devOauthHintP}>
+              Authorized redirect URIs → add (same OAuth client as in Supabase → Auth → Google):
             </p>
             <code className={styles.devOauthCode}>{expectedGoogleRedirect}</code>
             <p className={styles.devOauthHintP}>Must be <code>.supabase.co</code>, not <code>.supabase.co.il</code>.</p>

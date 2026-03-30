@@ -12,6 +12,27 @@ import {
 } from "@/lib/staff-backoffice-he";
 import type { ReturnRequestItem } from "@/lib/db-types";
 
+type RawOrderLine = {
+  sku?: string;
+  qty?: number | string;
+  price?: number | string;
+  product_name?: string;
+  partname?: string;
+  [key: string]: unknown;
+};
+
+type ItemsDetailRow = {
+  sku?: string;
+  product_name?: string;
+  qty?: number;
+  action_type?: string;
+  paid_price?: number;
+  new_size_id?: string | null;
+  new_size_label?: string | null;
+  new_size_price?: number | null;
+  price_diff?: number | null;
+};
+
 type DetailRow = {
   id: string;
   return_id: string;
@@ -49,6 +70,21 @@ function notesText(addr: Record<string, unknown> | null, payload: Record<string,
   const p = (payload?.notes as string | undefined)?.trim();
   if (p) return p;
   return "";
+}
+
+function formatLineDiff(diff: number | null | undefined): string {
+  if (diff == null || Number.isNaN(Number(diff))) return "—";
+  const d = Number(diff);
+  if (d === 0) return "אין הפרש";
+  if (d > 0) return `הפרש לתשלום ${formatIlsDetailed(d)}`;
+  return `זיכוי ${formatIlsDetailed(-d)}`;
+}
+
+function paidAndQtyForSku(rawItems: RawOrderLine[], sku: string): { paid: number; qty: number } {
+  const ri = rawItems.find((r) => r.sku === sku);
+  const paid = Number(ri?.price ?? 0);
+  const q = Math.max(1, Number(ri?.qty ?? 1) || 1);
+  return { paid, qty: q };
 }
 
 export default function RequestDetailClient({ returnId }: { returnId: string }) {
@@ -117,7 +153,8 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
   const notes = notesText(row.customer_address, row.webhook_payload);
   const order = row.webhook_payload?.order as Record<string, unknown> | undefined;
   const shipping = row.webhook_payload?.shipping as Record<string, unknown> | undefined;
-  const itemsDetail = row.webhook_payload?.items_detail as Array<Record<string, unknown>> | undefined;
+  const itemsDetail = row.webhook_payload?.items_detail as ItemsDetailRow[] | undefined;
+  const rawItems = (order?.raw_items as RawOrderLine[] | undefined) ?? [];
 
   const hasPaymentRow =
     Boolean(row.payplus_payment_id || row.payment_status) ||
@@ -183,25 +220,64 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
             <table className={styles.payTable}>
               <thead>
                 <tr>
-                  <th>סה״כ</th>
-                  <th>פרטים</th>
+                  <th>פריט מוחזר (מק״ט)</th>
+                  <th>פריט חדש / החלפה</th>
+                  <th style={{ width: 64 }}>כמות</th>
+                  <th style={{ minWidth: 120 }}>הפרש / זיכוי</th>
                   <th style={{ width: 72 }}>תמונה</th>
                 </tr>
               </thead>
               <tbody>
                 {(row.items || []).map((it, i) => {
-                  const rich = itemsDetail?.find((x) => x.sku === it.sku);
-                  const title = (rich?.product_name as string) || it.product_name || it.sku;
-                  const line = `${it.action === "replace" ? "החלפה" : "החזרה"} · ${title}`;
+                  const detail =
+                    itemsDetail && itemsDetail.length === (row.items?.length ?? 0)
+                      ? itemsDetail[i]
+                      : itemsDetail?.find((x) => String(x.sku) === it.sku);
+                  const { paid, qty: qtyFromOrder } = paidAndQtyForSku(rawItems, it.sku);
+                  const ri = rawItems.find((r) => r.sku === it.sku);
+                  const returnedName =
+                    detail?.product_name ||
+                    it.product_name ||
+                    (ri?.product_name as string | undefined) ||
+                    (ri?.partname as string | undefined) ||
+                    it.sku;
+                  const qty = detail?.qty ?? qtyFromOrder;
+                  const isReplace = it.action === "replace" || detail?.action_type === "replace";
+                  let priceDiff = detail?.price_diff;
+                  if (priceDiff == null) {
+                    if (it.action === "return" && paid > 0) priceDiff = -paid;
+                    else if (it.action === "replace" && (paid > 0 || it.size_price != null)) {
+                      const np = it.size_price != null ? Number(it.size_price) : paid;
+                      priceDiff = np - paid;
+                    }
+                  }
+                  const replacementParts = [
+                    isReplace ? detail?.new_size_label || it.size_label : null,
+                    isReplace && detail?.new_size_id ? `מזהה: ${detail.new_size_id}` : null,
+                    isReplace && detail?.new_size_price != null ? `מחיר: ${formatIlsDetailed(Number(detail.new_size_price))}` : null,
+                  ].filter(Boolean);
+                  const replacementLine =
+                    isReplace && replacementParts.length > 0 ? replacementParts.join(" · ") : isReplace ? "החלפה" : "—";
                   return (
                     <tr key={`${it.sku}-${i}`}>
-                      <td style={{ fontWeight: 700 }}>{it.price != null ? formatIlsDetailed(Number(it.price)) : "—"}</td>
                       <td>
-                        <div>{line}</div>
+                        <div style={{ fontWeight: 600 }}>
+                          {returnedName}{" "}
+                          <span className={styles.detailMeta} style={{ fontWeight: 500 }}>
+                            (מק״ט: <span dir="ltr">{it.sku}</span>)
+                          </span>
+                        </div>
                         <div className={styles.detailMeta} style={{ marginTop: "var(--space-1)" }}>
-                          מק&quot;ט: <span dir="ltr">{it.sku}</span>
+                          {it.action === "replace" ? "החלפה — פריט מקורי מוחזר" : "החזרה"}
                         </div>
                       </td>
+                      <td dir="rtl" style={{ verticalAlign: "top" }}>
+                        <span style={{ fontWeight: isReplace ? 600 : 400, color: isReplace ? "var(--color-text)" : "var(--color-text-muted)" }}>
+                          {replacementLine}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "center", fontWeight: 600 }}>{qty}</td>
+                      <td style={{ fontWeight: 700 }}>{formatLineDiff(priceDiff ?? null)}</td>
                       <td>—</td>
                     </tr>
                   );

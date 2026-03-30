@@ -75,6 +75,10 @@ export interface ReturnRequestItem {
   selected_size_id?: string;
   product_name?: string;
   price?: number;
+  /** Replacement size label when action is replace */
+  size_label?: string;
+  /** Replacement variant price when action is replace */
+  size_price?: number;
 }
 
 export interface CustomerAddress {

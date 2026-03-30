@@ -139,8 +139,19 @@ export async function POST(request: Request) {
       const productName =
         orderItem?.product_name || orderItem?.partname || c.sku || "פריט";
       const paidPrice = Number(orderItem?.price ?? 0);
-      const newPrice = c.size_price != null ? Number(c.size_price) : null;
-      const priceDiff = newPrice != null ? newPrice - paidPrice : null;
+      const qty = Math.max(1, Number(orderItem?.qty ?? 1) || 1);
+      const newPrice =
+        c.action === "replace"
+          ? c.size_price != null
+            ? Number(c.size_price)
+            : paidPrice
+          : null;
+      const priceDiff =
+        c.action === "return"
+          ? -paidPrice
+          : newPrice != null
+            ? newPrice - paidPrice
+            : 0;
       const isOtherReason = c.reason_id != null && returnReasons[Number(c.reason_id)] === "אחר";
       const reasonText =
         isOtherReason && c.reason_text?.trim()
@@ -151,12 +162,12 @@ export async function POST(request: Request) {
       return {
         sku: c.sku,
         product_name: productName,
-        qty: 1,
+        qty,
         action_type: c.action,
         paid_price: paidPrice,
         new_size_id: c.selected_size_id || null,
         new_size_label: c.size_label || null,
-        new_size_price: newPrice,
+        new_size_price: c.action === "replace" ? newPrice : null,
         price_diff: priceDiff,
         reason_id: c.reason_id || null,
         reason_text: reasonText,
@@ -218,8 +229,9 @@ export async function POST(request: Request) {
       _raw_choices: wizard.choices,
     };
 
+    await updateReturnRequestWebhookPayload(return_id, payload);
+
     if (totalToPay > 0) {
-      await updateReturnRequestWebhookPayload(return_id, payload);
       const successUrl = `${baseUrl}/api/payplus/success?return_id=${encodeURIComponent(return_id)}`;
       const failureUrl = `${baseUrl}/api/payplus/failure?return_id=${encodeURIComponent(return_id)}`;
       const linkResult = await generatePaymentLink({

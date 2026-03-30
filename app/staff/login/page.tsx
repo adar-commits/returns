@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect, useRef, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   getStaffOAuthRedirectBase,
@@ -41,6 +41,11 @@ const ERROR_HE: Record<string, string> = {
   missing_code: "חסר קוד אימות. נסו שוב.",
 };
 
+const EMAIL_LOGIN_ERROR_STATUS: Record<number, string> = {
+  401: "אימייל או סיסמה שגויים.",
+  403: "לחשבון הזה אין הרשאת צוות.",
+};
+
 function supabaseGoogleRedirectUri(): string | null {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   if (!raw) return null;
@@ -53,7 +58,11 @@ function supabaseGoogleRedirectUri(): string | null {
 }
 
 function StaffLoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -77,6 +86,36 @@ function StaffLoginForm() {
     if (!err) return;
     setError(ERROR_HE[err] || "משהו השתבש. נסו שוב.");
   }, [searchParams]);
+
+  async function signInWithEmail(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const trimmed = email.trim();
+    if (!trimmed || !password) {
+      setError("נא למלא אימייל וסיסמה.");
+      return;
+    }
+    setEmailLoading(true);
+    try {
+      const res = await fetch("/api/staff/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed, password }),
+      });
+      if (res.ok) {
+        router.push("/staff");
+        router.refresh();
+        return;
+      }
+      const msg =
+        EMAIL_LOGIN_ERROR_STATUS[res.status] || "ההתחברות נכשלה. נסו שוב.";
+      setError(msg);
+    } catch {
+      setError("ההתחברות נכשלה. נסו שוב.");
+    } finally {
+      setEmailLoading(false);
+    }
+  }
 
   async function signInWithGoogle() {
     if (shouldOfferProductionStaffLoginOnly()) {
@@ -121,8 +160,8 @@ function StaffLoginForm() {
         <h1 className={styles.headline}>ברוך הבא</h1>
         <p className={styles.sub}>
           {productionOnlyLocal
-            ? "התחברות Google לאזור הצוות מתבצעת באתר הייצור בלבד (אותו מקור לדפדפן ול־Supabase)."
-            : "התחברו עם Google כדי לגשת לאזור הצוות"}
+            ? "אימייל וסיסמה — כאן. Google — באתר הייצור בלבד (אותו מקור לדפדפן ול־Supabase)."
+            : "התחברו עם אימייל או עם Google לאזור הצוות"}
         </p>
 
         {productionOnlyLocal ? (
@@ -148,6 +187,46 @@ function StaffLoginForm() {
             )}
           </div>
         ) : null}
+
+        <form className={styles.emailForm} onSubmit={signInWithEmail} noValidate>
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor="staff-email">
+              אימייל
+            </label>
+            <input
+              id="staff-email"
+              className={styles.fieldInput}
+              type="email"
+              name="email"
+              autoComplete="username"
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+              disabled={emailLoading}
+            />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.fieldLabel} htmlFor="staff-password">
+              סיסמה
+            </label>
+            <input
+              id="staff-password"
+              className={styles.fieldInput}
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              disabled={emailLoading}
+            />
+          </div>
+          <button type="submit" className={styles.emailSubmit} disabled={emailLoading}>
+            {emailLoading ? "מתחברים…" : "כניסה"}
+          </button>
+        </form>
+
+        <div className={styles.divider} role="separator">
+          <span>או</span>
+        </div>
 
         <button
           type="button"

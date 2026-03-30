@@ -34,7 +34,7 @@ Entering the code **0000** at the OTP step logs the customer in without calling 
 
 ## Staff
 
-- **Login:** `/staff/login` — **Sign in with Google** only. Users must exist in `auth.users` and have a row in `staff_roles` (role: `admin`, `csr`, or `store_manager`; `branch_id` required for store_manager).
+- **Login:** `/staff/login` — **email + password** (`POST /api/staff/login`) or **Sign in with Google**. Users must exist in `auth.users` and have a row in `staff_roles` (role: `admin`, `csr`, or `store_manager`; `branch_id` required for store_manager). Email/password works on any host (including localhost); Google OAuth follows the same-origin / redirect URL rules described below.
 - **Staff entry:** `/staff/login` (not `/login`). Customer portal uses `/` and OTP — separate from staff Google sign-in.
 - **Production-only staff OAuth (recommended if localhost redirect URLs are painful):** Set **`NEXT_PUBLIC_STAFF_OAUTH_PRODUCTION_ONLY=true`** in `.env.local`. On localhost, `/staff/login` shows a button to open **`NEXT_PUBLIC_APP_URL/staff/login`**; complete Google sign-in there. In Supabase **Redirect URLs**, you only need your **production** (and preview, if you use them) app callback: `https://your-domain.com/auth/callback` — no localhost entry required for staff.
 - **Local dev with localhost OAuth:** Supabase only redirects to URLs listed under **Redirect URLs**. The app sends `redirectTo = <origin>/auth/callback` (no query string); the post-login path (`/staff`) is stored in `sessionStorage` until `/auth/callback` runs. Set **`NEXT_PUBLIC_STAFF_OAUTH_REDIRECT_ORIGIN`** when your tab origin differs from what you whitelisted. On `/staff/login` (dev), the gray box shows the exact callback URL to add in Supabase.

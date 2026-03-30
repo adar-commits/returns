@@ -80,11 +80,99 @@
 }
 
 .sub {
-  margin: 0 0 var(--space-8);
+  margin: 0 0 var(--space-6);
   font-size: var(--text-caption);
   color: rgba(244, 244, 245, 0.55);
   text-align: center;
   line-height: 1.5;
+}
+
+.emailForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: right;
+}
+
+.fieldLabel {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: rgba(244, 244, 245, 0.75);
+}
+
+.fieldInput {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.35);
+  color: #f4f4f5;
+  font-family: inherit;
+  font-size: var(--text-body);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.fieldInput::placeholder {
+  color: rgba(244, 244, 245, 0.35);
+}
+
+.fieldInput:focus {
+  border-color: rgba(94, 234, 212, 0.45);
+  box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.12);
+}
+
+.emailSubmit {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-5);
+  margin-top: var(--space-1);
+  border: none;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(155, 45, 48, 0.95) 0%, #7f1d1d 100%);
+  color: #fef2f2;
+  font-family: inherit;
+  font-size: var(--text-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.emailSubmit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.emailSubmit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 var(--space-6);
+  color: rgba(244, 244, 245, 0.4);
+  font-size: var(--text-small);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .googleBtn {

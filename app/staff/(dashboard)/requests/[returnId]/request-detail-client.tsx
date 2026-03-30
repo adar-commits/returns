@@ -434,9 +434,6 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                         </span>
                       </div>
                       <div className={styles.itemLineSub}>{unitPriceLabel}</div>
-                      <span className={`${styles.itemLineTag} ${isReplace ? styles.itemLineTagReplace : ""}`}>
-                        {isReplace ? "החלפה" : "החזרה"}
-                      </span>
                       {isReplace ? (
                         <div className={styles.itemLineSub}>
                           <strong>מידה חדשה:</strong> {newSizeLabel || "—"}

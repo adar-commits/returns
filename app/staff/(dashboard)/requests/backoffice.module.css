@@ -99,10 +99,10 @@
 }
 
 .segmentBtnActive {
-  background: #fecaca;
-  color: #7f1d1d;
-  border: 1px solid rgba(185, 28, 28, 0.22);
-  box-shadow: 0 2px 6px rgba(127, 29, 29, 0.12);
+  background: #fef3d2;
+  color: #0f172a;
+  border: 1px solid rgba(234, 179, 8, 0.42);
+  box-shadow: none;
 }
 
 .handlingRow {
@@ -156,10 +156,10 @@
 }
 
 .handlingChip:has(input:checked) {
-  background: #fecaca;
-  border-color: rgba(155, 45, 48, 0.45);
-  color: #7f1d1d;
-  box-shadow: 0 1px 3px rgba(127, 29, 29, 0.1);
+  background: #fef3d2;
+  border-color: rgba(234, 179, 8, 0.42);
+  color: #0f172a;
+  box-shadow: none;
 }
 
 .customDates {
@@ -275,7 +275,7 @@
   color: #5b21b6;
   border: 1px solid rgba(139, 92, 246, 0.22);
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(91, 33, 182, 0.08);
+  box-shadow: none;
 }
 
 .badges {
@@ -293,8 +293,9 @@
 }
 
 .badgeYellow {
-  background: #fef9c3;
-  color: #854d0e;
+  background: #fef3d2;
+  color: #0f172a;
+  border: 1px solid rgba(234, 179, 8, 0.42);
 }
 
 /* Brand-forward “success / closed” accent (replaces green). */
@@ -367,7 +368,7 @@
   font-size: 0.8125rem;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  box-shadow: none;
 }
 
 .typePillReturn {
@@ -712,9 +713,9 @@
 }
 
 .statusPillPay {
-  background: #fef3c7;
-  color: #78350f;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: #fef3d2;
+  color: #0f172a;
+  border: 1px solid rgba(234, 179, 8, 0.42);
 }
 
 .statusPillNeutral {
@@ -849,9 +850,9 @@
 }
 
 .itemDiffLabelPay {
-  background: #fffbeb;
-  color: #b45309;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: #fef3d2;
+  color: #0f172a;
+  border: 1px solid rgba(234, 179, 8, 0.42);
 }
 
 .itemLineTag {
@@ -866,8 +867,9 @@
 }
 
 .itemLineTagReplace {
-  background: #fef3c7;
-  color: #92400e;
+  background: #fef3d2;
+  color: #0f172a;
+  border: 1px solid rgba(234, 179, 8, 0.42);
 }
 
 .itemLineSub {

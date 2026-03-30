@@ -76,10 +76,10 @@ export default function StaffDashboardLayout({
                 fontSize: "0.8125rem",
                 fontWeight: 600,
                 textDecoration: "none",
-                background: "#fecaca",
-                color: "#7f1d1d",
-                border: "1px solid rgba(185, 28, 28, 0.22)",
-                boxShadow: "0 2px 6px rgba(127, 29, 29, 0.12)",
+                background: "#fef3d2",
+                color: "#0f172a",
+                border: "1px solid rgba(234, 179, 8, 0.42)",
+                boxShadow: "none",
               }}
             >
               כל הבקשות

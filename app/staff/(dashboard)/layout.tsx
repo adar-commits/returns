@@ -78,7 +78,10 @@ export default function StaffDashboardLayout({
               מרכז החזרות
             </span>
           </Link>
-          <nav style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}>
+          <nav
+            dir="ltr"
+            style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}
+          >
             <Link
               href={REQUESTS_HOME}
               className="staff-nav-pill staff-nav-pill--active"
@@ -96,6 +99,15 @@ export default function StaffDashboardLayout({
             >
               כל הבקשות
             </Link>
+            <Image
+              src="/staff-nav-mark.svg"
+              alt=""
+              width={36}
+              height={36}
+              unoptimized
+              aria-hidden
+              style={{ display: "block", flexShrink: 0, width: 36, height: 36 }}
+            />
             <Link
               href="/staff/settings"
               className="staff-nav-pill"

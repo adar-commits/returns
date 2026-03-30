@@ -7,12 +7,13 @@ import { createStaffSession } from "@/lib/staff-session";
  * OAuth callback (e.g. Google). Exchanges code for session, verifies staff_roles, creates staff cookie, redirects to /staff.
  */
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const callbackUrl = new URL(request.url);
+  const { searchParams } = callbackUrl;
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/staff";
-  const origin = request.headers.get("x-forwarded-host")
-    ? `https://${request.headers.get("x-forwarded-host")}`
-    : request.headers.get("origin") || request.url.split("/auth")[0];
+  // Use the origin of the URL the browser actually requested. Preferring x-forwarded-host
+  // (and forcing https) sent localhost OAuth completions to production when proxies/env set it.
+  const origin = callbackUrl.origin;
 
   if (!code) {
     return NextResponse.redirect(`${origin}/staff/login?error=missing_code`);

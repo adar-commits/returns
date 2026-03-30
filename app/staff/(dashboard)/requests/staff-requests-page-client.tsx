@@ -141,6 +141,128 @@ function newItemLabel(it: ReturnRequestItem): string {
   return "—";
 }
 
+type ItemsDetailEntry = {
+  sku?: string;
+  reason_text?: string | null;
+};
+
+function itemDetail(row: ListRow, it: ReturnRequestItem): ItemsDetailEntry | undefined {
+  const details = row.webhook_payload?.items_detail as ItemsDetailEntry[] | undefined;
+  if (!details?.length || !row.items?.length) return undefined;
+  const origIdx = row.items.indexOf(it);
+  if (origIdx >= 0 && details.length === row.items.length) return details[origIdx];
+  return details.find((d) => String(d.sku ?? "") === it.sku);
+}
+
+function returnReasonCell(it: ReturnRequestItem, row: ListRow): string {
+  const t = itemDetail(row, it)?.reason_text?.trim();
+  if (t) return t;
+  if (it.reason_id != null && String(it.reason_id).trim() !== "") return `קוד ${it.reason_id}`;
+  return "—";
+}
+
+function returnCreditOnly(it: ReturnRequestItem): { text: string; kind: DiffKind } {
+  const paid = it.price != null ? Number(it.price) : null;
+  if (paid != null && paid > 0) return { text: formatIls(paid), kind: "refund" };
+  return { text: "—", kind: "neutral" };
+}
+
+function productTitle(it: ReturnRequestItem): string {
+  return it.product_name?.trim() || it.sku;
+}
+
+function MoneyCell({ money }: { money: { text: string; kind: DiffKind } }) {
+  return (
+    <span
+      className={
+        money.kind === "pay" ? styles.moneyPay : money.kind === "refund" ? styles.moneyRefund : styles.moneyNeutral
+      }
+    >
+      {money.text}
+    </span>
+  );
+}
+
+function RequestCardItemsTable({ row }: { row: ListRow }) {
+  const all = row.items || [];
+  const returnItems = all.filter((i) => i.action === "return");
+  const replaceItems = all.filter((i) => i.action === "replace");
+  const hasAny = returnItems.length > 0 || replaceItems.length > 0;
+
+  if (!hasAny) {
+    return (
+      <table className={styles.itemsTable}>
+        <tbody>
+          <tr>
+            <td colSpan={4} className={styles.itemsEmpty}>
+              אין פריטים ברשומה
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    );
+  }
+
+  return (
+    <>
+      {returnItems.length > 0 ? (
+        <table className={styles.itemsTable}>
+          <thead>
+            <tr>
+              <th>פריט מוחזר</th>
+              <th>כמות 1</th>
+              <th>סיבת החזרה</th>
+              <th>זיכוי כספי</th>
+            </tr>
+          </thead>
+          <tbody>
+            {returnItems.map((it, j) => {
+              const money = returnCreditOnly(it);
+              return (
+                <tr key={`ret-${it.sku}-${j}`}>
+                  <td>{productTitle(it)}</td>
+                  <td>{itemQty(it)}</td>
+                  <td>{returnReasonCell(it, row)}</td>
+                  <td>
+                    <MoneyCell money={money} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : null}
+      {replaceItems.length > 0 ? (
+        <table className={styles.itemsTable}>
+          <thead>
+            <tr>
+              <th>פריט מוחלף</th>
+              <th>מידה חדשה</th>
+              <th>כמות</th>
+              <th>הפרש כספי</th>
+            </tr>
+          </thead>
+          <tbody>
+            {replaceItems.map((it, j) => {
+              const money = lineMoney(it);
+              return (
+                <tr key={`rep-${it.sku}-${j}`}>
+                  <td>{productTitle(it)}</td>
+                  <td>{newItemLabel(it)}</td>
+                  <td>{itemQty(it)}</td>
+                  <td>
+                    <MoneyCell money={money} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : null}
+    </>
+  );
+}
+
 function RequestsSkeleton() {
   return (
     <div className={styles.cardGrid} aria-busy="true" aria-label="טוען בקשות">
@@ -404,49 +526,7 @@ export default function StaffRequestsPageClient() {
               </dl>
 
               <div className={styles.itemsBlock}>
-                <table className={styles.itemsTable}>
-                  <thead>
-                    <tr>
-                      <th>שם הפריט מוחזר</th>
-                      <th>שם פריט חדש</th>
-                      <th>כמות</th>
-                      <th>הפרש כספי</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(row.items || []).length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className={styles.itemsEmpty}>
-                          אין פריטים ברשומה
-                        </td>
-                      </tr>
-                    ) : (
-                      (row.items || []).map((it, j) => {
-                        const money = lineMoney(it);
-                        return (
-                          <tr key={`${it.sku}-${j}`}>
-                            <td>{it.product_name?.trim() || it.sku}</td>
-                            <td>{newItemLabel(it)}</td>
-                            <td>{itemQty(it)}</td>
-                            <td>
-                              <span
-                                className={
-                                  money.kind === "pay"
-                                    ? styles.moneyPay
-                                    : money.kind === "refund"
-                                      ? styles.moneyRefund
-                                      : styles.moneyNeutral
-                                }
-                              >
-                                {money.text}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                <RequestCardItemsTable row={row} />
               </div>
             </Link>
           ))}

@@ -54,6 +54,8 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
           qty: Math.abs(Number(it.qty) || 1),
           price,
           price_amount: price,
+          product_url: it.product_url ?? it.url ?? it.link ?? it.product_link ?? it.href,
+          image_url: it.image_url ?? it.image ?? it.thumbnail ?? it.Image,
         };
       });
       return {

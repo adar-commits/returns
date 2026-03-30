@@ -31,6 +31,8 @@ type ItemsDetailRow = {
   new_size_label?: string | null;
   new_size_price?: number | null;
   price_diff?: number | null;
+  image_url?: string;
+  product_url?: string;
 };
 
 type DetailRow = {
@@ -258,6 +260,8 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                   ].filter(Boolean);
                   const replacementLine =
                     isReplace && replacementParts.length > 0 ? replacementParts.join(" · ") : isReplace ? "החלפה" : "—";
+                  const imageUrl = typeof detail?.image_url === "string" ? detail.image_url.trim() : "";
+                  const productUrl = typeof detail?.product_url === "string" ? detail.product_url.trim() : "";
                   return (
                     <tr key={`${it.sku}-${i}`}>
                       <td>
@@ -270,6 +274,13 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                         <div className={styles.detailMeta} style={{ marginTop: "var(--space-1)" }}>
                           {it.action === "replace" ? "החלפה — פריט מקורי מוחזר" : "החזרה"}
                         </div>
+                        {productUrl ? (
+                          <div className={styles.detailMeta} style={{ marginTop: "var(--space-1)" }}>
+                            <a href={productUrl} target="_blank" rel="noopener noreferrer" dir="ltr">
+                              דף מוצר
+                            </a>
+                          </div>
+                        ) : null}
                       </td>
                       <td dir="rtl" style={{ verticalAlign: "top" }}>
                         <span style={{ fontWeight: isReplace ? 600 : 400, color: isReplace ? "var(--color-text)" : "var(--color-text-muted)" }}>
@@ -278,7 +289,19 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                       </td>
                       <td style={{ textAlign: "center", fontWeight: 600 }}>{qty}</td>
                       <td style={{ fontWeight: 700 }}>{formatLineDiff(priceDiff ?? null)}</td>
-                      <td>—</td>
+                      <td style={{ width: 72, verticalAlign: "top" }}>
+                        {imageUrl ? (
+                          <a href={productUrl || imageUrl} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={imageUrl}
+                              alt=""
+                              style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6, display: "block" }}
+                            />
+                          </a>
+                        ) : (
+                          <span className={styles.detailMeta}>—</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

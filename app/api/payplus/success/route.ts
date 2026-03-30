@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_WEBHOOK_URL } from "@/lib/constants";
+import { persistDisplayMediaForReturnIfNeeded } from "@/lib/items-display-enrichment";
 
 /**
  * PayPlus redirects the user here after successful payment.
@@ -46,6 +47,7 @@ async function handleSuccessRedirect(request: Request) {
   }
 
   if (row.status !== "awaiting_payment") {
+    await persistDisplayMediaForReturnIfNeeded(return_id);
     return NextResponse.redirect(
       new URL(`/success?returnId=${encodeURIComponent(return_id)}&shippingType=courier&branchName=`, request.url)
     );
@@ -56,6 +58,14 @@ async function handleSuccessRedirect(request: Request) {
     .from("return_requests")
     .update({ status: "confirmed", payment_status: "paid" })
     .eq("return_id", return_id);
+
+  await persistDisplayMediaForReturnIfNeeded(return_id);
+
+  const { data: rowWithPayload } = await supabase
+    .from("return_requests")
+    .select("webhook_payload")
+    .eq("return_id", return_id)
+    .single();
 
   const shippingType =
     payload?.shipping && typeof payload.shipping === "object"
@@ -73,7 +83,8 @@ async function handleSuccessRedirect(request: Request) {
       ? String(((payload.shipping as Record<string, unknown>).branch as Record<string, unknown>).branch_name || "")
       : "";
 
-  if (payload) {
+  const payloadToSend = (rowWithPayload?.webhook_payload as Record<string, unknown> | null) ?? payload;
+  if (payloadToSend) {
     const settings = await getSettings();
     const finalUrl =
       settings?.final_webhook_url ||
@@ -84,7 +95,7 @@ async function handleSuccessRedirect(request: Request) {
         await fetch(finalUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, status: "confirmed" }),
+          body: JSON.stringify({ ...payloadToSend, status: "confirmed" }),
         });
       } catch (e) {
         console.error("PayPlus success callback webhook error:", e);

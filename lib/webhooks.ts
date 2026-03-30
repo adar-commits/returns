@@ -93,6 +93,17 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
   });
 }
 
+function pickProductUrlFromEntry(entry: Record<string, unknown>): string | undefined {
+  const v =
+    entry.product_url ??
+    entry.productUrl ??
+    entry.product_link ??
+    entry.href ??
+    entry.url ??
+    entry.link;
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
 /**
  * Normalize the batch GetSizes response.
  * Expected: [ { sku: "...", LABS_CSQR?: number, sizes: [...] }, ... ] or wrapped in { data: [...] }.
@@ -102,9 +113,10 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
 function normalizeSizesBatchResponse(
   data: unknown,
   fallbackSku?: string
-): { result: Record<string, SizeOption[]>; labsCsqr: Record<string, number> } {
+): { result: Record<string, SizeOption[]>; labsCsqr: Record<string, number>; productUrlBySku: Record<string, string> } {
   const result: Record<string, SizeOption[]> = {};
   const labsCsqr: Record<string, number> = {};
+  const productUrlBySku: Record<string, string> = {};
 
   // Unwrap common gateway wrappers: { data: [...] }, { body: [...] }, etc.
   let arr: unknown[] | null = null;
@@ -130,17 +142,21 @@ function normalizeSizesBatchResponse(
           if (sq != null && Number.isFinite(Number(sq))) {
             labsCsqr[entry.sku] = Number(sq);
           }
+          const pu = pickProductUrlFromEntry(entry);
+          if (pu) productUrlBySku[entry.sku] = pu;
           // Do NOT fall back to first size's labs_csqr: sizes are ordered arbitrarily (e.g. largest first).
           // Client matches returned product dimensions (e.g. SKU suffix 200290 → 200*290) to the right size.
         }
       }
-      return { result, labsCsqr };
+      return { result, labsCsqr, productUrlBySku };
     }
     // Legacy array wrapper: [ { sizes: [...] } ]
     if ("sizes" in first || "Sizes" in first) {
       const sizes = normalizeSizeList(first.sizes ?? first.Sizes ?? []);
       if (fallbackSku) result[fallbackSku] = sizes;
-      return { result, labsCsqr };
+      const pu = pickProductUrlFromEntry(first);
+      if (pu && fallbackSku) productUrlBySku[fallbackSku] = pu;
+      return { result, labsCsqr, productUrlBySku };
     }
   }
 
@@ -149,9 +165,11 @@ function normalizeSizesBatchResponse(
     const d = data as Record<string, unknown>;
     const sizes = normalizeSizeList(d.sizes ?? d.Sizes ?? []);
     if (fallbackSku) result[fallbackSku] = sizes;
+    const pu = pickProductUrlFromEntry(d);
+    if (pu && fallbackSku) productUrlBySku[fallbackSku] = pu;
   }
 
-  return { result, labsCsqr };
+  return { result, labsCsqr, productUrlBySku };
 }
 
 /**
@@ -160,17 +178,24 @@ function normalizeSizesBatchResponse(
 export async function fetchSizesBatch(
   skus: string[],
   sizesUrl: string
-): Promise<{ results: Record<string, SizeOption[]>; labsCsqr: Record<string, number> }> {
-  if (skus.length === 0) return { results: {}, labsCsqr: {} };
+): Promise<{
+  results: Record<string, SizeOption[]>;
+  labsCsqr: Record<string, number>;
+  productUrlBySku: Record<string, string>;
+}> {
+  if (skus.length === 0) return { results: {}, labsCsqr: {}, productUrlBySku: {} };
   try {
     const res = await fetch(sizesUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ Items: skus }),
     });
-    if (!res.ok) return { results: {}, labsCsqr: {} };
+    if (!res.ok) return { results: {}, labsCsqr: {}, productUrlBySku: {} };
     const data = await res.json();
-    let { result: out, labsCsqr } = normalizeSizesBatchResponse(data, skus.length === 1 ? skus[0] : undefined);
+    let { result: out, labsCsqr, productUrlBySku } = normalizeSizesBatchResponse(
+      data,
+      skus.length === 1 ? skus[0] : undefined
+    );
     // Fallback: if webhook returns array in same order as Items, map by index when key is missing
     let arr: unknown[] | null = null;
     if (Array.isArray(data)) arr = data;
@@ -193,6 +218,10 @@ export async function fetchSizesBatch(
             const sq = entry.LABS_CSQR ?? entry.labs_csqr;
             if (sq != null && Number.isFinite(Number(sq))) labsCsqr[key] = Number(sq);
           }
+          if (key) {
+            const pu = pickProductUrlFromEntry(entry);
+            if (pu && !productUrlBySku[key]) productUrlBySku[key] = pu;
+          }
         }
       } else if (("sizes" in first || "Sizes" in first) && arr.length >= skus.length) {
         // Batch [ { sizes: [...] }, ... ] without sku — map by index to requested skus
@@ -208,12 +237,14 @@ export async function fetchSizesBatch(
             }
             // Do NOT use first size's labs_csqr; client matches by dimensions (SKU suffix).
           }
+          const pu = pickProductUrlFromEntry(entry);
+          if (pu && !productUrlBySku[skus[i]]) productUrlBySku[skus[i]] = pu;
         }
       }
     }
-    return { results: out, labsCsqr };
+    return { results: out, labsCsqr, productUrlBySku };
   } catch {
-    return { results: {}, labsCsqr: {} };
+    return { results: {}, labsCsqr: {}, productUrlBySku: {} };
   }
 }
 

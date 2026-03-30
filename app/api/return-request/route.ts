@@ -6,6 +6,7 @@ import { createServerClient } from "@/lib/supabase-server";
 import { generatePaymentLink } from "@/lib/payplus";
 import type { ReturnRequestItem } from "@/lib/db-types";
 import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
+import { enrichWebhookPayloadDisplayMedia } from "@/lib/items-display-enrichment";
 
 type WizardChoice = {
   sku: string;
@@ -261,19 +262,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMessage }, { status: 502 });
     }
 
-    if (finalUrl) {
-      try {
-        const res = await fetch(finalUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (data.orderID && type !== "return") {
-          await updateReturnRequestReplacementOrderId(return_id, data.orderID);
+    if (totalToPay <= 0) {
+      let freePathOk = true;
+      if (finalUrl) {
+        try {
+          const res = await fetch(finalUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          freePathOk = res.ok;
+          const data = await res.json().catch(() => ({}));
+          if (data.orderID && type !== "return") {
+            await updateReturnRequestReplacementOrderId(return_id, data.orderID);
+          }
+        } catch (e) {
+          console.error("Final webhook error:", e);
+          freePathOk = false;
         }
-      } catch (e) {
-        console.error("Final webhook error:", e);
+      }
+      if (freePathOk) {
+        const enriched = await enrichWebhookPayloadDisplayMedia(payload);
+        if (enriched !== payload) {
+          await updateReturnRequestWebhookPayload(return_id, enriched);
+        }
       }
     }
 

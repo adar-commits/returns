@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase-server";
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_WEBHOOK_URL } from "@/lib/constants";
+import { persistDisplayMediaForReturnIfNeeded } from "@/lib/items-display-enrichment";
 
 /**
  * Payplus calls this when payment succeeds. Verify signature/body per Payplus docs,
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
         .from("return_requests")
         .update({ status: "confirmed", payment_status: "paid" })
         .eq("id", row.id);
+
+      await persistDisplayMediaForReturnIfNeeded(row.return_id);
 
       const settings = await getSettings();
       const finalUrl = settings?.final_webhook_url || process.env.FINAL_WEBHOOK_URL || DEFAULT_WEBHOOK_URL;

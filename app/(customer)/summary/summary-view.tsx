@@ -271,28 +271,51 @@ export default function SummaryView() {
 
         <Divider />
 
-        {/* Coupon (discount applies to החלפת מידה surcharges only, not shipping) */}
-        <div style={{ marginBottom: "var(--space-3)" }}>
-          <label className="input-label" style={{ display: "block", marginBottom: "var(--space-2)" }}>
-            קוד קופון
-          </label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", alignItems: "stretch" }}>
+        {/* Coupon — one compact row; feedback directly below (discount applies to החלפת מידה only) */}
+        <div style={{ marginBottom: "var(--space-3)" }} dir="rtl">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: "0.4rem 0.6rem",
+              rowGap: "0.35rem",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "var(--text-caption)",
+                fontWeight: 600,
+                color: "var(--color-text-muted)",
+                flexShrink: 0,
+                whiteSpace: "nowrap",
+              }}
+            >
+              קוד קופון?
+            </span>
             <input
               className="input"
-              style={{ flex: "1 1 160px", minWidth: 0 }}
               value={couponInput}
               onChange={(e) => {
                 setCouponInput(e.target.value);
                 if (couponFieldError) setCouponFieldError(null);
               }}
-              placeholder="הזינו קוד"
+              placeholder="הקלד/י אותו כאן"
               disabled={couponApplying}
               dir="ltr"
+              style={{
+                width: "9.5rem",
+                maxWidth: "42vw",
+                flex: "0 1 auto",
+                minWidth: 0,
+                fontSize: "var(--text-caption)",
+                padding: "0.35rem 0.55rem",
+                borderWidth: 1,
+              }}
             />
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ flexShrink: 0 }}
               disabled={couponApplying || !couponInput.trim()}
               onClick={async () => {
                 setCouponFieldError(null);
@@ -329,20 +352,46 @@ export default function SummaryView() {
                   setCouponApplying(false);
                 }
               }}
+              style={{
+                width: "auto",
+                minHeight: 36,
+                padding: "0.35rem 0.75rem",
+                fontSize: "var(--text-caption)",
+                flexShrink: 0,
+              }}
             >
               {couponApplying ? "בודק…" : "החל קופון"}
             </button>
           </div>
-          {appliedCoupon && !couponFieldError && (
-            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-success)" }}>
-              קופון הוחל: הנחה {appliedCoupon.discountPercent}% על סכום החלפות המידה בלבד
-            </p>
-          )}
-          {couponFieldError && (
-            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-error, #b91c1c)" }}>
-              {couponFieldError}
-            </p>
-          )}
+          <div
+            role="status"
+            aria-live="polite"
+            style={{ minHeight: "1.35em", marginTop: "0.35rem" }}
+          >
+            {couponFieldError ? (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "var(--text-caption)",
+                  color: "var(--color-error, #b91c1c)",
+                  lineHeight: 1.35,
+                }}
+              >
+                {couponFieldError}
+              </p>
+            ) : appliedCoupon ? (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "var(--text-caption)",
+                  color: "var(--color-success)",
+                  lineHeight: 1.35,
+                }}
+              >
+                קופון הוחל — הנחה {appliedCoupon.discountPercent}% על סכום החלפות המידה בלבד
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <Divider />

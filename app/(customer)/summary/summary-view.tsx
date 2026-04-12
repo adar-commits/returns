@@ -271,51 +271,68 @@ export default function SummaryView() {
 
         <Divider />
 
-        {/* Coupon — one compact row; feedback directly below (discount applies to החלפת מידה only) */}
+        {/* Coupon — label + pill input (right); primary CTA-style button (left); feedback below */}
         <div style={{ marginBottom: "var(--space-3)" }} dir="rtl">
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
-              gap: "0.4rem 0.6rem",
-              rowGap: "0.35rem",
+              justifyContent: "space-between",
+              gap: "0.65rem",
+              width: "100%",
             }}
           >
-            <span
+            <div
               style={{
-                fontSize: "var(--text-caption)",
-                fontWeight: 600,
-                color: "var(--color-text-muted)",
-                flexShrink: 0,
-                whiteSpace: "nowrap",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: "0.45rem",
+                minWidth: 0,
+                flex: "1 1 auto",
+                justifyContent: "flex-end",
               }}
             >
-              קוד קופון?
-            </span>
-            <input
-              className="input"
-              value={couponInput}
-              onChange={(e) => {
-                setCouponInput(e.target.value);
-                if (couponFieldError) setCouponFieldError(null);
-              }}
-              placeholder="הקלד/י אותו כאן"
-              disabled={couponApplying}
-              dir="ltr"
-              style={{
-                width: "9.5rem",
-                maxWidth: "42vw",
-                flex: "0 1 auto",
-                minWidth: 0,
-                fontSize: "var(--text-caption)",
-                padding: "0.35rem 0.55rem",
-                borderWidth: 1,
-              }}
-            />
+              <span
+                style={{
+                  fontSize: "var(--text-caption)",
+                  fontWeight: 600,
+                  color: "var(--color-text-muted)",
+                  flexShrink: 0,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                קוד קופון?
+              </span>
+              <input
+                className="input"
+                value={couponInput}
+                onChange={(e) => {
+                  setCouponInput(e.target.value);
+                  if (couponFieldError) setCouponFieldError(null);
+                }}
+                placeholder="הקלד/י אותו כאן"
+                disabled={couponApplying}
+                dir="rtl"
+                style={{
+                  width: "10rem",
+                  maxWidth: "min(10rem, 48vw)",
+                  flex: "0 1 auto",
+                  minWidth: 0,
+                  fontSize: "var(--text-caption)",
+                  padding: "0.45rem 0.75rem",
+                  textAlign: "right",
+                  borderRadius: 999,
+                  border: "1px solid rgba(148, 163, 184, 0.45)",
+                  boxShadow: "none",
+                  background: "var(--color-surface-elevated)",
+                }}
+              />
+            </div>
             <button
               type="button"
-              className="btn btn-secondary"
+              className="btn btn-primary"
               disabled={couponApplying || !couponInput.trim()}
               onClick={async () => {
                 setCouponFieldError(null);
@@ -354,10 +371,12 @@ export default function SummaryView() {
               }}
               style={{
                 width: "auto",
-                minHeight: 36,
-                padding: "0.35rem 0.75rem",
+                minHeight: 44,
+                padding: "0.5rem 1rem",
                 fontSize: "var(--text-caption)",
                 flexShrink: 0,
+                borderRadius: "var(--radius-md)",
+                alignSelf: "center",
               }}
             >
               {couponApplying ? "בודק…" : "החל קופון"}

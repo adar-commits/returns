@@ -34,53 +34,6 @@ function WazeIcon() {
   );
 }
 
-function BranchWarningModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onCancel]);
-
-  return (
-    <div
-      onClick={onCancel}
-      style={{
-        position: "fixed", inset: 0, zIndex: 999,
-        background: "rgba(44,37,32,0.55)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "var(--space-4)",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "var(--color-surface-elevated)",
-          borderRadius: "var(--radius-lg)",
-          padding: "var(--space-6)",
-          maxWidth: 440,
-          width: "100%",
-          boxShadow: "var(--shadow-lg)",
-          textAlign: "right",
-          direction: "rtl",
-        }}
-      >
-        <p style={{ fontSize: "1.3rem", marginBottom: "var(--space-2)" }}>🕐 שימו לב</p>
-        <p style={{ fontSize: "var(--text-body)", color: "var(--color-text)", lineHeight: 1.7, marginBottom: "var(--space-5)" }}>
-          במקרה של החלפה/החזרה לסניף יש לתאם הגעתך בכדי להבטיח מלאי תקין להזמנה.
-        </p>
-        <div style={{ display: "flex", gap: "var(--space-3)", flexDirection: "row-reverse" }}>
-          <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={onConfirm}>
-            הבנתי, המשך
-          </button>
-          <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={onCancel}>
-            ביטול
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ShippingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -93,7 +46,6 @@ export default function ShippingForm() {
   const [shippingFee, setShippingFee] = useState(85);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [branchesLoadError, setBranchesLoadError] = useState(false);
-  const [showWarning, setShowWarning] = useState(false);
   const [submittingCallback, setSubmittingCallback] = useState(false);
   const [onlyCallback, setOnlyCallback] = useState(false);
   const [deliveryFeeLoading, setDeliveryFeeLoading] = useState(true);
@@ -226,10 +178,6 @@ export default function ShippingForm() {
   };
 
   const handleContinue = async () => {
-    if (deliveryOrBranch === "branch" && selectedBranchId) {
-      setShowWarning(true);
-      return;
-    }
     if (deliveryOrBranch === "callback") {
       const raw = sessionStorage.getItem("returns_wizard");
       if (!raw) return;
@@ -260,13 +208,6 @@ export default function ShippingForm() {
 
   return (
     <div>
-      {showWarning && (
-        <BranchWarningModal
-          onConfirm={() => { setShowWarning(false); doNavigate(); }}
-          onCancel={() => setShowWarning(false)}
-        />
-      )}
-
       {/* Shipping option cards — when any product is "איני בטוח/ה" show only נציג טלפוני */}
       <div className="choice-group" style={{ marginBottom: "var(--space-5)" }}>
         {!onlyCallback && (

@@ -392,73 +392,80 @@ export default function StaffRequestsPageClient() {
     <>
       <h1 className={styles.pageTitle}>כל בקשות ההחזרה וההחלפה</h1>
 
-      <form onSubmit={submitSearch}>
-        <input
-          className={styles.search}
-          dir="rtl"
-          placeholder="חיפוש חופשי לפי שם לקוח, טלפון, הזמנה או מס׳ בקשה"
-          value={searchDraft}
-          onChange={(e) => setSearchDraft(e.target.value)}
-          aria-label="חיפוש"
-        />
-      </form>
+      <div className={styles.filtersCard}>
+        <form className={styles.filtersSearchForm} onSubmit={submitSearch}>
+          <input
+            className={styles.search}
+            dir="rtl"
+            placeholder="חיפוש חופשי לפי שם לקוח, טלפון, הזמנה או מס׳ בקשה"
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
+            aria-label="חיפוש"
+          />
+        </form>
 
-      <div className={styles.handlingRow} role="group" aria-label="סינון לפי סטטוס טיפול">
-        <span className={styles.handlingLabel}>סטטוס טיפול בקשה</span>
-        <div className={styles.handlingChips}>
-          {HANDLING_OPTIONS.map(({ id, label }) => (
-            <label key={id} className={styles.handlingChip}>
-              <input type="checkbox" checked={handlingSelected.has(id)} onChange={() => toggleHandling(id)} />
-              <span>{label}</span>
+        <div className={styles.filtersColumns}>
+          <div className={styles.filterColumn} role="group" aria-label="סינון לפי סטטוס טיפול">
+            <span className={styles.filterColumnLabel}>סטטוס טיפול</span>
+            <div className={styles.handlingChips}>
+              {HANDLING_OPTIONS.map(({ id, label }) => (
+                <label key={id} className={styles.handlingChip}>
+                  <input type="checkbox" checked={handlingSelected.has(id)} onChange={() => toggleHandling(id)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.filterColumn}>
+            <span className={styles.filterColumnLabel}>טווח תאריכים</span>
+            <div className={styles.segmentWrap} role="tablist" aria-label="טווח תאריכים">
+              {PRESETS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activePreset === id}
+                  className={`${styles.segmentBtn} ${activePreset === id ? styles.segmentBtnActive : ""}`}
+                  onClick={() => onPresetClick(id)}
+                >
+                  {id === "custom" ? (
+                    <>
+                      <span aria-hidden>📅</span> {label}
+                    </>
+                  ) : (
+                    label
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {activePreset === "custom" && (
+          <div className={styles.customDates}>
+            <label>
+              מתאריך
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setParams({ preset: "custom", from: e.target.value, to: to || e.target.value })}
+              />
             </label>
-          ))}
-        </div>
+            <label>
+              עד תאריך
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setParams({ preset: "custom", from: from || e.target.value, to: e.target.value })}
+              />
+            </label>
+            <button type="button" className={styles.customApplyBtn} onClick={applyCustomDates} disabled={!from || !to}>
+              החל טווח
+            </button>
+          </div>
+        )}
       </div>
-
-      <div className={styles.segmentWrap} role="tablist" aria-label="טווח תאריכים">
-        {PRESETS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={activePreset === id}
-            className={`${styles.segmentBtn} ${activePreset === id ? styles.segmentBtnActive : ""}`}
-            onClick={() => onPresetClick(id)}
-          >
-            {id === "custom" ? (
-              <>
-                <span aria-hidden>📅</span> {label}
-              </>
-            ) : (
-              label
-            )}
-          </button>
-        ))}
-      </div>
-
-      {activePreset === "custom" && (
-        <div className={styles.customDates}>
-          <label>
-            מתאריך
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setParams({ preset: "custom", from: e.target.value, to: to || e.target.value })}
-            />
-          </label>
-          <label>
-            עד תאריך
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setParams({ preset: "custom", from: from || e.target.value, to: e.target.value })}
-            />
-          </label>
-          <button type="button" className={styles.customApplyBtn} onClick={applyCustomDates} disabled={!from || !to}>
-            החל טווח
-          </button>
-        </div>
-      )}
 
       {loading ? (
         <RequestsSkeleton />

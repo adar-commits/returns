@@ -5,6 +5,34 @@ import StaffFlashMessage from "./staff-flash-message";
 
 const REQUESTS_HOME = "/staff/requests?preset=week";
 
+function SettingsGearIcon() {
+  return (
+    <svg
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function StaffDashboardLayout({
   children,
 }: {
@@ -13,11 +41,13 @@ export default function StaffDashboardLayout({
   return (
     <div
       className="staff-shell"
+      dir="rtl"
+      lang="he"
       style={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "var(--staff-bg, #eef1f4)",
+        background: "var(--staff-bg, #f4f5f7)",
       }}
     >
       <header
@@ -67,33 +97,32 @@ export default function StaffDashboardLayout({
             <span
               style={{
                 fontSize: "0.7rem",
-                fontWeight: 600,
+                fontWeight: 500,
                 color: "#64748b",
                 letterSpacing: "0.02em",
-                borderRight: "1px solid #e2e8f0",
-                paddingRight: "0.75rem",
-                marginRight: "0.25rem",
+                borderInlineStart: "1px solid #e8ecf1",
+                paddingInlineStart: "0.75rem",
+                marginInlineStart: "0.25rem",
               }}
             >
               מרכז החזרות
             </span>
           </Link>
           <nav
-            dir="ltr"
-            style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", alignItems: "center" }}
+            style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}
           >
             <Link
               href={REQUESTS_HOME}
               className="staff-nav-pill staff-nav-pill--active"
               style={{
-                padding: "0.45rem 1rem",
-                borderRadius: 999,
+                padding: "0.4rem 0.9rem",
+                borderRadius: 8,
                 fontSize: "0.8125rem",
-                fontWeight: 600,
+                fontWeight: 500,
                 textDecoration: "none",
-                background: "#fef3d2",
-                color: "#0f172a",
-                border: "1px solid rgba(234, 179, 8, 0.42)",
+                background: "rgba(254, 243, 210, 0.65)",
+                color: "#1e293b",
+                border: "1px solid rgba(234, 179, 8, 0.22)",
                 boxShadow: "none",
               }}
             >
@@ -110,18 +139,25 @@ export default function StaffDashboardLayout({
             />
             <Link
               href="/staff/settings"
-              className="staff-nav-pill"
+              className="staff-nav-pill staff-settings-link"
+              aria-label="הגדרות"
+              title="הגדרות"
               style={{
-                padding: "0.45rem 1rem",
-                borderRadius: 999,
-                fontSize: "0.8125rem",
-                fontWeight: 500,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "2.25rem",
+                height: "2.25rem",
+                padding: 0,
+                borderRadius: 8,
                 textDecoration: "none",
-                color: "#475569",
-                background: "#f1f5f9",
+                color: "#64748b",
+                background: "#fff",
+                border: "1px solid rgba(148, 163, 184, 0.22)",
+                boxShadow: "none",
               }}
             >
-              הגדרות
+              <SettingsGearIcon />
             </Link>
           </nav>
         </div>

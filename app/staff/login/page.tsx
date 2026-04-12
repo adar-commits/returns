@@ -155,8 +155,8 @@ function StaffLoginForm() {
             <Image
               src="/hom-group-logo.png"
               alt=""
-              width={220}
-              height={52}
+              width={594}
+              height={261}
               priority
               sizes="220px"
               style={{ width: "100%", height: "auto", maxWidth: 220, display: "block" }}

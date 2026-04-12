@@ -128,6 +128,9 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
   const [saving, setSaving] = useState(false);
   const [newInternalNoteDraft, setNewInternalNoteDraft] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -152,6 +155,18 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!approveModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setApproveModalOpen(false);
+        setApproveError(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [approveModalOpen]);
 
   const patchHandling = (staff_handling: "in_progress" | "completed") => {
     setSaving(true);
@@ -181,6 +196,22 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
         } else if (d?.error) setErr(d.error);
       })
       .finally(() => setSaving(false));
+  };
+
+  const submitApprovePriorityOrder = () => {
+    setApproveSubmitting(true);
+    setApproveError(null);
+    fetch(`/api/staff/requests/${encodeURIComponent(returnId)}/approve-priority-order`, { method: "POST" })
+      .then(async (r) => {
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          setApproveError(typeof d?.error === "string" ? d.error : "הפעולה נכשלה");
+          return;
+        }
+        setApproveModalOpen(false);
+      })
+      .catch(() => setApproveError("שגיאת רשת"))
+      .finally(() => setApproveSubmitting(false));
   };
 
   const appendInternalNote = () => {
@@ -309,11 +340,22 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
           </button>
           <button
             type="button"
-            className={`${styles.actionBtn} ${styles.actionBtnPrimary} ${styles.actionBtnToolbar}`}
+            className={`${styles.actionBtn} ${styles.actionBtnSuccess} ${styles.actionBtnToolbar}`}
             disabled={saving}
             onClick={() => patchHandling("completed")}
           >
             סמן הושלם
+          </button>
+          <button
+            type="button"
+            className={`${styles.actionBtn} ${styles.actionBtnSecondary} ${styles.actionBtnToolbar}`}
+            disabled={saving || approveSubmitting}
+            onClick={() => {
+              setApproveError(null);
+              setApproveModalOpen(true);
+            }}
+          >
+            אשר הזמנה
           </button>
         </div>
       </div>
@@ -332,7 +374,9 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
                 ⓘ
               </button>
             </div>
-            <span className={`${styles.statusPill} ${logisticsStatusPillClass(row.status, styles)}`}>
+            <span
+              className={`${styles.statusPill} ${styles.detailHeroStatusPill} ${logisticsStatusPillClass(row.status, styles)}`}
+            >
               סטטוס בקשה: {RETURN_STATUS_HE[row.status] || row.status}
             </span>
           </div>
@@ -692,6 +736,61 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
           </section>
         </div>
       </div>
+
+      {approveModalOpen ? (
+        <div
+          className={styles.staffConfirmBackdrop}
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setApproveModalOpen(false);
+              setApproveError(null);
+            }
+          }}
+        >
+          <div
+            className={styles.staffConfirmDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="staff-approve-order-title"
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className={styles.staffConfirmTitle} id="staff-approve-order-title">
+              האם את/ה בטוח/ה שתרצה להמשיך?
+            </h2>
+            <p className={styles.staffConfirmLead}>
+              הפעולה תיצור הזמנה בפריוריטי כולל שליחות אם קיימת
+            </p>
+            {approveError ? (
+              <p className={styles.staffConfirmErr} role="alert">
+                {approveError}
+              </p>
+            ) : null}
+            <div className={styles.staffConfirmActions}>
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${styles.actionBtnPrimary} ${styles.actionBtnToolbar}`}
+                disabled={approveSubmitting}
+                onClick={submitApprovePriorityOrder}
+              >
+                {approveSubmitting ? "שולח…" : "בצע פעולה"}
+              </button>
+              <button
+                type="button"
+                className={`${styles.actionBtn} ${styles.actionBtnSecondary} ${styles.actionBtnToolbar}`}
+                disabled={approveSubmitting}
+                onClick={() => {
+                  setApproveModalOpen(false);
+                  setApproveError(null);
+                }}
+              >
+                בטל פעולה
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

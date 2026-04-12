@@ -699,17 +699,21 @@
   font-weight: 700;
 }
 
-/* Card header: RET + status on the right (RTL flex-start). */
+/* Card header: reference on the right, status pill on the far left (RTL). */
 .detailHeroRefStatus {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 0.65rem 0.85rem;
   width: 100%;
   min-width: 0;
   margin-bottom: 0.65rem;
+}
+
+.detailHeroStatusPill {
+  flex-shrink: 0;
 }
 
 .detailHeroActions {
@@ -908,6 +912,8 @@
   gap: 0.35rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .detailHeroIdHint {
@@ -1361,6 +1367,77 @@
   background: var(--color-primary-hover, #862a2d);
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1), 0 4px 14px rgba(155, 45, 48, 0.22);
   transform: translateY(-1px);
+}
+
+.actionBtnSuccess {
+  background: #15803d;
+  color: #fff;
+  border-color: rgba(21, 128, 61, 0.55);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(21, 128, 61, 0.2);
+}
+
+.actionBtnSuccess:hover:not(:disabled) {
+  background: #166534;
+  border-color: rgba(22, 101, 52, 0.65);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(21, 128, 61, 0.22);
+  transform: translateY(-1px);
+}
+
+.actionBtnSuccess:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(21, 128, 61, 0.45);
+}
+
+.staffConfirmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.staffConfirmDialog {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.25rem 1.35rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.staffConfirmTitle {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+}
+
+.staffConfirmLead {
+  margin: 0 0 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.55;
+  text-align: right;
+}
+
+.staffConfirmErr {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: #b91c1c;
+  text-align: right;
+}
+
+.staffConfirmActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.5rem;
 }
 
 .actionBtn:focus-visible {

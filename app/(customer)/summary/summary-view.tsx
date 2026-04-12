@@ -189,7 +189,7 @@ export default function SummaryView() {
 
   const shippingLabel =
     wizard.shipping?.type === "branch"
-      ? `איסוף עצמי — ${wizard.shipping.branch?.name ?? ""}`
+      ? `החלפה / החזרה לסניף - ${wizard.shipping.branch?.name ?? ""}`
       : wizard.shipping?.type === "callback"
         ? "חזרו אלי בטלפון - חינם"
         : "שליח עד הבית";

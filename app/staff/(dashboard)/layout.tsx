@@ -72,71 +72,26 @@ export default function StaffDashboardLayout({
         >
           <Link
             href={REQUESTS_HOME}
-            style={{ display: "flex", alignItems: "center", gap: "0.75rem", textDecoration: "none" }}
+            style={{ display: "inline-flex", alignItems: "center", textDecoration: "none", lineHeight: 0 }}
           >
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                background: "#0a0a0a",
-                padding: "6px 12px",
-                borderRadius: 10,
-                lineHeight: 0,
-              }}
-            >
-              <Image
-                src="/hom-group-logo.png"
-                alt="hōM GROUP"
-                width={132}
-                height={31}
-                priority
-                sizes="132px"
-                style={{ height: "auto", width: "clamp(104px, 18vw, 132px)" }}
-              />
-            </span>
-            <span
-              style={{
-                fontSize: "0.7rem",
-                fontWeight: 500,
-                color: "#64748b",
-                letterSpacing: "0.02em",
-                borderInlineStart: "1px solid #e8ecf1",
-                paddingInlineStart: "0.75rem",
-                marginInlineStart: "0.25rem",
-              }}
-            >
-              מרכז החזרות
-            </span>
-          </Link>
-          <nav
-            style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}
-          >
-            <Link
-              href={REQUESTS_HOME}
-              className="staff-nav-pill staff-nav-pill--active"
-              style={{
-                padding: "0.4rem 0.9rem",
-                borderRadius: 8,
-                fontSize: "0.8125rem",
-                fontWeight: 500,
-                textDecoration: "none",
-                background: "rgba(254, 243, 210, 0.65)",
-                color: "#1e293b",
-                border: "1px solid rgba(234, 179, 8, 0.22)",
-                boxShadow: "none",
-              }}
-            >
-              כל הבקשות
-            </Link>
             <Image
-              src="/staff-nav-mark.svg"
-              alt=""
-              width={36}
-              height={36}
-              unoptimized
-              aria-hidden
-              style={{ display: "block", flexShrink: 0, width: 36, height: 36 }}
+              src="/hom-group-logo.png"
+              alt="HōM GROUP"
+              width={594}
+              height={261}
+              priority
+              sizes="(max-width: 640px) 92vw, min(420px, 40vw)"
+              style={{
+                height: "auto",
+                width: "auto",
+                maxHeight: "clamp(44px, 10vw, 56px)",
+                maxWidth: "min(100%, 420px)",
+                objectFit: "contain",
+                objectPosition: "right center",
+              }}
             />
+          </Link>
+          <nav style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
             <Link
               href="/staff/settings"
               className="staff-nav-pill staff-settings-link"

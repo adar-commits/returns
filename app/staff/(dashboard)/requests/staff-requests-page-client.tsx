@@ -279,6 +279,82 @@ function RequestsSkeleton() {
   );
 }
 
+function groupRowsByStaffHandling(rows: ListRow[]) {
+  const pending: ListRow[] = [];
+  const inProgress: ListRow[] = [];
+  const completed: ListRow[] = [];
+  for (const r of rows) {
+    if (r.staff_handling === "completed") completed.push(r);
+    else if (r.staff_handling === "in_progress") inProgress.push(r);
+    else pending.push(r);
+  }
+  return { pending, inProgress, completed };
+}
+
+function RequestCardLink({ row, animIndex }: { row: ListRow; animIndex: number }) {
+  return (
+    <Link
+      href={`/staff/requests/${encodeURIComponent(row.reference_code || row.return_id)}`}
+      className={styles.requestCard}
+      style={{ animationDelay: `${Math.min(animIndex, 12) * 55}ms` }}
+    >
+      <div className={styles.cardTopBar}>
+        <span className={styles.agePill}>{createdDaysLabel(row.created_at)}</span>
+        <div className={styles.badges}>
+          <span className={`${styles.badge} ${statusBadgeClass(row.status)}`}>
+            {RETURN_STATUS_HE[row.status] || row.status}
+          </span>
+          {row.staff_handling ? (
+            <span className={`${styles.badge} ${staffBadgeClass(row.staff_handling) || ""}`}>
+              {STAFF_HANDLING_HE[row.staff_handling] || row.staff_handling}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <dl className={styles.fieldList}>
+        <div className={styles.fieldRow}>
+          <dt className={styles.fieldLabel}>מספר בקשה</dt>
+          <dd className={styles.fieldValue} dir="ltr">
+            {row.reference_code || "—"}
+          </dd>
+        </div>
+        <div className={styles.fieldRow}>
+          <dt className={styles.fieldLabel}>תאריך-שעה</dt>
+          <dd className={styles.fieldValue}>
+            {new Date(row.created_at).toLocaleString("he-IL", {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          </dd>
+        </div>
+        <div className={styles.fieldRow}>
+          <dt className={styles.fieldLabel}>הזמנה</dt>
+          <dd className={styles.fieldValue} dir="ltr">
+            {row.order_id}
+          </dd>
+        </div>
+        <div className={styles.fieldRow}>
+          <dt className={styles.fieldLabel}>שם הלקוח</dt>
+          <dd className={styles.fieldValue}>{displayName(row)}</dd>
+        </div>
+        <div className={styles.fieldRow}>
+          <dt className={styles.fieldLabel}>סוג הבקשה</dt>
+          <dd className={styles.fieldValuePillCell}>
+            <span className={`${styles.typePill} ${typePillClass(row.type)}`}>
+              {RETURN_TYPE_HE[row.type] || row.type}
+            </span>
+          </dd>
+        </div>
+      </dl>
+
+      <div className={styles.itemsBlock}>
+        <RequestCardItemsTable row={row} />
+      </div>
+    </Link>
+  );
+}
+
 export default function StaffRequestsPageClient() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -388,6 +464,11 @@ export default function StaffRequestsPageClient() {
     setParams({ q: searchDraft.trim() || null });
   };
 
+  const grouped = useMemo(() => groupRowsByStaffHandling(rows), [rows]);
+  const countPending = grouped.pending.length;
+  const countInProgress = grouped.inProgress.length;
+  const countCompleted = grouped.completed.length;
+
   return (
     <>
       <h1 className={styles.pageTitle}>כל בקשות ההחזרה וההחלפה</h1>
@@ -405,18 +486,6 @@ export default function StaffRequestsPageClient() {
         </form>
 
         <div className={styles.filtersColumns}>
-          <div className={styles.filterColumn} role="group" aria-label="סינון לפי סטטוס טיפול">
-            <span className={styles.filterColumnLabel}>סטטוס טיפול</span>
-            <div className={styles.handlingChips}>
-              {HANDLING_OPTIONS.map(({ id, label }) => (
-                <label key={id} className={styles.handlingChip}>
-                  <input type="checkbox" checked={handlingSelected.has(id)} onChange={() => toggleHandling(id)} />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           <div className={styles.filterColumn}>
             <span className={styles.filterColumnLabel}>טווח תאריכים</span>
             <div className={styles.segmentWrap} role="tablist" aria-label="טווח תאריכים">
@@ -437,6 +506,18 @@ export default function StaffRequestsPageClient() {
                     label
                   )}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.filterColumn} role="group" aria-label="סינון לפי סטטוס טיפול">
+            <span className={styles.filterColumnLabel}>סטטוס טיפול</span>
+            <div className={styles.handlingChips}>
+              {HANDLING_OPTIONS.map(({ id, label }) => (
+                <label key={id} className={styles.handlingChip}>
+                  <input type="checkbox" checked={handlingSelected.has(id)} onChange={() => toggleHandling(id)} />
+                  <span>{label}</span>
+                </label>
               ))}
             </div>
           </div>
@@ -469,75 +550,80 @@ export default function StaffRequestsPageClient() {
 
       {loading ? (
         <RequestsSkeleton />
-      ) : rows.length === 0 ? (
-        <div className={styles.emptyCard}>
-          <p className={styles.emptyCardText}>אין בקשות בתצוגה זו</p>
-        </div>
       ) : (
-        <div className={styles.cardGrid}>
-          {rows.map((row, i) => (
-            <Link
-              key={row.return_id}
-              href={`/staff/requests/${encodeURIComponent(row.reference_code || row.return_id)}`}
-              className={styles.requestCard}
-              style={{ animationDelay: `${Math.min(i, 12) * 55}ms` }}
-            >
-              <div className={styles.cardTopBar}>
-                <span className={styles.agePill}>{createdDaysLabel(row.created_at)}</span>
-                <div className={styles.badges}>
-                  <span className={`${styles.badge} ${statusBadgeClass(row.status)}`}>
-                    {RETURN_STATUS_HE[row.status] || row.status}
-                  </span>
-                  {row.staff_handling ? (
-                    <span className={`${styles.badge} ${staffBadgeClass(row.staff_handling) || ""}`}>
-                      {STAFF_HANDLING_HE[row.staff_handling] || row.staff_handling}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+        <>
+          <div className={styles.statsRow} aria-label="סיכום בקשות לפי שלב טיפול">
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>ממתין לאישור</span>
+              <p className={styles.statValue}>{countPending}</p>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>בטיפול</span>
+              <p className={styles.statValue}>{countInProgress}</p>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>הושלמו</span>
+              <p className={styles.statValue}>{countCompleted}</p>
+            </div>
+          </div>
 
-              <dl className={styles.fieldList}>
-                <div className={styles.fieldRow}>
-                  <dt className={styles.fieldLabel}>מספר בקשה</dt>
-                  <dd className={styles.fieldValue} dir="ltr">
-                    {row.reference_code || "—"}
-                  </dd>
-                </div>
-                <div className={styles.fieldRow}>
-                  <dt className={styles.fieldLabel}>תאריך-שעה</dt>
-                  <dd className={styles.fieldValue}>
-                    {new Date(row.created_at).toLocaleString("he-IL", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
-                  </dd>
-                </div>
-                <div className={styles.fieldRow}>
-                  <dt className={styles.fieldLabel}>הזמנה</dt>
-                  <dd className={styles.fieldValue} dir="ltr">
-                    {row.order_id}
-                  </dd>
-                </div>
-                <div className={styles.fieldRow}>
-                  <dt className={styles.fieldLabel}>שם הלקוח</dt>
-                  <dd className={styles.fieldValue}>{displayName(row)}</dd>
-                </div>
-                <div className={styles.fieldRow}>
-                  <dt className={styles.fieldLabel}>סוג הבקשה</dt>
-                  <dd className={styles.fieldValuePillCell}>
-                    <span className={`${styles.typePill} ${typePillClass(row.type)}`}>
-                      {RETURN_TYPE_HE[row.type] || row.type}
-                    </span>
-                  </dd>
-                </div>
-              </dl>
+          {rows.length === 0 ? (
+            <div className={styles.emptyCard}>
+              <p className={styles.emptyCardText}>אין בקשות בתצוגה זו</p>
+            </div>
+          ) : (
+            <>
+              <section className={styles.requestGroup} aria-labelledby="staff-group-pending">
+                <h2 className={styles.requestGroupTitle} id="staff-group-pending">
+                  ממתין לאישור ({countPending})
+                </h2>
+                {grouped.pending.length === 0 ? (
+                  <p className={styles.groupEmptyNote}>אין בקשות בקבוצה זו</p>
+                ) : (
+                  <div className={styles.cardGrid}>
+                    {grouped.pending.map((row, i) => (
+                      <RequestCardLink key={row.return_id} row={row} animIndex={i} />
+                    ))}
+                  </div>
+                )}
+              </section>
 
-              <div className={styles.itemsBlock}>
-                <RequestCardItemsTable row={row} />
-              </div>
-            </Link>
-          ))}
-        </div>
+              <section className={styles.requestGroup} aria-labelledby="staff-group-progress">
+                <h2 className={styles.requestGroupTitle} id="staff-group-progress">
+                  בטיפול ({countInProgress})
+                </h2>
+                {grouped.inProgress.length === 0 ? (
+                  <p className={styles.groupEmptyNote}>אין בקשות בקבוצה זו</p>
+                ) : (
+                  <div className={styles.cardGrid}>
+                    {grouped.inProgress.map((row, i) => (
+                      <RequestCardLink key={row.return_id} row={row} animIndex={grouped.pending.length + i} />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className={styles.requestGroup} aria-labelledby="staff-group-done">
+                <h2 className={styles.requestGroupTitle} id="staff-group-done">
+                  הושלמו ({countCompleted})
+                </h2>
+                {grouped.completed.length === 0 ? (
+                  <p className={styles.groupEmptyNote}>אין בקשות בקבוצה זו</p>
+                ) : (
+                  <div className={styles.cardGrid}>
+                    {grouped.completed.map((row, i) => (
+                      <RequestCardLink
+                        key={row.return_id}
+                        row={row}
+                        animIndex={grouped.pending.length + grouped.inProgress.length + i}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+        </>
       )}
     </>
   );

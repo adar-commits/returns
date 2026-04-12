@@ -24,10 +24,80 @@
 .pageTitle {
   margin: 0 0 0.65rem;
   font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
-  font-size: clamp(1.1rem, 2.1vw, 1.35rem);
-  font-weight: 600;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  font-weight: 500;
   color: #1e293b;
   letter-spacing: -0.015em;
+}
+
+/* Summary counts — labels and values stay regular weight */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  padding: 0.65rem 0.75rem;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  text-align: right;
+}
+
+.statLabel {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.statValue {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: #334155;
+  line-height: 1.2;
+}
+
+.requestGroup {
+  margin-bottom: 1.5rem;
+}
+
+.requestGroup:last-child {
+  margin-bottom: 0;
+}
+
+.requestGroupTitle {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-noto-sans), var(--font-open-sans), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: #475569;
+  letter-spacing: -0.01em;
+}
+
+.groupEmptyNote {
+  margin: 0;
+  padding: 1rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #94a3b8;
+  text-align: right;
+  border: 1px dashed rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: #fafbfc;
 }
 
 .subtitle {

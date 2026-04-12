@@ -7,6 +7,7 @@ import { generatePaymentLink } from "@/lib/payplus";
 import type { ReturnRequestItem } from "@/lib/db-types";
 import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
 import { enrichWebhookPayloadDisplayMedia } from "@/lib/items-display-enrichment";
+import { couponDiscountIlsFromPercent, fetchCouponFromWebhook, roundIls } from "@/lib/coupon";
 
 type WizardChoice = {
   sku: string;
@@ -68,7 +69,11 @@ export async function POST(request: Request) {
   }
   try {
     const body = await request.json();
-    const { wizard, customer_address } = body as { wizard: Wizard; customer_address?: Record<string, string> };
+    const { wizard, customer_address, coupon_code } = body as {
+      wizard: Wizard;
+      customer_address?: Record<string, string>;
+      coupon_code?: string;
+    };
 
     const choicesWithAction = (wizard.choices || []).filter(
       (c) => c.action === "return" || c.action === "replace"
@@ -109,6 +114,26 @@ export async function POST(request: Request) {
       }
     }
     const shippingFee = Number(wizard.shipping?.fee ?? 0);
+
+    const replacePaySubtotal = amountToPay;
+    let couponDiscountIls = 0;
+    const trimmedCoupon = typeof coupon_code === "string" ? coupon_code.trim() : "";
+    if (trimmedCoupon) {
+      const validation = await fetchCouponFromWebhook(trimmedCoupon);
+      if (!validation) {
+        return NextResponse.json({ error: "לא ניתן לאמת קופון כרגע" }, { status: 502 });
+      }
+      if (!validation.isValid) {
+        return NextResponse.json({ error: "קוד קופון אינו זמין / תקין" }, { status: 400 });
+      }
+      const pct = parseFloat(validation.discount);
+      if (Number.isNaN(pct) || pct < 0) {
+        return NextResponse.json({ error: "קוד קופון אינו זמין / תקין" }, { status: 400 });
+      }
+      couponDiscountIls = couponDiscountIlsFromPercent(replacePaySubtotal, pct);
+      amountToPay = roundIls(Math.max(0, amountToPay - couponDiscountIls));
+    }
+
     const totalToPay = Math.max(0, amountToPay + shippingFee - amountRefund);
     const netRefund = Math.max(0, amountRefund - amountToPay - shippingFee);
 
@@ -227,6 +252,9 @@ export async function POST(request: Request) {
         shipping_fee: shippingFee,
         net_pay: totalToPay,
         net_refund: netRefund,
+        coupon_code: trimmedCoupon || null,
+        coupon_discount_ils: couponDiscountIls,
+        replace_pay_subtotal_before_coupon: replacePaySubtotal,
       },
       _raw_choices: wizard.choices,
     };

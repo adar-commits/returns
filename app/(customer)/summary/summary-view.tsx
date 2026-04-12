@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/format";
+import { couponDiscountIlsFromPercent } from "@/lib/coupon";
 
 type LineItem = { sku: string; product_name?: string; partname?: string; price?: number; qty?: number };
 type Choice = {
@@ -56,6 +57,10 @@ export default function SummaryView() {
   const [termsError, setTermsError] = useState(false);
   const [termsPortalUrl, setTermsPortalUrl] = useState<string>("https://www.carpetshop.co.il/policies/terms-of-service");
   const [termsShippingUrl, setTermsShippingUrl] = useState<string>("https://www.carpetshop.co.il/policies/refund-policy");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent: number } | null>(null);
+  const [couponFieldError, setCouponFieldError] = useState<string | null>(null);
+  const [couponApplying, setCouponApplying] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
   const termsRef = useRef<HTMLDivElement>(null);
 
@@ -127,8 +132,14 @@ export default function SummaryView() {
   const effectiveShippingFee =
     payTotal === 0 && refundTotal === 0 && shippingFee > 0 ? 0 : shippingFee;
 
-  const netPay = Math.max(0, payTotal + effectiveShippingFee - refundTotal);
-  const netRefund = Math.max(0, refundTotal - payTotal - effectiveShippingFee);
+  const replacePaySubtotal = payTotal;
+  const couponDiscountIls = appliedCoupon
+    ? couponDiscountIlsFromPercent(replacePaySubtotal, appliedCoupon.discountPercent)
+    : 0;
+  const payTotalAfterCoupon = Math.max(0, replacePaySubtotal - couponDiscountIls);
+
+  const netPay = Math.max(0, payTotalAfterCoupon + effectiveShippingFee - refundTotal);
+  const netRefund = Math.max(0, refundTotal - payTotalAfterCoupon - effectiveShippingFee);
   const needsPayment = netPay > 0;
   const needsAddress = needsPayment && wizard?.shipping?.type === "delivery";
 
@@ -152,6 +163,7 @@ export default function SummaryView() {
         body: JSON.stringify({
           wizard: wizardToSend,
           customer_address: needsAddress ? { full_name: fullName, phone, address } : undefined,
+          coupon_code: appliedCoupon?.code,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -247,7 +259,7 @@ export default function SummaryView() {
                   </span>
                 )}
                 {row.action === "keep" && (
-                  <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>—</span>
+                  <span style={{ fontWeight: 700, fontSize: "var(--text-body)", direction: "ltr" }}>0 ₪</span>
                 )}
                 {row.action === "unsure" && (
                   <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>—</span>
@@ -256,6 +268,82 @@ export default function SummaryView() {
             </div>
           </div>
         ))}
+
+        <Divider />
+
+        {/* Coupon (discount applies to החלפת מידה surcharges only, not shipping) */}
+        <div style={{ marginBottom: "var(--space-3)" }}>
+          <label className="input-label" style={{ display: "block", marginBottom: "var(--space-2)" }}>
+            קוד קופון
+          </label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", alignItems: "stretch" }}>
+            <input
+              className="input"
+              style={{ flex: "1 1 160px", minWidth: 0 }}
+              value={couponInput}
+              onChange={(e) => {
+                setCouponInput(e.target.value);
+                if (couponFieldError) setCouponFieldError(null);
+              }}
+              placeholder="הזינו קוד"
+              disabled={couponApplying}
+              dir="ltr"
+            />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ flexShrink: 0 }}
+              disabled={couponApplying || !couponInput.trim()}
+              onClick={async () => {
+                setCouponFieldError(null);
+                setCouponApplying(true);
+                try {
+                  const res = await fetch("/api/coupon/validate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ coupon: couponInput.trim() }),
+                  });
+                  const data = (await res.json().catch(() => ({}))) as {
+                    isValid?: boolean;
+                    discount?: string;
+                    error?: string;
+                  };
+                  if (!res.ok) {
+                    setCouponFieldError(data.error || "לא ניתן לאמת קופון כרגע");
+                    setAppliedCoupon(null);
+                    return;
+                  }
+                  if (!data.isValid) {
+                    setCouponFieldError("קוד קופון אינו זמין / תקין");
+                    setAppliedCoupon(null);
+                    return;
+                  }
+                  const pct = parseFloat(String(data.discount ?? ""));
+                  if (Number.isNaN(pct) || pct < 0) {
+                    setCouponFieldError("קוד קופון אינו זמין / תקין");
+                    setAppliedCoupon(null);
+                    return;
+                  }
+                  setAppliedCoupon({ code: couponInput.trim(), discountPercent: pct });
+                } finally {
+                  setCouponApplying(false);
+                }
+              }}
+            >
+              {couponApplying ? "בודק…" : "החל קופון"}
+            </button>
+          </div>
+          {appliedCoupon && !couponFieldError && (
+            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-success)" }}>
+              קופון הוחל: הנחה {appliedCoupon.discountPercent}% על סכום החלפות המידה בלבד
+            </p>
+          )}
+          {couponFieldError && (
+            <p style={{ marginTop: "var(--space-2)", fontSize: "var(--text-small)", color: "var(--color-error, #b91c1c)" }}>
+              {couponFieldError}
+            </p>
+          )}
+        </div>
 
         <Divider />
 
@@ -274,10 +362,16 @@ export default function SummaryView() {
             <span style={{ direction: "ltr" }}>−{fmt(refundTotal)} ₪</span>
           </div>
         )}
-        {payTotal > 0 && (
+        {replacePaySubtotal > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
-            <span>סה״כ הפרשים</span>
-            <span style={{ direction: "ltr" }}>+{fmt(payTotal)} ₪</span>
+            <span>סה״כ הפרשים (החלפת מידה)</span>
+            <span style={{ direction: "ltr" }}>+{fmt(replacePaySubtotal)} ₪</span>
+          </div>
+        )}
+        {couponDiscountIls > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-success)", marginBottom: "var(--space-1)" }}>
+            <span>הנחת קופון (החלפת מידה בלבד)</span>
+            <span style={{ direction: "ltr" }}>−{fmt(couponDiscountIls)} ₪</span>
           </div>
         )}
 

@@ -20,6 +20,10 @@ export const DEFAULT_SIZES_WEBHOOK_URL =
 export const DEFAULT_BRANCHES_WEBHOOK_URL =
   "https://redcarpet.app.n8n.cloud/webhook/1afacfcf-bdb5-455a-a84a-8475352b7479";
 
+/** Webhook to validate coupon codes (POST { coupon }). Override with COUPON_WEBHOOK_URL. */
+export const DEFAULT_COUPON_WEBHOOK_URL =
+  "https://redcarpet.app.n8n.cloud/webhook/f79bd7dd-9467-404b-a3ae-ec0f1fc88697";
+
 /** SKUs always restricted from product selection (not shown in return/replace item list). Merged with restricted_skus from settings. */
 export const DEFAULT_RESTRICTED_SKUS: string[] = [
   "1002", "1112",

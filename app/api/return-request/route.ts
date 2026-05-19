@@ -7,7 +7,7 @@ import { generatePaymentLink } from "@/lib/payplus";
 import type { ReturnRequestItem } from "@/lib/db-types";
 import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
 import { enrichWebhookPayloadDisplayMedia } from "@/lib/items-display-enrichment";
-import { couponDiscountIlsFromPercent, fetchCouponFromWebhook, roundIls } from "@/lib/coupon";
+import { computeCheckoutTotals, fetchCouponFromWebhook } from "@/lib/coupon";
 
 type WizardChoice = {
   sku: string;
@@ -116,8 +116,8 @@ export async function POST(request: Request) {
     const shippingFee = Number(wizard.shipping?.fee ?? 0);
 
     const replacePaySubtotal = amountToPay;
-    let couponDiscountIls = 0;
     const trimmedCoupon = typeof coupon_code === "string" ? coupon_code.trim() : "";
+    let couponDiscountPercent = 0;
     if (trimmedCoupon) {
       const validation = await fetchCouponFromWebhook(trimmedCoupon);
       if (!validation) {
@@ -130,12 +130,19 @@ export async function POST(request: Request) {
       if (Number.isNaN(pct) || pct < 0) {
         return NextResponse.json({ error: "קוד קופון אינו זמין / תקין" }, { status: 400 });
       }
-      couponDiscountIls = couponDiscountIlsFromPercent(replacePaySubtotal, pct);
-      amountToPay = roundIls(Math.max(0, amountToPay - couponDiscountIls));
+      couponDiscountPercent = pct;
     }
 
-    const totalToPay = Math.max(0, amountToPay + shippingFee - amountRefund);
-    const netRefund = Math.max(0, amountRefund - amountToPay - shippingFee);
+    const checkoutTotals = computeCheckoutTotals({
+      replacePaySubtotal,
+      shippingFee,
+      refundTotal: amountRefund,
+      couponDiscountPercent,
+    });
+    const couponDiscountIls = checkoutTotals.couponDiscountIls;
+    amountToPay = checkoutTotals.replacePayAfterCoupon;
+    const totalToPay = checkoutTotals.netPay;
+    const netRefund = checkoutTotals.netRefund;
 
     const { return_id, confirm_token, reference_code } = await createReturnRequest({
       phone: session.phone,

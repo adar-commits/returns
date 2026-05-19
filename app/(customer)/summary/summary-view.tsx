@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/format";
-import { couponDiscountIlsFromPercent } from "@/lib/coupon";
+import { computeCheckoutTotals } from "@/lib/coupon";
 
 type LineItem = { sku: string; product_name?: string; partname?: string; price?: number; qty?: number };
 type Choice = {
@@ -132,14 +132,19 @@ export default function SummaryView() {
   const effectiveShippingFee =
     payTotal === 0 && refundTotal === 0 && shippingFee > 0 ? 0 : shippingFee;
 
-  const replacePaySubtotal = payTotal;
-  const couponDiscountIls = appliedCoupon
-    ? couponDiscountIlsFromPercent(replacePaySubtotal, appliedCoupon.discountPercent)
-    : 0;
-  const payTotalAfterCoupon = Math.max(0, replacePaySubtotal - couponDiscountIls);
-
-  const netPay = Math.max(0, payTotalAfterCoupon + effectiveShippingFee - refundTotal);
-  const netRefund = Math.max(0, refundTotal - payTotalAfterCoupon - effectiveShippingFee);
+  const checkoutTotals = computeCheckoutTotals({
+    replacePaySubtotal: payTotal,
+    shippingFee: effectiveShippingFee,
+    refundTotal,
+    couponDiscountPercent: appliedCoupon?.discountPercent,
+  });
+  const {
+    replacePaySubtotal,
+    couponDiscountIls,
+    replacePayAfterCoupon: payTotalAfterCoupon,
+    netPay,
+    netRefund,
+  } = checkoutTotals;
   const needsPayment = netPay > 0;
   const needsAddress = needsPayment && wizard?.shipping?.type === "delivery";
 
@@ -415,21 +420,7 @@ export default function SummaryView() {
 
         <Divider />
 
-        {/* Shipping line */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-2)" }}>
-          <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{shippingLabel}</span>
-          <span style={{ fontSize: "var(--text-caption)", fontWeight: 600, direction: "ltr" }}>
-            {effectiveShippingFee > 0 ? `+${fmt(effectiveShippingFee)} ₪` : "חינם"}
-          </span>
-        </div>
-
-        {/* Subtotals */}
-        {refundTotal > 0 && (
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
-            <span>סה״כ זיכויים</span>
-            <span style={{ direction: "ltr" }}>−{fmt(refundTotal)} ₪</span>
-          </div>
-        )}
+        {/* Subtotals — coupon on products only; shipping at full price after discount */}
         {replacePaySubtotal > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
             <span>סה״כ הפרשים (החלפת מידה)</span>
@@ -438,8 +429,29 @@ export default function SummaryView() {
         )}
         {couponDiscountIls > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-success)", marginBottom: "var(--space-1)" }}>
-            <span>הנחת קופון (החלפת מידה בלבד)</span>
+            <span>הנחת קופון ({appliedCoupon?.discountPercent}% על מוצרים בלבד)</span>
             <span style={{ direction: "ltr" }}>−{fmt(couponDiscountIls)} ₪</span>
+          </div>
+        )}
+        {couponDiscountIls > 0 && payTotalAfterCoupon > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
+            <span>סה״כ מוצרים לאחר הנחה</span>
+            <span style={{ direction: "ltr" }}>+{fmt(payTotalAfterCoupon)} ₪</span>
+          </div>
+        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-2)" }}>
+          <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
+            {shippingLabel}
+            {effectiveShippingFee > 0 && couponDiscountIls > 0 ? " (ללא הנחה)" : ""}
+          </span>
+          <span style={{ fontSize: "var(--text-caption)", fontWeight: 600, direction: "ltr" }}>
+            {effectiveShippingFee > 0 ? `+${fmt(effectiveShippingFee)} ₪` : "חינם"}
+          </span>
+        </div>
+        {refundTotal > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
+            <span>סה״כ זיכויים</span>
+            <span style={{ direction: "ltr" }}>−{fmt(refundTotal)} ₪</span>
           </div>
         )}
 

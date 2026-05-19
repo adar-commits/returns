@@ -34,8 +34,53 @@ export function roundIls(n: number): number {
 
 /**
  * Apply webhook discount as percent of `replacePaySubtotal` (sum of positive replace price diffs only).
+ * Shipping is never included in this base.
  */
 export function couponDiscountIlsFromPercent(replacePaySubtotal: number, discountPercent: number): number {
   if (replacePaySubtotal <= 0 || !Number.isFinite(discountPercent) || discountPercent <= 0) return 0;
   return roundIls((replacePaySubtotal * discountPercent) / 100);
+}
+
+export type CheckoutTotalsInput = {
+  /** Sum of positive size-replacement price diffs only (never includes shipping). */
+  replacePaySubtotal: number;
+  shippingFee: number;
+  refundTotal: number;
+  /** Webhook percent (e.g. 10 = 10%). Omit or 0 when no coupon. */
+  couponDiscountPercent?: number;
+};
+
+export type CheckoutTotalsResult = {
+  replacePaySubtotal: number;
+  couponDiscountIls: number;
+  replacePayAfterCoupon: number;
+  shippingFee: number;
+  refundTotal: number;
+  netPay: number;
+  netRefund: number;
+};
+
+/**
+ * Checkout totals: coupon applies to replacement surcharges only; shipping is added at full price after the discount.
+ */
+export function computeCheckoutTotals(input: CheckoutTotalsInput): CheckoutTotalsResult {
+  const replacePaySubtotal = Math.max(0, input.replacePaySubtotal);
+  const shippingFee = Math.max(0, input.shippingFee);
+  const refundTotal = Math.max(0, input.refundTotal);
+  const couponDiscountIls = couponDiscountIlsFromPercent(
+    replacePaySubtotal,
+    input.couponDiscountPercent ?? 0
+  );
+  const replacePayAfterCoupon = roundIls(Math.max(0, replacePaySubtotal - couponDiscountIls));
+  const netPay = Math.max(0, replacePayAfterCoupon + shippingFee - refundTotal);
+  const netRefund = Math.max(0, refundTotal - replacePayAfterCoupon - shippingFee);
+  return {
+    replacePaySubtotal,
+    couponDiscountIls,
+    replacePayAfterCoupon,
+    shippingFee,
+    refundTotal,
+    netPay,
+    netRefund,
+  };
 }

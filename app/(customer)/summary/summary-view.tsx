@@ -128,23 +128,44 @@ export default function SummaryView() {
       .catch(() => {});
   }, []);
 
-  // If the only cost is shipping (no product diff, no refund), do not charge for shipping
+  const replaceLines = itemRows
+    .filter((r) => r.action === "replace" && r.newPrice > 0)
+    .map((r) => ({ paidPrice: r.paidPrice, newPrice: r.newPrice }));
+  const returnOnlyRefund = itemRows
+    .filter((r) => r.action === "return")
+    .reduce((sum, r) => sum + r.paidPrice, 0);
+
+  // If the only cost is shipping (no product due, no refund), do not charge for shipping
+  const preCouponTotals = computeCheckoutTotals({
+    replaceLines,
+    returnRefund: returnOnlyRefund,
+    shippingFee,
+  });
   const effectiveShippingFee =
-    payTotal === 0 && refundTotal === 0 && shippingFee > 0 ? 0 : shippingFee;
+    preCouponTotals.replacePayDue === 0 &&
+    returnOnlyRefund === 0 &&
+    preCouponTotals.replaceCredit === 0 &&
+    shippingFee > 0
+      ? 0
+      : shippingFee;
 
   const checkoutTotals = computeCheckoutTotals({
-    replacePaySubtotal: payTotal,
+    replaceLines,
+    returnRefund: returnOnlyRefund,
     shippingFee: effectiveShippingFee,
-    refundTotal,
     couponDiscountPercent: appliedCoupon?.discountPercent,
   });
   const {
-    replacePaySubtotal,
+    replaceProductsSubtotal,
     couponDiscountIls,
-    replacePayAfterCoupon: payTotalAfterCoupon,
+    replaceProductsAfterDiscount,
+    replacePaidSubtotal,
+    replaceDiffSubtotal,
+    replacePayDue: payTotalAfterCoupon,
     netPay,
     netRefund,
   } = checkoutTotals;
+  const hasCoupon = couponDiscountIls > 0;
   const needsPayment = netPay > 0;
   const needsAddress = needsPayment && wizard?.shipping?.type === "delivery";
 
@@ -412,7 +433,7 @@ export default function SummaryView() {
                   lineHeight: 1.35,
                 }}
               >
-                קופון הוחל — הנחה {appliedCoupon.discountPercent}% על סכום החלפות המידה בלבד
+                קופון הוחל — הנחה {appliedCoupon.discountPercent}% על מחיר המוצר המוחלף (לא על הפרש ולא על משלוח)
               </p>
             ) : null}
           </div>
@@ -421,37 +442,55 @@ export default function SummaryView() {
         <Divider />
 
         {/* Subtotals — coupon on products only; shipping at full price after discount */}
-        {replacePaySubtotal > 0 && (
+        {hasCoupon && replaceProductsSubtotal > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
-            <span>סה״כ הפרשים (החלפת מידה)</span>
-            <span style={{ direction: "ltr" }}>+{fmt(replacePaySubtotal)} ₪</span>
+            <span>סה״כ מחיר מוצרים מוחלפים</span>
+            <span style={{ direction: "ltr" }}>+{fmt(replaceProductsSubtotal)} ₪</span>
           </div>
         )}
-        {couponDiscountIls > 0 && (
+        {!hasCoupon && replaceDiffSubtotal > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
+            <span>סה״כ הפרשים (החלפת מידה)</span>
+            <span style={{ direction: "ltr" }}>+{fmt(replaceDiffSubtotal)} ₪</span>
+          </div>
+        )}
+        {hasCoupon && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-success)", marginBottom: "var(--space-1)" }}>
-            <span>הנחת קופון ({appliedCoupon?.discountPercent}% על מוצרים בלבד)</span>
+            <span>הנחת קופון ({appliedCoupon?.discountPercent}% על מחיר מוצר)</span>
             <span style={{ direction: "ltr" }}>−{fmt(couponDiscountIls)} ₪</span>
           </div>
         )}
-        {couponDiscountIls > 0 && payTotalAfterCoupon > 0 && (
+        {hasCoupon && replaceProductsAfterDiscount > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
-            <span>סה״כ מוצרים לאחר הנחה</span>
+            <span>מחיר מוצרים לאחר הנחה</span>
+            <span style={{ direction: "ltr" }}>+{fmt(replaceProductsAfterDiscount)} ₪</span>
+          </div>
+        )}
+        {hasCoupon && replacePaidSubtotal > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
+            <span>פחות שולם במקור</span>
+            <span style={{ direction: "ltr" }}>−{fmt(replacePaidSubtotal)} ₪</span>
+          </div>
+        )}
+        {hasCoupon && payTotalAfterCoupon > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
+            <span>סה״כ לתשלום (מוצרים)</span>
             <span style={{ direction: "ltr" }}>+{fmt(payTotalAfterCoupon)} ₪</span>
           </div>
         )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-2)" }}>
           <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>
             {shippingLabel}
-            {effectiveShippingFee > 0 && couponDiscountIls > 0 ? " (ללא הנחה)" : ""}
+            {effectiveShippingFee > 0 && hasCoupon ? " (ללא הנחה)" : ""}
           </span>
           <span style={{ fontSize: "var(--text-caption)", fontWeight: 600, direction: "ltr" }}>
             {effectiveShippingFee > 0 ? `+${fmt(effectiveShippingFee)} ₪` : "חינם"}
           </span>
         </div>
-        {refundTotal > 0 && (
+        {checkoutTotals.returnRefund + checkoutTotals.replaceCredit > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)" }}>
             <span>סה״כ זיכויים</span>
-            <span style={{ direction: "ltr" }}>−{fmt(refundTotal)} ₪</span>
+            <span style={{ direction: "ltr" }}>−{fmt(checkoutTotals.returnRefund + checkoutTotals.replaceCredit)} ₪</span>
           </div>
         )}
 

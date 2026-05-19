@@ -98,24 +98,21 @@ export async function POST(request: Request) {
     const hasReplace = items.some((i) => i.action === "replace");
     const type = hasReturn && hasReplace ? "mixed" : hasReplace ? "replacement" : "return";
 
-    let amountRefund = 0;
-    let amountToPay = 0;
+    const replaceLines: { paidPrice: number; newPrice: number }[] = [];
+    let returnRefund = 0;
 
     for (const c of wizard.choices) {
       if (c.action !== "return" && c.action !== "replace") continue;
       const item = orderItems.find((i) => i.sku === c.sku);
       const itemPrice = Number(item?.price ?? 0);
       if (c.action === "return") {
-        amountRefund += itemPrice;
+        returnRefund += itemPrice;
       } else if (c.action === "replace" && c.size_price != null) {
-        const diff = Number(c.size_price) - itemPrice;
-        if (diff > 0) amountToPay += diff;
-        else amountRefund += -diff;
+        replaceLines.push({ paidPrice: itemPrice, newPrice: Number(c.size_price) });
       }
     }
     const shippingFee = Number(wizard.shipping?.fee ?? 0);
 
-    const replacePaySubtotal = amountToPay;
     const trimmedCoupon = typeof coupon_code === "string" ? coupon_code.trim() : "";
     let couponDiscountPercent = 0;
     if (trimmedCoupon) {
@@ -134,13 +131,14 @@ export async function POST(request: Request) {
     }
 
     const checkoutTotals = computeCheckoutTotals({
-      replacePaySubtotal,
+      replaceLines,
+      returnRefund,
       shippingFee,
-      refundTotal: amountRefund,
       couponDiscountPercent,
     });
     const couponDiscountIls = checkoutTotals.couponDiscountIls;
-    amountToPay = checkoutTotals.replacePayAfterCoupon;
+    const amountToPay = checkoutTotals.replacePayDue;
+    const amountRefund = returnRefund + checkoutTotals.replaceCredit;
     const totalToPay = checkoutTotals.netPay;
     const netRefund = checkoutTotals.netRefund;
 
@@ -261,7 +259,9 @@ export async function POST(request: Request) {
         net_refund: netRefund,
         coupon_code: trimmedCoupon || null,
         coupon_discount_ils: couponDiscountIls,
-        replace_pay_subtotal_before_coupon: replacePaySubtotal,
+        replace_products_subtotal: checkoutTotals.replaceProductsSubtotal,
+        replace_products_after_discount: checkoutTotals.replaceProductsAfterDiscount,
+        replace_paid_subtotal: checkoutTotals.replacePaidSubtotal,
       },
       _raw_choices: wizard.choices,
     };

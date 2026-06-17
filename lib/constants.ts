@@ -24,6 +24,11 @@ export const DEFAULT_BRANCHES_WEBHOOK_URL =
 export const DEFAULT_COUPON_WEBHOOK_URL =
   "https://redcarpet.app.n8n.cloud/webhook/f79bd7dd-9467-404b-a3ae-ec0f1fc88697";
 
+/** HoM Group service — return request mirror (information only). */
+export const HOM_GROUP_RETURN_REQUESTS_URL =
+  "https://service.hom-group.co.il/api/return-requests";
+export const HOM_GROUP_RETURN_REQUESTS_BEARER = "jfiafya7f6a78fs6as78ftn79ct7rt28r9y";
+
 /** SKUs always restricted from product selection (not shown in return/replace item list). Merged with restricted_skus from settings. */
 export const DEFAULT_RESTRICTED_SKUS: string[] = [
   "1002", "1112",

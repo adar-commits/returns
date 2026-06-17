@@ -8,6 +8,7 @@ import type { ReturnRequestItem } from "@/lib/db-types";
 import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
 import { enrichWebhookPayloadDisplayMedia } from "@/lib/items-display-enrichment";
 import { computeCheckoutTotals, fetchCouponFromWebhook } from "@/lib/coupon";
+import { notifyHomGroupReturnRequest } from "@/lib/hom-group-return-request";
 
 type WizardChoice = {
   sku: string;
@@ -224,13 +225,18 @@ export async function POST(request: Request) {
       wizard.order?.BRANCHDES || wizard.order?.branchdes || wizard.order?.branch_desc || null;
     const orderTotal = wizard.order?.total_price || wizard.order?.total || null;
 
+    const requestStatus = amountToPay > 0 ? "awaiting_payment" : "pending_approval";
+
     const payload = {
       return_id,
       reference_code,
       created_at: new Date().toISOString(),
       type,
-      status: "pending_approval",
+      status: requestStatus,
       confirm_url: confirmUrl,
+      coupon_code: trimmedCoupon || null,
+      customer_address: customer_address || null,
+      wizard,
       customer: {
         phone: session.phone,
         full_name: customer_address?.full_name || null,
@@ -267,6 +273,10 @@ export async function POST(request: Request) {
     };
 
     await updateReturnRequestWebhookPayload(return_id, payload);
+
+    void notifyHomGroupReturnRequest(payload).catch((e) =>
+      console.error("HoM Group return-requests notify failed:", e)
+    );
 
     if (totalToPay > 0) {
       const successUrl = `${baseUrl}/api/payplus/success?return_id=${encodeURIComponent(return_id)}`;

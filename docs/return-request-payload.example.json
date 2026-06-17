@@ -1,0 +1,265 @@
+{
+  "examples": {
+    "replacement_delivery_with_coupon": {
+      "description": "Size replacement, home delivery, customer pays (coupon on replacement product price). Requires customer_address when net payment > 0 and shipping.type is delivery.",
+      "body": {
+        "coupon_code": "LAVAN",
+        "customer_address": {
+          "full_name": "ישראל ישראלי",
+          "phone": "0501234567",
+          "address": "רחוב הרצל 10, תל אביב",
+          "city": "תל אביב",
+          "email": "customer@example.com"
+        },
+        "wizard": {
+          "orderId": "OV255001193",
+          "step": "summary",
+          "order": {
+            "order_id": "OV255001193",
+            "ivnum": "OV255001193",
+            "ivdate": "2025-11-15",
+            "IVDATE": "2025-11-15",
+            "branch_desc": "תל אביב",
+            "BRANCHDES": "תל אביב",
+            "total_price": 736.56,
+            "items": [
+              {
+                "sku": "22201002-160230",
+                "partname": "סידני 01 קרם SYDNEY 160*230",
+                "product_name": "סידני 01 קרם SYDNEY 160*230",
+                "qty": 1,
+                "price": 736.56,
+                "price_amount": 736.56
+              }
+            ]
+          },
+          "choices": [
+            {
+              "sku": "22201002-160230",
+              "action": "replace",
+              "selected_size_id": "22201002-200300",
+              "size_label": "סידני 01 קרם SYDNEY 200*300",
+              "size_price": 1605.5,
+              "size_labs_csqr": 6.0
+            }
+          ],
+          "shipping": {
+            "type": "delivery",
+            "fee": 85
+          }
+        }
+      }
+    },
+    "return_only_branch": {
+      "description": "Full return, drop-off at branch, no payment. coupon_code omitted.",
+      "body": {
+        "wizard": {
+          "orderId": "OV255001193",
+          "step": "summary",
+          "order": {
+            "order_id": "OV255001193",
+            "ivdate": "2025-11-15",
+            "total_price": 736.56,
+            "items": [
+              {
+                "sku": "22201002-160230",
+                "partname": "סידני 01 קרם SYDNEY 160*230",
+                "qty": 1,
+                "price": 736.56
+              }
+            ]
+          },
+          "choices": [
+            {
+              "sku": "22201002-160230",
+              "action": "return",
+              "reason_id": "0",
+              "reason_text": null
+            }
+          ],
+          "shipping": {
+            "type": "branch",
+            "fee": 0,
+            "branch_id": "BR1",
+            "branch": {
+              "id": "BR1",
+              "name": "סניף תל אביב",
+              "address": "דיזengoff 100, תל אביב",
+              "state": "מרכז",
+              "phone": "03-1234567",
+              "email": "tlv@carpetshop.co.il",
+              "opening_hours": "א׳-ה׳ 10:00-19:00",
+              "map_url": "https://waze.com/ul/..."
+            }
+          }
+        }
+      }
+    },
+    "mixed_return_and_replace": {
+      "description": "One line returned, one line replaced (type becomes mixed).",
+      "body": {
+        "wizard": {
+          "orderId": "OV255001200",
+          "step": "summary",
+          "order": {
+            "order_id": "OV255001200",
+            "ivdate": "2025-12-01",
+            "total_price": 1200,
+            "items": [
+              {
+                "sku": "SKU-RETURN-01",
+                "partname": "שטיח A",
+                "qty": 1,
+                "price": 400
+              },
+              {
+                "sku": "SKU-REPLACE-01",
+                "partname": "שטיח B",
+                "qty": 1,
+                "price": 800
+              }
+            ]
+          },
+          "choices": [
+            {
+              "sku": "SKU-RETURN-01",
+              "action": "return",
+              "reason_id": "2",
+              "reason_text": null
+            },
+            {
+              "sku": "SKU-REPLACE-01",
+              "action": "replace",
+              "selected_size_id": "SKU-REPLACE-01-L",
+              "size_label": "שטיח B 240*340",
+              "size_price": 1100,
+              "size_labs_csqr": 8.16
+            },
+            {
+              "sku": "SKU-OTHER",
+              "action": "keep"
+            }
+          ],
+          "shipping": {
+            "type": "delivery",
+            "fee": 150
+          }
+        },
+        "customer_address": {
+          "full_name": "דנה כהן",
+          "phone": "0527654321",
+          "address": "הרצל 5, חיפה"
+        }
+      }
+    },
+    "return_other_reason_free_text": {
+      "description": "Return with reason_id pointing to 'אחר' — reason_text is required in the UI when that reason is selected.",
+      "body": {
+        "wizard": {
+          "orderId": "OV255001193",
+          "order": {
+            "items": [
+              {
+                "sku": "22201002-160230",
+                "partname": "סידני 01 קרם SYDNEY 160*230",
+                "price": 736.56,
+                "qty": 1
+              }
+            ]
+          },
+          "choices": [
+            {
+              "sku": "22201002-160230",
+              "action": "return",
+              "reason_id": "5",
+              "reason_text": "המוצר לא מתאים לעיצוב החדר"
+            }
+          ],
+          "shipping": {
+            "type": "branch",
+            "fee": 0,
+            "branch_id": "BR2",
+            "branch": {
+              "id": "BR2",
+              "name": "סניף חיפה"
+            }
+          }
+        }
+      }
+    },
+    "callback_consultation": {
+      "description": "Customer unsure — callback only, no return/replace actions on items.",
+      "body": {
+        "wizard": {
+          "orderId": "OV255001193",
+          "order": {
+            "items": [
+              {
+                "sku": "22201002-160230",
+                "partname": "סידני 01 קרם SYDNEY 160*230",
+                "price": 736.56,
+                "qty": 1
+              }
+            ]
+          },
+          "choices": [
+            {
+              "sku": "22201002-160230",
+              "action": "unsure"
+            }
+          ],
+          "shipping": {
+            "type": "callback",
+            "fee": 0
+          }
+        }
+      }
+    }
+  },
+  "field_reference": {
+    "top_level": {
+      "wizard": "Required. Full session state from the customer flow.",
+      "customer_address": "Optional. Required in practice when shipping.type is delivery and customer must pay.",
+      "coupon_code": "Optional. Validated via coupon webhook; discount applies to replacement product catalog price (not shipping, not surcharge diff)."
+    },
+    "wizard": {
+      "orderId": "Required. Same as order ivnum / order_id.",
+      "order": "Required. Original order snapshot; items[].price is what customer paid per line.",
+      "choices": "Required. One entry per order line the customer acted on.",
+      "shipping": "Required. type: delivery | branch | callback; fee in ILS.",
+      "step": "Optional. UI step marker (e.g. items, shipping, summary)."
+    },
+    "choices[]": {
+      "sku": "Required. Must match an order item SKU.",
+      "action": "Required. return | replace | keep | unsure. Only return and replace affect totals.",
+      "reason_id": "Required for return. Index into app_settings.return_reasons.",
+      "reason_text": "Required when reason is 'אחר'.",
+      "selected_size_id": "Required for replace. SKU/id of chosen size from sizes webhook.",
+      "size_label": "Required for replace. Display label of new size.",
+      "size_price": "Required for replace. Catalog price of replacement size (used for payment + coupon).",
+      "size_labs_csqr": "Optional. Square meters of original item; used earlier in shipping fee calculation."
+    },
+    "shipping": {
+      "type": "delivery = courier (שליח עד הבית); branch = return/replace at store; callback = phone consultation.",
+      "fee": "Delivery fee in ILS. Usually 0 for branch and callback.",
+      "branch_id": "Set when type is branch.",
+      "branch": "Branch details object when type is branch."
+    },
+    "customer_address": {
+      "full_name": "Recipient name for pickup/delivery.",
+      "phone": "Contact phone.",
+      "address": "Full address string for courier pickup.",
+      "city": "Optional city.",
+      "email": "Optional; passed to PayPlus when generating payment link."
+    },
+    "derived_by_server": {
+      "note": "These are computed from wizard — do not send unless you implement your own API.",
+      "type": "return | replacement | mixed",
+      "amount_to_pay": "Product amount due after coupon (max(0, discountedNewPrice - paid) per replace line).",
+      "amount_refund": "Return credits + replace downgrade credits.",
+      "shipping_fee": "From wizard.shipping.fee",
+      "net_pay": "amount_to_pay + shipping_fee - amount_refund (min 0)",
+      "phone": "Today taken from authenticated customer session, not request body."
+    }
+  }
+}

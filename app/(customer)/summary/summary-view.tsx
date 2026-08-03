@@ -158,7 +158,7 @@ export default function SummaryView() {
   });
   const { couponDiscountIls, replaceDiffSubtotal, netPay, netRefund } = checkoutTotals;
   const needsPayment = netPay > 0;
-  const needsAddress = needsPayment && wizard?.shipping?.type === "delivery";
+  const needsAddress = wizard?.shipping?.type === "delivery";
 
   const handleSubmit = async () => {
     if (!wizard) return;

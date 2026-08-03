@@ -5,10 +5,15 @@ import { createReturnRequest, updateReturnRequestReplacementOrderId, updateRetur
 import { createServerClient } from "@/lib/supabase-server";
 import { generatePaymentLink } from "@/lib/payplus";
 import type { ReturnRequestItem } from "@/lib/db-types";
-import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL } from "@/lib/constants";
+import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL, DEFAULT_ORDERS_WEBHOOK_URL } from "@/lib/constants";
 import { enrichWebhookPayloadDisplayMedia } from "@/lib/items-display-enrichment";
 import { computeCheckoutTotals, fetchCouponFromWebhook } from "@/lib/coupon";
 import { notifyHomGroupReturnRequest } from "@/lib/hom-group-return-request";
+import {
+  fetchCustomerAddressFromOrders,
+  mergeCustomerAddress,
+  type CustomerAddressPayload,
+} from "@/lib/customer-address";
 
 type WizardChoice = {
   sku: string;
@@ -143,6 +148,33 @@ export async function POST(request: Request) {
     const totalToPay = checkoutTotals.netPay;
     const netRefund = checkoutTotals.netRefund;
 
+    const settings = await getSettings();
+    const shippingMethodEarly =
+      wizard.shipping?.type === "branch"
+        ? "branch"
+        : wizard.shipping?.type === "callback"
+          ? "callback"
+          : "courier";
+
+    let resolvedCustomerAddress: CustomerAddressPayload | null = mergeCustomerAddress(
+      customer_address,
+      null,
+      session.phone
+    );
+    if (!resolvedCustomerAddress && shippingMethodEarly === "courier") {
+      const ordersUrl =
+        settings?.orders_webhook_url || process.env.ORDERS_WEBHOOK_URL || DEFAULT_ORDERS_WEBHOOK_URL;
+      const fromOrders = await fetchCustomerAddressFromOrders(session.phone, ordersUrl);
+      resolvedCustomerAddress = mergeCustomerAddress(customer_address, fromOrders, session.phone);
+    }
+
+    if (shippingMethodEarly === "courier" && !resolvedCustomerAddress) {
+      return NextResponse.json(
+        { error: "נדרשת כתובת לאיסוף בשליח. נא למלא פרטי משלוח." },
+        { status: 400 }
+      );
+    }
+
     const { return_id, confirm_token, reference_code } = await createReturnRequest({
       phone: session.phone,
       order_id: wizard.orderId,
@@ -152,10 +184,8 @@ export async function POST(request: Request) {
       amount_refund: amountRefund,
       amount_to_pay: amountToPay,
       shipping_fee: shippingFee,
-      customer_address: customer_address || null,
+      customer_address: resolvedCustomerAddress,
     });
-
-    const settings = await getSettings();
     const finalUrl =
       settings?.final_webhook_url ||
       process.env.FINAL_WEBHOOK_URL ||
@@ -235,13 +265,13 @@ export async function POST(request: Request) {
       status: requestStatus,
       confirm_url: confirmUrl,
       coupon_code: trimmedCoupon || null,
-      customer_address: customer_address || null,
+      customer_address: resolvedCustomerAddress,
       wizard,
       customer: {
-        phone: session.phone,
-        full_name: customer_address?.full_name || null,
-        address: customer_address?.address || null,
-        city: customer_address?.city || null,
+        phone: resolvedCustomerAddress?.phone || session.phone,
+        full_name: resolvedCustomerAddress?.full_name || null,
+        address: resolvedCustomerAddress?.address || null,
+        city: resolvedCustomerAddress?.city || null,
       },
       order: {
         order_id: wizard.orderId,
@@ -254,7 +284,7 @@ export async function POST(request: Request) {
         method: shippingMethod,
         fee: shippingFee,
         branch: branchInfo,
-        customer_delivery_address: shippingMethod === "courier" ? customer_address || null : null,
+        customer_delivery_address: shippingMethod === "courier" ? resolvedCustomerAddress : null,
       },
       items_detail: itemsDetail,
       totals: {
@@ -286,8 +316,8 @@ export async function POST(request: Request) {
         return_id,
         success_url: successUrl,
         failure_url: failureUrl,
-        customer_name: customer_address?.full_name || "Customer",
-        customer_email: customer_address?.email || undefined,
+        customer_name: resolvedCustomerAddress?.full_name || "Customer",
+        customer_email: resolvedCustomerAddress?.email || undefined,
         customer_phone: session.phone,
       });
       if (linkResult?.payment_page_link) {

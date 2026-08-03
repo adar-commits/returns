@@ -1,5 +1,6 @@
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_LOGO_URL, ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
+import StartOverLink from "./start-over-link";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
@@ -37,9 +38,9 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         </div>
       )}
       <div className="help-block" style={{ paddingTop: 0, marginTop: 0 }}>
-        <a href="/orders" className="link" style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
+        <StartOverLink style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
           להתחלה מחדש לחץ כאן
-        </a>
+        </StartOverLink>
       </div>
       {footer && <footer className="footer-block">{footer}</footer>}
     </div>

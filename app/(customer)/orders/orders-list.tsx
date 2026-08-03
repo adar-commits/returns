@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { formatOrderDateMD, formatMoney } from "@/lib/format";
 import { ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
+import StartOverLink from "../start-over-link";
 
 type DisabledReason = "cancelled" | "existing_request" | "past_window" | null;
 
@@ -236,18 +237,9 @@ export default function OrdersList() {
 
       {/* Different phone — below last order card */}
       <div style={{ marginTop: "var(--space-4)", textAlign: "center" }}>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          style={{ width: "auto", minWidth: 0, fontSize: "var(--text-small)" }}
-          onClick={async () => {
-            sessionStorage.clear();
-            try { await fetch("/api/auth/reset", { method: "POST" }); } catch (_) {}
-            window.location.href = "/";
-          }}
-        >
+        <StartOverLink className="btn btn-ghost" style={{ width: "auto", minWidth: 0, fontSize: "var(--text-small)" }}>
           {ENABLE_SIZE_EXCHANGE ? "הזמנת על טלפון אחר? לחץ כאן" : "ההזמנה רשומה עם טלפון אחר? לחצ/י כאן"}
-        </button>
+        </StartOverLink>
       </div>
     </div>
   );

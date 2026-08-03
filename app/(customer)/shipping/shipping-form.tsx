@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { totalDeliveryFee } from "@/lib/delivery-fee";
 import { formatMoney } from "@/lib/format";
+import { ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
 
 type Branch = {
   id: string;
@@ -220,7 +221,9 @@ export default function ShippingForm() {
                   — {deliveryFeeLoading ? "טוען…" : `₪${formatMoney(Number(shippingFee))}`}
                 </span>
                 <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
-                  מערך השליחים שלנו לשירותך — איסוף / החלפה מבית הלקוח
+                  {ENABLE_SIZE_EXCHANGE
+                    ? "מערך השליחים שלנו לשירותך — איסוף / החלפה מבית הלקוח"
+                    : "מערכך השליחים שלנו לשירותים - איסוף מבית הלקוח"}
                 </p>
               </div>
             </label>

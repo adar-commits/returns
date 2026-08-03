@@ -1,5 +1,5 @@
 import { getSettings } from "@/lib/settings";
-import { DEFAULT_LOGO_URL } from "@/lib/constants";
+import { DEFAULT_LOGO_URL, ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
 
 export default async function CustomerLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
@@ -24,7 +24,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={logoUrl} alt="Logo" className="customer-header-logo" />
         <p className="customer-header-title">
-          פורטל החלפות והחזרות לשירותכם
+          {ENABLE_SIZE_EXCHANGE ? "פורטל החלפות והחזרות לשירותכם" : "פורטל החזרות לשירותכם"}
         </p>
       </header>
       {banner && <div className="content-banner">{banner}</div>}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DEFAULT_RESTRICTED_SKUS } from "@/lib/constants";
+import { DEFAULT_RESTRICTED_SKUS, ENABLE_SIZE_EXCHANGE, RETURNS_ONLY_RETURN_REASONS } from "@/lib/constants";
 import { formatMoney } from "@/lib/format";
 
 const GALLERY_SIZE = 160;
@@ -172,7 +172,11 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       const orders = ordersData.orders || [];
       const found = orders.find((o: { order_id?: string }) => String(o.order_id) === orderId);
       setOrder(found || null);
-      setReturnReasons(settingsData.return_reasons || []);
+      setReturnReasons(
+        ENABLE_SIZE_EXCHANGE
+          ? (settingsData.return_reasons || [])
+          : [...RETURNS_ONLY_RETURN_REASONS]
+      );
       const fromSettings = Array.isArray(settingsData.restricted_skus) ? settingsData.restricted_skus : [];
       setRestrictedSkus(fromSettings);
       const rawItems = (found?.items || found?.line_items || []) as LineItem[];
@@ -252,7 +256,11 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
   const handleContinue = () => {
     setValidationError(null);
     if (choices.some((c) => c.action === "" || c.action == null)) {
-      setValidationError("נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה - זקוק/ה לסיוע טלפוני או ללא שינוי.");
+      setValidationError(
+        ENABLE_SIZE_EXCHANGE
+          ? "נא לבחור לכל פריט: החזרת מוצר, החלפת מידה, איני בטוח/ה - זקוק/ה לסיוע טלפוני או ללא שינוי."
+          : "נא לבחור לכל פריט: החזרת מוצר, איני בטוח/ה - זקוק/ה לסיוע טלפוני או ללא שינוי."
+      );
       errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -358,7 +366,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
 
               {/* Action selector */}
               <div className="input-wrap">
-                <label className="input-label">החזרה או החלפה</label>
+                {ENABLE_SIZE_EXCHANGE && <label className="input-label">החזרה או החלפה</label>}
                 <select
                   className="input"
                   value={choices[i]?.action ?? ""}
@@ -373,7 +381,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
                 >
                   <option value="">בחר פעולה</option>
                   <option value="return">החזרת מוצר</option>
-                  <option value="replace">החלפת מידה</option>
+                  {ENABLE_SIZE_EXCHANGE && <option value="replace">החלפת מידה</option>}
                   <option value="unsure">איני בטוח/ה - זקוק/ה לסיוע טלפוני</option>
                   <option value="keep">ללא שינוי</option>
                 </select>
@@ -419,7 +427,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
               )}
 
               {/* Replace — size picker (boxes only, no dropdown) */}
-              {choices[i]?.action === "replace" && (
+              {ENABLE_SIZE_EXCHANGE && choices[i]?.action === "replace" && (
                 <div className="input-wrap">
                   <p style={{ margin: "0 0 var(--space-2)", fontSize: "var(--text-small)", fontWeight: 600, color: "var(--color-error, #c00)", textAlign: "center", lineHeight: 1.4 }}>
                     * בפורטל זה ניתן לבצע החלפת מידה בלבד — עבור החלפת דגם יש לפנות לשירות הלקוחות *3076
@@ -549,7 +557,7 @@ export default function ItemSelection({ orderId }: { orderId: string }) {
       })}
 
       <button type="button" className="btn btn-primary" onClick={handleContinue} disabled={sending}>
-        {sending ? "שולח…" : "המשך למשלוח ואיסוף"}
+        {sending ? "שולח…" : ENABLE_SIZE_EXCHANGE ? "המשך למשלוח ואיסוף" : "המשך לשלב הבא"}
       </button>
     </div>
   );

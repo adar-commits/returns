@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/format";
 import { computeCheckoutTotals } from "@/lib/coupon";
+import { ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
 
 type LineItem = { sku: string; product_name?: string; partname?: string; price?: number; qty?: number };
 type Choice = {
@@ -205,7 +206,9 @@ export default function SummaryView() {
 
   const shippingLabel =
     wizard.shipping?.type === "branch"
-      ? `החלפה / החזרה לסניף - ${wizard.shipping.branch?.name ?? ""}`
+      ? ENABLE_SIZE_EXCHANGE
+        ? `החלפה / החזרה לסניף - ${wizard.shipping.branch?.name ?? ""}`
+        : `החזרה לסניף - ${wizard.shipping.branch?.name ?? ""}`
       : wizard.shipping?.type === "callback"
         ? "חזרו אלי בטלפון - חינם"
         : "שליח עד הבית";
@@ -287,7 +290,9 @@ export default function SummaryView() {
 
         <Divider />
 
-        {/* Coupon — label + pill input (right); primary CTA-style button (left); feedback below */}
+        {/* Coupon — hidden while size exchange is disabled */}
+        {ENABLE_SIZE_EXCHANGE && (
+        <>
         <div style={{ marginBottom: "var(--space-3)" }} dir="rtl">
           <div
             style={{
@@ -428,8 +433,9 @@ export default function SummaryView() {
             ) : null}
           </div>
         </div>
-
         <Divider />
+        </>
+        )}
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-2)" }}>
           <span style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)" }}>{shippingLabel}</span>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { formatOrderDateMD, formatMoney } from "@/lib/format";
+import { ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
 
 type DisabledReason = "cancelled" | "existing_request" | "past_window" | null;
 
@@ -125,8 +126,8 @@ export default function OrdersList() {
       {/* Greeting */}
       <p style={{ marginBottom: "var(--space-5)", fontSize: "var(--text-body)", color: "var(--color-text-muted)", lineHeight: 1.5 }}>
         {customerName
-          ? <>היי, <strong style={{ color: "var(--color-text)" }}>{customerName}</strong> — בחר/י הזמנה להחלפה או החזרה</>
-          : "בחר/י הזמנה להחלפה או החזרה"}
+          ? <>היי, <strong style={{ color: "var(--color-text)" }}>{customerName}</strong> — {ENABLE_SIZE_EXCHANGE ? "בחר/י הזמנה להחלפה או החזרה" : "בחר/י הזמנה להחזרה"}</>
+          : ENABLE_SIZE_EXCHANGE ? "בחר/י הזמנה להחלפה או החזרה" : "בחר/י הזמנה להחזרה"}
       </p>
 
       <ul className="list-plain">
@@ -185,11 +186,11 @@ export default function OrdersList() {
                   <div className="order-card-buttons" style={{ display: "flex", gap: "var(--space-2)", flexWrap: "nowrap" }}>
                     {canReturn ? (
                       <Link href={`/orders/${id}/items`} className="btn btn-primary" style={{ width: "auto", minWidth: 0, textDecoration: "none", fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
-                        החלפה / החזרה
+                        {ENABLE_SIZE_EXCHANGE ? "החלפה / החזרה" : "החזרה"}
                       </Link>
                     ) : (
                       <button type="button" className="btn btn-primary" disabled style={{ width: "auto", minWidth: 0, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
-                        החלפה / החזרה
+                        {ENABLE_SIZE_EXCHANGE ? "החלפה / החזרה" : "החזרה"}
                       </button>
                     )}
                     <button
@@ -245,7 +246,7 @@ export default function OrdersList() {
             window.location.href = "/";
           }}
         >
-          הזמנת על טלפון אחר? לחץ כאן
+          {ENABLE_SIZE_EXCHANGE ? "הזמנת על טלפון אחר? לחץ כאן" : "ההזמנה רשומה עם טלפון אחר? לחצ/י כאן"}
         </button>
       </div>
     </div>

@@ -1,6 +1,22 @@
 /** Default logo shown in customer flow (same-origin; override with env NEXT_PUBLIC_LOGO_URL). */
 export const DEFAULT_LOGO_URL = "/img/HoM_logo.webp";
 
+/**
+ * When false, customer portal is returns-only (no size exchange / coupon).
+ * Set to true to re-enable החלפת מידה flow and related UI.
+ */
+export const ENABLE_SIZE_EXCHANGE = false;
+
+/** Return reasons shown while ENABLE_SIZE_EXCHANGE is false. */
+export const RETURNS_ONLY_RETURN_REASONS = [
+  "פגם במוצר",
+  "מידה לא מתאימה",
+  "המוצר שונה מהתמונה/תיאור",
+  "שיניתי את דעתי",
+  "עיכוב באספקה",
+  "אחר",
+] as const;
+
 /** Default webhook URL used when no setting or env is configured for OTP, sizes, or final. */
 export const DEFAULT_WEBHOOK_URL =
   "https://redcarpet.app.n8n.cloud/webhook/e437eb1f-8b91-4c08-adbb-1b9c1d96ea09";

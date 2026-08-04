@@ -9,6 +9,9 @@ import { DEFAULT_WEBHOOK_URL, DEFAULT_APP_URL, DEFAULT_ORDERS_WEBHOOK_URL } from
 import { enrichWebhookPayloadDisplayMedia } from "@/lib/items-display-enrichment";
 import { computeCheckoutTotals, fetchCouponFromWebhook } from "@/lib/coupon";
 import { notifyHomGroupReturnRequest } from "@/lib/hom-group-return-request";
+import { resolveCustId } from "@/lib/customer-id";
+import { normalizeOrdersResponse } from "@/lib/orders-normalize";
+import { fetchOrders } from "@/lib/webhooks";
 import {
   fetchCustomerAddressFromOrders,
   mergeCustomerAddress,
@@ -255,6 +258,20 @@ export async function POST(request: Request) {
       wizard.order?.BRANCHDES || wizard.order?.branchdes || wizard.order?.branch_desc || null;
     const orderTotal = wizard.order?.total_price || wizard.order?.total || null;
 
+    let custId = resolveCustId(wizard.order, undefined);
+    if (!custId) {
+      const ordersUrl =
+        settings?.orders_webhook_url || process.env.ORDERS_WEBHOOK_URL || DEFAULT_ORDERS_WEBHOOK_URL;
+      const ordersRaw = await fetchOrders(session.phone, ordersUrl);
+      if (ordersRaw) {
+        const ordersData = normalizeOrdersResponse(ordersRaw);
+        const matchedOrder = ordersData.orders.find(
+          (o) => String(o.order_id ?? o.id ?? "") === String(wizard.orderId)
+        );
+        custId = resolveCustId(matchedOrder, ordersData.customerDetails);
+      }
+    }
+
     const requestStatus = amountToPay > 0 ? "awaiting_payment" : "pending_approval";
 
     const payload = {
@@ -265,9 +282,11 @@ export async function POST(request: Request) {
       status: requestStatus,
       confirm_url: confirmUrl,
       coupon_code: trimmedCoupon || null,
+      cust_id: custId,
       customer_address: resolvedCustomerAddress,
       wizard,
       customer: {
+        cust_id: custId,
         phone: resolvedCustomerAddress?.phone || session.phone,
         full_name: resolvedCustomerAddress?.full_name || null,
         address: resolvedCustomerAddress?.address || null,
@@ -275,6 +294,7 @@ export async function POST(request: Request) {
       },
       order: {
         order_id: wizard.orderId,
+        cust_id: custId,
         ivdate: orderDate,
         branch: orderBranch,
         total: orderTotal,

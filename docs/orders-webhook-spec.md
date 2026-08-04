@@ -39,13 +39,13 @@ The app **POST**s `{ "phone": "05XXXXXXXX" }` to your Orders webhook URL. You mu
 
 | Location | Field | Type | Description |
 |----------|--------|------|-------------|
-| **customer** | custid | string | Customer ID |
+| **customer** | cust_id / custid | string | Customer ID (either field accepted) |
 | | name | string | Full name (used in UI greeting) |
 | | phone | string | Phone number |
 | | address | string | Default address (optional for display) |
 | **orders[]** | ivdate | string | Order/invoice date (ISO or YYYY-MM-DD; used for eligibility) |
 | | ivnum | string | Invoice/order number (unique id; used as order_id in app) |
-| | custid | string | Customer ID |
+| | cust_id / custid | string | Customer ID |
 | | phone | string | Phone |
 | | branch_id | string | Branch id if from branch |
 | | branch_desc | string | Branch name/description |
@@ -61,9 +61,10 @@ The app **POST**s `{ "phone": "05XXXXXXXX" }` to your Orders webhook URL. You mu
 
 ```json
 {
-  "customer": {
-    "custid": "C123",
-    "name": "ישראל ישראלי",
+    "customer": {
+      "cust_id": "C123",
+      "custid": "C123",
+      "name": "ישראל ישראלי",
     "phone": "0501234567",
     "address": "רחוב הרצל 1, תל אביב"
   },

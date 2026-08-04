@@ -6,6 +6,8 @@
  * Only orders with total_price > 0 are included (credit notes excluded from "my orders").
  */
 
+import { normalizeCustId } from "@/lib/customer-id";
+
 function coerceReturnable(v: unknown): boolean | undefined {
   if (v === true || v === 1) return true;
   if (v === false || v === 0) return false;
@@ -24,15 +26,26 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
   const rawOrders = data.orders ?? data.Orders ?? [];
   const ordersArray = Array.isArray(rawOrders) ? rawOrders : [];
   const customer = data.customer ?? data.Customer;
-  const customerDetails = customer
+  const customerRecord = customer as Record<string, unknown> | undefined;
+  const customerCustId = normalizeCustId(customerRecord);
+  const customerDetails = customerRecord
     ? {
-        custid: (customer as Record<string, unknown>).custid,
-        name: (customer as Record<string, unknown>).name,
-        full_name: (customer as Record<string, unknown>).name ?? (customer as Record<string, unknown>).full_name,
-        phone: (customer as Record<string, unknown>).phone,
-        address: (customer as Record<string, unknown>).address,
+        cust_id: customerCustId ?? undefined,
+        custid: customerCustId ?? undefined,
+        name: customerRecord.name,
+        full_name: customerRecord.name ?? customerRecord.full_name,
+        phone: customerRecord.phone,
+        address: customerRecord.address,
       }
-    : (data.customerDetails ?? data.customer_details) as Record<string, unknown> | undefined;
+    : (() => {
+        const details = (data.customerDetails ?? data.customer_details) as Record<string, unknown> | undefined;
+        if (!details) return undefined;
+        const id = normalizeCustId(details);
+        return {
+          ...details,
+          ...(id ? { cust_id: id, custid: id } : {}),
+        };
+      })();
 
   const orders = ordersArray
     .filter((o: Record<string, unknown>) => {
@@ -62,6 +75,8 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
         ...o,
         order_id: o.ivnum ?? o.order_id ?? o.id,
         id: o.ivnum ?? o.order_id ?? o.id,
+        cust_id: normalizeCustId(o) ?? undefined,
+        custid: normalizeCustId(o) ?? undefined,
         IVDATE: o.ivdate ?? o.IVDATE,
         ivdate: o.ivdate ?? o.IVDATE,
         IVNUM: o.ivnum ?? o.IVNUM,

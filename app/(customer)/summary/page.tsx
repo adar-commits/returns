@@ -9,7 +9,7 @@ export default async function SummaryPage() {
   return (
     <main className="page-wrap-wide">
       <ProgressBar currentStep={3} />
-      <h1 className="page-title">סיכום ותשלום</h1>
+      <h1 className="page-title">סיכום החזרה</h1>
       <p className="page-subtitle">כמעט סיימנו — וודא/י את הפרטים מטה</p>
       <SummaryView />
     </main>

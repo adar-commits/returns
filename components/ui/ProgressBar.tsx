@@ -1,4 +1,4 @@
-const STEPS = ["בחירת הזמנה", "בחירת פריטים", "משלוח ואיסוף", "סיכום ותשלום"];
+const STEPS = ["בחירת הזמנה", "בחירת פריטים", "משלוח ואיסוף", "סיכום"];
 
 export default function ProgressBar({ currentStep }: { currentStep: number }) {
   const fillPercent = Math.min(100, ((currentStep + 0.5) / 4) * 100);

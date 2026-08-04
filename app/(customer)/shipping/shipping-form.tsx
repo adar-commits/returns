@@ -231,8 +231,8 @@ export default function ShippingForm() {
             <label className="choice-option" data-selected={deliveryOrBranch === "branch"} style={{ cursor: "pointer" }}>
               <input type="radio" name="shipping" checked={deliveryOrBranch === "branch"} onChange={() => setDeliveryOrBranch("branch")} />
               <div>
-                <strong>החזרה / החלפה בכל סניף</strong>
-                <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
+                <strong>החזרה לסניף</strong>
+                <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — ללא עלות</span>
                 <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
                   החזירו את המוצר לאחד מסניפי הרשת שלנו ללא עלות
                 </p>
@@ -268,7 +268,11 @@ export default function ShippingForm() {
           ) : branches.length === 0 ? (
             <p style={{ color: "var(--color-text-muted)", fontSize: "var(--text-caption)", textAlign: "right" }}>לא נמצאו סניפים</p>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)" }}>
+            <>
+              <p style={{ color: "var(--color-text)", fontSize: "var(--text-caption)", textAlign: "right", marginBottom: "var(--space-3)", lineHeight: 1.5 }}>
+                שעות פעילות הסניפים הינם א׳-ה׳ בין השעות 09:30 עד 19:30 (איירפורט סיטי עד 18:00) , ימי שישי 09:00 - 14:00, שבת - סגור
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)" }}>
               {branches.map((b) => {
                 const selected = selectedBranchId === b.id;
                 const wazeHref = wazeUrls[b.id] || b.map_url || null;
@@ -338,7 +342,11 @@ export default function ShippingForm() {
                   </button>
                 );
               })}
-            </div>
+              </div>
+              <p style={{ color: "var(--color-error, #b91c1c)", fontSize: "var(--text-caption)", textAlign: "right", marginTop: "var(--space-3)", lineHeight: 1.5 }}>
+                בימי שישי וערבי חג לא תתאפשר החזרת סחורה לסניפים
+              </p>
+            </>
           )}
         </div>
       )}

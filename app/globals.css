@@ -430,6 +430,11 @@ body {
   flex: 0 1 auto;
 }
 
+.customer-main .page-wrap,
+.customer-main .page-wrap-wide {
+  min-height: auto;
+}
+
 .help-block {
   padding: var(--space-4) var(--space-4);
   background: var(--color-surface);
@@ -446,6 +451,10 @@ body {
   .customer-main .page-wrap,
   .customer-main .page-wrap-wide {
     padding-bottom: var(--space-3);
+    min-height: auto;
+  }
+  .customer-main .hero {
+    padding: var(--space-4) 0 var(--space-3);
   }
   .customer-main .page-wrap > *:first-child,
   .customer-main .page-wrap-wide > *:first-child {

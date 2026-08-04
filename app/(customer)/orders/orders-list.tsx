@@ -120,7 +120,7 @@ export default function OrdersList() {
 
   if (loading) return <div className="loading-block"><div className="loader" /><span>טוען הזמנות…</span></div>;
   if (error) return <div ref={errorRef} className="msg-error">{error}</div>;
-  if (orders.length === 0) return <div className="card"><p style={{ color: "var(--color-text-muted)", margin: 0 }}>לא נמצאו הזמנות.</p></div>;
+  if (orders.length === 0) return <div className="card"><p style={{ color: "var(--color-text-muted)", margin: 0 }}>לא נמצאו הזמנות שסופקו למספר טלפון זה.</p></div>;
 
   return (
     <div style={{ marginTop: "var(--space-2)" }}>

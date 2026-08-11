@@ -244,7 +244,7 @@ export default function ShippingForm() {
         <label className="choice-option" data-selected={deliveryOrBranch === "callback"} style={{ cursor: onlyCallback ? "default" : "pointer" }}>
           <input type="radio" name="shipping" checked={deliveryOrBranch === "callback"} onChange={() => !onlyCallback && setDeliveryOrBranch("callback")} disabled={onlyCallback} />
           <div>
-            <strong>נציג טלפוני</strong>
+            <strong>לא בטוחים שרוצים להחזיר? נציג טלפוני לשירותך</strong>
             <span style={{ color: "var(--color-success)", fontWeight: 600 }}> — חינם</span>
             <p style={{ fontSize: "var(--text-caption)", color: "var(--color-text-muted)", marginTop: "var(--space-1)" }}>
               {onlyCallback ? "נבחר אופן זה כי בחרת איני בטוח/ה באחד מהפריטים — יועצ/ת יחזור אליך בהקדם" : "חזרו אלי בטלפון — יועצ/ת עיצוב לשירותך ללא עלות, מענה עד 24 שעות"}

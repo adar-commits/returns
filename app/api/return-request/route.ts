@@ -17,16 +17,15 @@ import {
   mergeCustomerAddress,
   type CustomerAddressPayload,
 } from "@/lib/customer-address";
+import {
+  buildItemsDetailFromChoices,
+  choicesForPayload,
+  resolveRequestIntent,
+  shippingMethodLabelHe,
+  type WizardItemChoice,
+} from "@/lib/return-request-items-detail";
 
-type WizardChoice = {
-  sku: string;
-  action: "" | "return" | "replace";
-  reason_id?: string;
-  reason_text?: string;
-  selected_size_id?: string;
-  size_label?: string;
-  size_price?: number;
-};
+type WizardChoice = WizardItemChoice;
 
 type WizardOrderItem = {
   sku: string;
@@ -84,22 +83,21 @@ export async function POST(request: Request) {
       coupon_code?: string;
     };
 
-    const choicesWithAction = (wizard.choices || []).filter(
-      (c) => c.action === "return" || c.action === "replace"
-    );
+    const wizardChoices = (wizard.choices || []) as WizardChoice[];
+    const payloadChoices = choicesForPayload(wizardChoices);
     if (!wizard?.orderId || !wizard.choices?.length) {
       return NextResponse.json({ error: "Invalid wizard data" }, { status: 400 });
     }
 
     const orderItems: WizardOrderItem[] = wizard.order?.items || wizard.order?.line_items || [];
 
-    const items: ReturnRequestItem[] = choicesWithAction.map((c) => ({
+    const items: ReturnRequestItem[] = payloadChoices.map((c) => ({
       sku: c.sku,
-      action: c.action === "replace" ? "replace" : "return",
-      reason_id: c.reason_id,
-      selected_size_id: c.selected_size_id,
-      size_label: c.size_label,
-      size_price: c.size_price,
+      action: c.action as ReturnRequestItem["action"],
+      reason_id: c.action === "return" ? c.reason_id : undefined,
+      selected_size_id: c.action === "replace" ? c.selected_size_id : undefined,
+      size_label: c.action === "replace" ? c.size_label : undefined,
+      size_price: c.action === "replace" ? c.size_price : undefined,
     }));
 
     // Allow submission with no return/replace (e.g. only keep/unsure + callback for consultation)
@@ -199,47 +197,10 @@ export async function POST(request: Request) {
     const confirmUrl = `${baseUrl}/confirm-return?token=${confirm_token}`;
 
     const returnReasons: string[] = settings?.return_reasons || [];
-    const itemsDetail = choicesWithAction.map((c) => {
-      const orderItem = orderItems.find((i) => i.sku === c.sku);
-      const productName =
-        orderItem?.product_name || orderItem?.partname || c.sku || "פריט";
-      const paidPrice = Number(orderItem?.price ?? 0);
-      const qty = Math.max(1, Number(orderItem?.qty ?? 1) || 1);
-      const newPrice =
-        c.action === "replace"
-          ? c.size_price != null
-            ? Number(c.size_price)
-            : paidPrice
-          : null;
-      const priceDiff =
-        c.action === "return"
-          ? -paidPrice
-          : newPrice != null
-            ? newPrice - paidPrice
-            : 0;
-      const isOtherReason = c.reason_id != null && returnReasons[Number(c.reason_id)] === "אחר";
-      const reasonText =
-        isOtherReason && c.reason_text?.trim()
-          ? c.reason_text.trim()
-          : c.reason_id != null && returnReasons[Number(c.reason_id)] != null
-            ? returnReasons[Number(c.reason_id)]
-            : null;
-      return {
-        sku: c.sku,
-        product_name: productName,
-        qty,
-        action_type: c.action,
-        paid_price: paidPrice,
-        new_size_id: c.selected_size_id || null,
-        new_size_label: c.size_label || null,
-        new_size_price: c.action === "replace" ? newPrice : null,
-        price_diff: priceDiff,
-        reason_id: c.reason_id || null,
-        reason_text: reasonText,
-      };
-    });
+    const itemsDetail = buildItemsDetailFromChoices(wizardChoices, orderItems, returnReasons);
 
     const shippingMethod = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
+    const requestIntent = resolveRequestIntent(wizardChoices, hasReturn, hasReplace);
     const branchInfo =
       wizard.shipping?.type === "branch"
         ? {
@@ -302,10 +263,12 @@ export async function POST(request: Request) {
       },
       shipping: {
         method: shippingMethod,
+        method_label_he: shippingMethodLabelHe(shippingMethod),
         fee: shippingFee,
         branch: branchInfo,
         customer_delivery_address: shippingMethod === "courier" ? resolvedCustomerAddress : null,
       },
+      request_intent: requestIntent,
       items_detail: itemsDetail,
       totals: {
         amount_refund: amountRefund,

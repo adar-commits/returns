@@ -77,7 +77,7 @@ export interface ReturnRequestRow {
 
 export interface ReturnRequestItem {
   sku: string;
-  action: "return" | "replace";
+  action: "return" | "replace" | "keep" | "unsure";
   reason_id?: string;
   selected_size_id?: string;
   product_name?: string;

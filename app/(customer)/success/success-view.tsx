@@ -1,24 +1,11 @@
 "use client";
 
 export default function SuccessView({
-  returnId,
   referenceCode,
-  shippingType,
-  branchName,
 }: {
-  returnId: string;
   /** Short customer-facing id, e.g. RET-00042 */
   referenceCode: string;
-  shippingType: string;
-  branchName: string;
 }) {
-  const destinationLabel =
-    shippingType === "branch" && branchName
-      ? `הבקשה נשלחה לסניף ${branchName}`
-      : shippingType === "callback"
-        ? "יועצ/ת עיצוב תחזור אליכם עד 24 שעות"
-        : "הבקשה נשלחה לשירות הלקוחות שלנו";
-
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "var(--space-6) var(--space-4)", minHeight: "60vh", justifyContent: "center" }}>
 
@@ -53,24 +40,13 @@ export default function SuccessView({
         הבקשה נשלחה!
       </h1>
 
-      {/* Shipping destination */}
-      <p style={{
-        fontSize: "var(--text-body)",
-        fontWeight: 600,
-        color: "var(--color-primary)",
-        textAlign: "center",
-        marginBottom: "var(--space-3)",
-      }}>
-        {destinationLabel}
-      </p>
-
       {/* Sub-message */}
       <p style={{ fontSize: "var(--text-body)", color: "var(--color-text-muted)", textAlign: "center", lineHeight: 1.7, maxWidth: 320, marginBottom: "var(--space-6)" }}>
         בקשתך נשלחה בהצלחה, אנחנו מיד נתפנה לטפל בה.
       </p>
 
       {/* Reference ID card */}
-      {(referenceCode || returnId) && (
+      {referenceCode && (
         <div
           style={{
             background: "var(--color-surface-elevated)",
@@ -83,33 +59,12 @@ export default function SuccessView({
             maxWidth: 360,
           }}
         >
-          {referenceCode ? (
-            <>
-              <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                מספר בקשה
-              </p>
-              <p style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--color-text)", letterSpacing: "0.08em" }}>
-                {referenceCode}
-              </p>
-            </>
-          ) : null}
-          {returnId ? (
-            <p
-              style={{
-                fontFamily: "monospace",
-                fontSize: referenceCode ? "var(--text-small)" : "var(--text-body)",
-                fontWeight: referenceCode ? 500 : 700,
-                color: "var(--color-text-muted)",
-                letterSpacing: "0.04em",
-                wordBreak: "break-all",
-                marginTop: referenceCode ? "var(--space-3)" : 0,
-                marginBottom: 0,
-              }}
-            >
-              {referenceCode ? "מזהה מערכת: " : ""}
-              {returnId}
-            </p>
-          ) : null}
+          <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginBottom: "var(--space-1)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+            מספר בקשה
+          </p>
+          <p style={{ fontSize: "1.35rem", fontWeight: 800, color: "var(--color-text)", letterSpacing: "0.08em" }}>
+            {referenceCode}
+          </p>
           <p style={{ fontSize: "var(--text-small)", color: "var(--color-text-muted)", marginTop: "var(--space-2)" }}>
             שמרו את המספר לצורך מעקב עתידי
           </p>

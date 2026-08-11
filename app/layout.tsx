@@ -32,7 +32,8 @@ export const metadata: Metadata = {
   description: "פורטל החלפות והחזרות — השטיח האדום",
   manifest: "/manifest",
   icons: {
-    apple: "/img/HoM_logo.webp",
+    icon: "/img/favicon.png",
+    apple: "/img/favicon.png",
   },
   formatDetection: {
     telephone: true,

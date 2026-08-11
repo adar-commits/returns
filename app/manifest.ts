@@ -14,15 +14,15 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: "rtl",
     icons: [
       {
-        src: "/img/HoM_logo.webp",
+        src: "/img/favicon.png",
         sizes: "192x192",
-        type: "image/webp",
+        type: "image/png",
         purpose: "any",
       },
       {
-        src: "/img/HoM_logo.webp",
+        src: "/img/favicon.png",
         sizes: "512x512",
-        type: "image/webp",
+        type: "image/png",
         purpose: "any",
       },
     ],

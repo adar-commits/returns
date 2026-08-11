@@ -269,8 +269,11 @@ export default function ShippingForm() {
             <p style={{ color: "var(--color-text-muted)", fontSize: "var(--text-caption)", textAlign: "right" }}>לא נמצאו סניפים</p>
           ) : (
             <>
-              <p style={{ color: "var(--color-text)", fontSize: "var(--text-caption)", textAlign: "right", marginBottom: "var(--space-3)", lineHeight: 1.5 }}>
-                שעות פעילות הסניפים הינם א׳-ה׳ בין השעות 09:30 עד 19:30 (איירפורט סיטי עד 18:00) , ימי שישי 09:00 - 14:00, שבת - סגור
+              <p style={{ color: "var(--color-text)", fontSize: "var(--text-caption)", textAlign: "right", marginBottom: "var(--space-2)", lineHeight: 1.5 }}>
+                ניתן להחזיר מוצרים לסניפים בימי א׳-ה׳ בין השעות 09:30 עד 19:30 (איירפורט סיטי עד 18:00)
+              </p>
+              <p style={{ color: "var(--color-error, #b91c1c)", fontSize: "var(--text-caption)", textAlign: "right", marginBottom: "var(--space-3)", lineHeight: 1.5 }}>
+                בימי שישי וערבי חג לא תתאפשר החזרת סחורה לסניפים
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)" }}>
               {branches.map((b) => {

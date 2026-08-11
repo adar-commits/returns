@@ -256,9 +256,6 @@ export default function SummaryView() {
                     {row.action === "replace" && row.newPrice > 0 && (
                       <span>מחיר למוצר המוחלף: <strong style={{ color: "var(--color-text)" }}>{fmt(row.newPrice)} ₪</strong></span>
                     )}
-                    {row.action === "return" && (
-                      <span style={{ fontWeight: 600, color: "var(--color-success)" }}>זיכוי: {fmt(row.paidPrice)} ₪</span>
-                    )}
                     {row.action === "replace" && row.diff === 0 && (
                       <span style={{ color: "var(--color-text-muted)" }}>ללא הפרש</span>
                     )}
@@ -267,11 +264,6 @@ export default function SummaryView() {
               </div>
               {/* Left: net amount badge */}
               <div style={{ textAlign: "left", direction: "ltr", flexShrink: 0 }}>
-                {row.action === "return" && row.paidPrice > 0 && (
-                  <span style={{ color: "var(--color-success)", fontWeight: 700, fontSize: "var(--text-body)" }}>
-                    −{fmt(row.paidPrice)} ₪
-                  </span>
-                )}
                 {row.action === "replace" && row.diff !== 0 && (
                   <span style={{ color: row.diff > 0 ? "var(--color-primary)" : "var(--color-success)", fontWeight: 700, fontSize: "var(--text-body)" }}>
                     {row.diff > 0 ? "+" : "−"}{fmt(Math.abs(row.diff))} ₪

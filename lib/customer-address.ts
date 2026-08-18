@@ -27,6 +27,11 @@ function asTrimmedString(value: unknown): string {
   return value != null ? String(value).trim() : "";
 }
 
+/** Pickup address is only needed for home courier — not branch return or phone callback. */
+export function isCourierPickupShipping(type: string | undefined | null): boolean {
+  return type === "delivery" || type === "courier";
+}
+
 /** Compose a single pickup-address line for webhooks / legacy `address`. */
 export function composePickupAddress(parts: PickupAddressParts): string {
   const streetLine = [asTrimmedString(parts.street), asTrimmedString(parts.house_number)]

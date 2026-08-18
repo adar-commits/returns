@@ -60,6 +60,14 @@ export default function ShippingForm() {
       if (choices.some((c: { action?: string }) => c.action === "unsure")) {
         setOnlyCallback(true);
         setDeliveryOrBranch("callback");
+      } else {
+        const savedType = wizard.shipping?.type;
+        if (savedType === "branch" || savedType === "callback" || savedType === "delivery") {
+          setDeliveryOrBranch(savedType);
+        }
+        if (savedType === "branch" && wizard.shipping?.branch_id) {
+          setSelectedBranchId(String(wizard.shipping.branch_id));
+        }
       }
     } catch (_) {}
   }, []);

@@ -15,6 +15,7 @@ import { fetchOrders } from "@/lib/webhooks";
 import {
   fetchCustomerAddressFromOrders,
   mergeCustomerAddress,
+  isCourierPickupShipping,
   type CustomerAddressPayload,
 } from "@/lib/customer-address";
 import {
@@ -150,26 +151,18 @@ export async function POST(request: Request) {
     const netRefund = checkoutTotals.netRefund;
 
     const settings = await getSettings();
-    const shippingMethodEarly =
-      wizard.shipping?.type === "branch"
-        ? "branch"
-        : wizard.shipping?.type === "callback"
-          ? "callback"
-          : "courier";
-
-    let resolvedCustomerAddress: CustomerAddressPayload | null = mergeCustomerAddress(
-      customer_address,
-      null,
-      session.phone
-    );
-    if (!resolvedCustomerAddress && shippingMethodEarly === "courier") {
+    const needsPickupAddress = isCourierPickupShipping(wizard.shipping?.type);
+    let resolvedCustomerAddress: CustomerAddressPayload | null = needsPickupAddress
+      ? mergeCustomerAddress(customer_address, null, session.phone)
+      : null;
+    if (!resolvedCustomerAddress && needsPickupAddress) {
       const ordersUrl =
         settings?.orders_webhook_url || process.env.ORDERS_WEBHOOK_URL || DEFAULT_ORDERS_WEBHOOK_URL;
       const fromOrders = await fetchCustomerAddressFromOrders(session.phone, ordersUrl);
       resolvedCustomerAddress = mergeCustomerAddress(customer_address, fromOrders, session.phone);
     }
 
-    if (shippingMethodEarly === "courier" && !resolvedCustomerAddress) {
+    if (needsPickupAddress && !resolvedCustomerAddress) {
       return NextResponse.json(
         { error: "נדרשת כתובת לאיסוף בשליח. נא למלא פרטי משלוח." },
         { status: 400 }

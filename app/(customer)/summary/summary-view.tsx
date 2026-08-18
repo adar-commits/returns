@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/format";
 import { computeCheckoutTotals } from "@/lib/coupon";
 import { ENABLE_SIZE_EXCHANGE } from "@/lib/constants";
+import { isCourierPickupShipping } from "@/lib/customer-address";
 
 type LineItem = { sku: string; product_name?: string; partname?: string; price?: number; qty?: number };
 type Choice = {
@@ -182,7 +183,7 @@ export default function SummaryView() {
   });
   const { couponDiscountIls, replaceDiffSubtotal, netPay, netRefund } = checkoutTotals;
   const needsPayment = netPay > 0;
-  const needsAddress = wizard?.shipping?.type === "delivery";
+  const needsAddress = isCourierPickupShipping(wizard?.shipping?.type);
 
   const handleSubmit = async () => {
     if (!wizard) return;
@@ -524,7 +525,7 @@ export default function SummaryView() {
         )}
       </div>
 
-      {/* Delivery address form (only when payment + delivery) */}
+      {/* Pickup address — courier only; hidden for branch return and phone callback */}
       {needsAddress && (
         <div className="card" style={{ marginBottom: "var(--space-4)" }}>
           <p className="card-title">פרטי משלוח</p>

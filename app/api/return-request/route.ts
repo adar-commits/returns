@@ -21,6 +21,8 @@ import {
 import {
   buildItemsDetailFromChoices,
   choicesForPayload,
+  customerReturnReasons,
+  enrichChoicesWithCancellationReasons,
   resolveRequestIntent,
   shippingMethodLabelHe,
   type WizardItemChoice,
@@ -189,8 +191,9 @@ export async function POST(request: Request) {
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : DEFAULT_APP_URL);
     const confirmUrl = `${baseUrl}/confirm-return?token=${confirm_token}`;
 
-    const returnReasons: string[] = settings?.return_reasons || [];
-    const itemsDetail = buildItemsDetailFromChoices(wizardChoices, orderItems, returnReasons);
+    const returnReasons = customerReturnReasons(settings?.return_reasons);
+    const enrichedChoices = enrichChoicesWithCancellationReasons(wizardChoices, returnReasons);
+    const itemsDetail = buildItemsDetailFromChoices(enrichedChoices, orderItems, returnReasons);
 
     const shippingMethod = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
     const requestIntent = resolveRequestIntent(wizardChoices, hasReturn, hasReplace);
@@ -238,7 +241,7 @@ export async function POST(request: Request) {
       coupon_code: trimmedCoupon || null,
       cust_id: custId,
       customer_address: resolvedCustomerAddress,
-      wizard,
+      wizard: { ...wizard, choices: enrichedChoices },
       customer: {
         cust_id: custId,
         phone: resolvedCustomerAddress?.phone || session.phone,
@@ -280,7 +283,7 @@ export async function POST(request: Request) {
         replace_products_after_discount: checkoutTotals.replaceProductsAfterDiscount,
         replace_paid_subtotal: checkoutTotals.replacePaidSubtotal,
       },
-      _raw_choices: wizard.choices,
+      _raw_choices: enrichedChoices,
     };
 
     await updateReturnRequestWebhookPayload(return_id, payload);

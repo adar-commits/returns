@@ -1,3 +1,5 @@
+import { ENABLE_SIZE_EXCHANGE, RETURNS_ONLY_RETURN_REASONS } from "@/lib/constants";
+
 type OrderLine = {
   sku?: string;
   product_name?: string;
@@ -14,7 +16,13 @@ export type WizardItemChoice = {
   selected_size_id?: string;
   size_label?: string;
   size_price?: number;
+  return_reason?: string;
+  return_reason_label?: string;
+  reason?: string;
+  reason_label?: string;
 };
+
+const CANCELLATION_REASON_ACTIONS = new Set(["return", "refund", "replace"]);
 
 const ACTION_LABEL_HE: Record<string, string> = {
   return: "החזרת מוצר",
@@ -32,6 +40,67 @@ export function choicesForPayload(choices: WizardItemChoice[]): Array<WizardItem
     (c): c is WizardItemChoice & { action: Exclude<WizardItemChoice["action"], ""> } =>
       c.action !== ""
   );
+}
+
+/** Same reason list the customer saw on item selection. */
+export function customerReturnReasons(settingsReasons: string[] | undefined): string[] {
+  if (!ENABLE_SIZE_EXCHANGE) return [...RETURNS_ONLY_RETURN_REASONS];
+  return Array.isArray(settingsReasons) ? settingsReasons : [];
+}
+
+export function resolveCancellationReason(
+  choice: WizardItemChoice,
+  returnReasons: string[]
+): { return_reason: string; return_reason_label: string } | null {
+  if (!CANCELLATION_REASON_ACTIONS.has(choice.action)) return null;
+
+  if (choice.action === "replace") {
+    const existing =
+      [choice.return_reason_label, choice.return_reason, choice.reason_label, choice.reason]
+        .map((v) => (v != null ? String(v).trim() : ""))
+        .find(Boolean);
+    const label = existing || "החלפת מידה";
+    return { return_reason: choice.return_reason?.trim() || "replace", return_reason_label: label };
+  }
+
+  const idx =
+    choice.reason_id != null && String(choice.reason_id).trim() !== ""
+      ? Number(choice.reason_id)
+      : NaN;
+  const fromList = Number.isInteger(idx) ? returnReasons[idx] : undefined;
+  const custom = choice.reason_text?.trim() || "";
+  const label =
+    (fromList === "אחר" && custom ? custom : "") ||
+    fromList ||
+    custom ||
+    [choice.return_reason_label, choice.return_reason, choice.reason_label, choice.reason]
+      .map((v) => (v != null ? String(v).trim() : ""))
+      .find(Boolean) ||
+    "";
+  if (!label) return null;
+
+  return {
+    return_reason: label,
+    return_reason_label: label,
+  };
+}
+
+/** Landbot reads wizard.choices[] return_reason / return_reason_label / reason / reason_label. */
+export function enrichChoicesWithCancellationReasons(
+  choices: WizardItemChoice[],
+  returnReasons: string[]
+): WizardItemChoice[] {
+  return choices.map((c) => {
+    const resolved = resolveCancellationReason(c, returnReasons);
+    if (!resolved) return { ...c };
+    return {
+      ...c,
+      return_reason: resolved.return_reason,
+      return_reason_label: resolved.return_reason_label,
+      reason: resolved.return_reason,
+      reason_label: resolved.return_reason_label,
+    };
+  });
 }
 
 export function buildItemsDetailFromChoices(
@@ -56,15 +125,8 @@ export function buildItemsDetailFromChoices(
         : c.action === "replace" && newPrice != null
           ? newPrice - paidPrice
           : 0;
-    const isOtherReason = c.reason_id != null && returnReasons[Number(c.reason_id)] === "אחר";
-    const reasonText =
-      c.action === "return"
-        ? isOtherReason && c.reason_text?.trim()
-          ? c.reason_text.trim()
-          : c.reason_id != null && returnReasons[Number(c.reason_id)] != null
-            ? returnReasons[Number(c.reason_id)]
-            : null
-        : null;
+    const cancellation = resolveCancellationReason(c, returnReasons);
+    const reasonText = cancellation?.return_reason_label ?? null;
 
     return {
       sku: c.sku,
@@ -77,8 +139,12 @@ export function buildItemsDetailFromChoices(
       new_size_label: c.action === "replace" ? c.size_label || null : null,
       new_size_price: c.action === "replace" ? newPrice : null,
       price_diff: priceDiff,
-      reason_id: c.action === "return" ? c.reason_id || null : null,
+      reason_id: c.action === "return" || c.action === "replace" ? c.reason_id || null : null,
       reason_text: reasonText,
+      return_reason: cancellation?.return_reason ?? null,
+      return_reason_label: cancellation?.return_reason_label ?? null,
+      reason: cancellation?.return_reason ?? null,
+      reason_label: cancellation?.return_reason_label ?? null,
     };
   });
 }

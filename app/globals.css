@@ -357,6 +357,26 @@ body {
   margin: 0 auto;
 }
 
+.btn-spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.btn.btn-loading,
+.btn:disabled.btn-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  opacity: 1;
+  cursor: wait;
+}
+
 .loading-block {
   display: flex;
   flex-direction: column;

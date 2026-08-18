@@ -707,11 +707,21 @@ export default function SummaryView() {
 
       <button
         type="button"
-        className="btn btn-primary"
+        className={`btn btn-primary${submitting ? " btn-loading" : ""}`}
         onClick={handleSubmit}
         disabled={submitting || (needsAddress && (!fullName.trim() || !phone.trim() || !city.trim() || !street.trim()))}
+        aria-busy={submitting}
       >
-        {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום ושליחת בקשה"}
+        {submitting ? (
+          <>
+            <span className="btn-spinner" aria-hidden />
+            שולח…
+          </>
+        ) : needsPayment ? (
+          "המשך לתשלום"
+        ) : (
+          "סיום ושליחת בקשה"
+        )}
       </button>
     </div>
   );

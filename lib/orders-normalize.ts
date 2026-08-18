@@ -36,6 +36,11 @@ function normalizeSinglePayload(data: Record<string, unknown>): {
         full_name: customerRecord.name ?? customerRecord.full_name,
         phone: customerRecord.phone,
         address: customerRecord.address,
+        city: customerRecord.city,
+        street: customerRecord.street,
+        house_number: customerRecord.house_number,
+        floor: customerRecord.floor,
+        apartment: customerRecord.apartment,
       }
     : (() => {
         const details = (data.customerDetails ?? data.customer_details) as Record<string, unknown> | undefined;

@@ -93,6 +93,12 @@ export interface CustomerAddress {
   phone?: string;
   address?: string;
   city?: string;
+  street?: string;
+  house_number?: string;
+  floor?: string;
+  apartment?: string;
+  courier_notes?: string;
+  notes?: string;
   zip?: string;
 }
 

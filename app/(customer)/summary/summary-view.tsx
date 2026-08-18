@@ -21,7 +21,19 @@ type Wizard = {
   choices: Choice[];
   shipping: { type: string; fee: number; branch_id?: string; branch?: { id?: string; name?: string; address?: string; state?: string; phone?: string; opening_hours?: string; map_url?: string } };
 };
-type CustomerDetails = { name?: string; full_name?: string; address?: string; phone?: string };
+type CustomerDetails = {
+  name?: string;
+  full_name?: string;
+  address?: string;
+  phone?: string;
+  city?: string;
+  street?: string;
+  house_number?: string;
+  floor?: string;
+  apartment?: string;
+  courier_notes?: string;
+  notes?: string;
+};
 
 type ItemRow = {
   sku: string;
@@ -51,7 +63,12 @@ export default function SummaryView() {
   const [shippingFee, setShippingFee] = useState(0);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [street, setStreet] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [floor, setFloor] = useState("");
+  const [apartment, setApartment] = useState("");
+  const [courierNotes, setCourierNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -116,7 +133,14 @@ export default function SummaryView() {
         setCustomerDetails(cd);
         setFullName(cd.name || cd.full_name || "");
         setPhone(cd.phone || "");
-        setAddress(cd.address || "");
+        setCity(typeof cd.city === "string" ? cd.city : "");
+        setStreet(typeof cd.street === "string" ? cd.street : typeof cd.address === "string" ? cd.address : "");
+        setHouseNumber(typeof cd.house_number === "string" ? cd.house_number : "");
+        setFloor(typeof cd.floor === "string" ? cd.floor : "");
+        setApartment(typeof cd.apartment === "string" ? cd.apartment : "");
+        setCourierNotes(
+          typeof cd.courier_notes === "string" ? cd.courier_notes : typeof cd.notes === "string" ? cd.notes : ""
+        );
       });
     fetch("/api/settings")
       .then((r) => r.json())
@@ -168,6 +192,10 @@ export default function SummaryView() {
       setTermsError(true);
       return;
     }
+    if (needsAddress && (!fullName.trim() || !phone.trim() || !city.trim() || !street.trim())) {
+      setError("יש למלא עיר ורחוב לכתובת האיסוף");
+      return;
+    }
     setSubmitting(true);
     try {
       const wizardToSend =
@@ -179,7 +207,18 @@ export default function SummaryView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           wizard: wizardToSend,
-          customer_address: needsAddress ? { full_name: fullName, phone, address } : undefined,
+          customer_address: needsAddress
+            ? {
+                full_name: fullName,
+                phone,
+                city,
+                street,
+                house_number: houseNumber,
+                floor,
+                apartment,
+                courier_notes: courierNotes,
+              }
+            : undefined,
           coupon_code: appliedCoupon?.code,
         }),
       });
@@ -512,13 +551,73 @@ export default function SummaryView() {
             />
           </div>
           <div className="input-wrap">
-            <label className="input-label">כתובת מלאה לאיסוף</label>
+            <label className="input-label">
+              עיר <span style={{ color: "var(--color-error, #b91c1c)" }}>*</span>
+            </label>
             <input
               className="input"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="רחוב, מספר בית, עיר"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="תל אביב"
               required
+            />
+          </div>
+          <div className="input-wrap">
+            <label className="input-label">
+              רחוב <span style={{ color: "var(--color-error, #b91c1c)" }}>*</span>
+            </label>
+            <input
+              className="input"
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              placeholder="הרצל"
+              required
+            />
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: "var(--space-3)",
+            }}
+          >
+            <div className="input-wrap">
+              <label className="input-label">מס׳ בית</label>
+              <input
+                className="input"
+                value={houseNumber}
+                onChange={(e) => setHouseNumber(e.target.value)}
+                placeholder="12"
+              />
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">קומה</label>
+              <input
+                className="input"
+                value={floor}
+                onChange={(e) => setFloor(e.target.value)}
+                placeholder="3"
+              />
+            </div>
+            <div className="input-wrap">
+              <label className="input-label">דירה</label>
+              <input
+                className="input"
+                value={apartment}
+                onChange={(e) => setApartment(e.target.value)}
+                placeholder="5"
+              />
+            </div>
+          </div>
+          <div className="input-wrap" style={{ marginBottom: 0 }}>
+            <label className="input-label">הוראות לשליח</label>
+            <textarea
+              className="input"
+              value={courierNotes}
+              onChange={(e) => setCourierNotes(e.target.value)}
+              placeholder="קוד לבניין, שעות מועדפות…"
+              rows={3}
+              style={{ resize: "vertical", minHeight: 88 }}
             />
           </div>
         </div>
@@ -609,7 +708,7 @@ export default function SummaryView() {
         type="button"
         className="btn btn-primary"
         onClick={handleSubmit}
-        disabled={submitting || (needsAddress && (!fullName || !phone || !address))}
+        disabled={submitting || (needsAddress && (!fullName.trim() || !phone.trim() || !city.trim() || !street.trim()))}
       >
         {submitting ? "שולח…" : needsPayment ? "המשך לתשלום" : "סיום ושליחת בקשה"}
       </button>

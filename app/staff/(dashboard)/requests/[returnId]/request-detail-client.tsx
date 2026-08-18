@@ -64,8 +64,13 @@ type DetailRow = {
 };
 
 function notesText(addr: Record<string, unknown> | null, payload: Record<string, unknown> | null): string {
-  const n = (addr?.notes as string | undefined)?.trim();
-  if (n) return n;
+  const fromAddr =
+    (addr?.courier_notes as string | undefined)?.trim() || (addr?.notes as string | undefined)?.trim();
+  if (fromAddr) return fromAddr;
+  const customer = payload?.customer as Record<string, unknown> | undefined;
+  const fromCustomer =
+    (customer?.courier_notes as string | undefined)?.trim() || (customer?.notes as string | undefined)?.trim();
+  if (fromCustomer) return fromCustomer;
   const p = (payload?.notes as string | undefined)?.trim();
   if (p) return p;
   return "";
@@ -600,16 +605,46 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
               ) : null}
               {shipMethod === "courier" && deliveryAddr && Object.keys(deliveryAddr).length > 0 ? (
                 <>
-                  {deliveryAddr.address ? (
-                    <div className={styles.shippingDetailRow}>
-                      <span className={styles.shippingDetailKey}>כתובת למשלוח</span>
-                      <span>{String(deliveryAddr.address)}</span>
-                    </div>
-                  ) : null}
                   {deliveryAddr.city ? (
                     <div className={styles.shippingDetailRow}>
                       <span className={styles.shippingDetailKey}>עיר</span>
                       <span>{String(deliveryAddr.city)}</span>
+                    </div>
+                  ) : null}
+                  {deliveryAddr.street ? (
+                    <div className={styles.shippingDetailRow}>
+                      <span className={styles.shippingDetailKey}>רחוב</span>
+                      <span>{String(deliveryAddr.street)}</span>
+                    </div>
+                  ) : null}
+                  {deliveryAddr.house_number ? (
+                    <div className={styles.shippingDetailRow}>
+                      <span className={styles.shippingDetailKey}>מס׳ בית</span>
+                      <span>{String(deliveryAddr.house_number)}</span>
+                    </div>
+                  ) : null}
+                  {deliveryAddr.floor ? (
+                    <div className={styles.shippingDetailRow}>
+                      <span className={styles.shippingDetailKey}>קומה</span>
+                      <span>{String(deliveryAddr.floor)}</span>
+                    </div>
+                  ) : null}
+                  {deliveryAddr.apartment ? (
+                    <div className={styles.shippingDetailRow}>
+                      <span className={styles.shippingDetailKey}>דירה</span>
+                      <span>{String(deliveryAddr.apartment)}</span>
+                    </div>
+                  ) : null}
+                  {deliveryAddr.courier_notes || deliveryAddr.notes ? (
+                    <div className={styles.shippingDetailRow}>
+                      <span className={styles.shippingDetailKey}>הוראות לשליח</span>
+                      <span>{String(deliveryAddr.courier_notes || deliveryAddr.notes)}</span>
+                    </div>
+                  ) : null}
+                  {!deliveryAddr.street && deliveryAddr.address ? (
+                    <div className={styles.shippingDetailRow}>
+                      <span className={styles.shippingDetailKey}>כתובת למשלוח</span>
+                      <span>{String(deliveryAddr.address)}</span>
                     </div>
                   ) : null}
                   {deliveryAddr.zip ? (

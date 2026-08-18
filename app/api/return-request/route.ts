@@ -252,6 +252,11 @@ export async function POST(request: Request) {
         full_name: resolvedCustomerAddress?.full_name || null,
         address: resolvedCustomerAddress?.address || null,
         city: resolvedCustomerAddress?.city || null,
+        street: resolvedCustomerAddress?.street || null,
+        house_number: resolvedCustomerAddress?.house_number || null,
+        floor: resolvedCustomerAddress?.floor || null,
+        apartment: resolvedCustomerAddress?.apartment || null,
+        courier_notes: resolvedCustomerAddress?.courier_notes || null,
       },
       order: {
         order_id: wizard.orderId,

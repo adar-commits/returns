@@ -57,7 +57,12 @@ export default function ShippingForm() {
     try {
       const wizard = JSON.parse(raw);
       const choices = wizard.choices || [];
-      if (choices.some((c: { action?: string }) => c.action === "unsure")) {
+      const hasReturnOrReplace = choices.some(
+        (c: { action?: string }) => c.action === "return" || c.action === "replace"
+      );
+      const hasUnsure = choices.some((c: { action?: string }) => c.action === "unsure");
+      // Phone-only only when the request is consultation-only (unsure, no actual return/replace).
+      if (hasUnsure && !hasReturnOrReplace) {
         setOnlyCallback(true);
         setDeliveryOrBranch("callback");
       } else {
@@ -217,7 +222,7 @@ export default function ShippingForm() {
 
   return (
     <div>
-      {/* Shipping option cards — when any product is "איני בטוח/ה" show only נציג טלפוני */}
+      {/* Shipping option cards — phone-only only when there is no actual return/replace */}
       <div className="choice-group" style={{ marginBottom: "var(--space-5)" }}>
         {!onlyCallback && (
           <>

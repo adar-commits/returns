@@ -128,7 +128,14 @@ export default function ShippingForm() {
             if (key != null && Array.isArray(results[key])) sizes = results[key];
             else sizes = [];
           }
-          if (sizes.length === 0) return null;
+          if (sizes.length === 0) {
+            for (const list of Object.values(results)) {
+              if (!Array.isArray(list)) continue;
+              const hit = list.find((s) => normKey(String(s?.sku ?? "")) === normKey(sku));
+              if (hit?.labs_csqr != null && Number.isFinite(hit.labs_csqr)) return hit.labs_csqr;
+            }
+            return null;
+          }
           const sizeWithSku = sizes.find((s) => normKey(String(s?.sku ?? "")) === normKey(sku));
           if (sizeWithSku?.labs_csqr != null && Number.isFinite(sizeWithSku.labs_csqr)) return sizeWithSku.labs_csqr;
           return null;

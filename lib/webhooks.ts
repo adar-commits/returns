@@ -93,6 +93,22 @@ function normalizeSizeList(raw: unknown): SizeOption[] {
   });
 }
 
+/** Index each variant SKU so a request for 31503138-200290 finds 5.8 even if the family key is 31503138-80150. */
+function indexVariantLabsAndResults(
+  sizeList: SizeOption[],
+  result: Record<string, SizeOption[]>,
+  labsCsqr: Record<string, number>
+) {
+  for (const s of sizeList) {
+    const variantSku = typeof s.sku === "string" ? s.sku.trim() : "";
+    if (!variantSku) continue;
+    if (s.labs_csqr != null && Number.isFinite(s.labs_csqr)) {
+      labsCsqr[variantSku] = s.labs_csqr;
+    }
+    if (!result[variantSku]?.length) result[variantSku] = sizeList;
+  }
+}
+
 function pickProductUrlFromEntry(entry: Record<string, unknown>): string | undefined {
   const v =
     entry.product_url ??
@@ -138,14 +154,13 @@ function normalizeSizesBatchResponse(
         if (typeof entry.sku === "string") {
           const sizeList = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
           result[entry.sku] = sizeList;
+          indexVariantLabsAndResults(sizeList, result, labsCsqr);
           const sq = entry.LABS_CSQR ?? entry.labs_csqr;
           if (sq != null && Number.isFinite(Number(sq))) {
             labsCsqr[entry.sku] = Number(sq);
           }
           const pu = pickProductUrlFromEntry(entry);
           if (pu) productUrlBySku[entry.sku] = pu;
-          // Do NOT fall back to first size's labs_csqr: sizes are ordered arbitrarily (e.g. largest first).
-          // Client matches returned product dimensions (e.g. SKU suffix 200290 → 200*290) to the right size.
         }
       }
       return { result, labsCsqr, productUrlBySku };
@@ -154,6 +169,7 @@ function normalizeSizesBatchResponse(
     if ("sizes" in first || "Sizes" in first) {
       const sizes = normalizeSizeList(first.sizes ?? first.Sizes ?? []);
       if (fallbackSku) result[fallbackSku] = sizes;
+      indexVariantLabsAndResults(sizes, result, labsCsqr);
       const pu = pickProductUrlFromEntry(first);
       if (pu && fallbackSku) productUrlBySku[fallbackSku] = pu;
       return { result, labsCsqr, productUrlBySku };
@@ -165,6 +181,7 @@ function normalizeSizesBatchResponse(
     const d = data as Record<string, unknown>;
     const sizes = normalizeSizeList(d.sizes ?? d.Sizes ?? []);
     if (fallbackSku) result[fallbackSku] = sizes;
+    indexVariantLabsAndResults(sizes, result, labsCsqr);
     const pu = pickProductUrlFromEntry(d);
     if (pu && fallbackSku) productUrlBySku[fallbackSku] = pu;
   }
@@ -214,7 +231,9 @@ export async function fetchSizesBatch(
           const entry = arr[i] as Record<string, unknown>;
           const key = typeof entry.sku === "string" ? entry.sku : skus[i];
           if (key && !out[key]?.length && entry.sizes != null) {
-            out = { ...out, [key]: normalizeSizeList(entry.sizes ?? entry.Sizes ?? []) };
+            const sizeList = normalizeSizeList(entry.sizes ?? entry.Sizes ?? []);
+            out = { ...out, [key]: sizeList };
+            indexVariantLabsAndResults(sizeList, out, labsCsqr);
             const sq = entry.LABS_CSQR ?? entry.labs_csqr;
             if (sq != null && Number.isFinite(Number(sq))) labsCsqr[key] = Number(sq);
           }
@@ -231,11 +250,11 @@ export async function fetchSizesBatch(
           const sizeList = Array.isArray(list) && list.length > 0 ? normalizeSizeList(list) : [];
           if (sizeList.length > 0) {
             out = { ...out, [skus[i]]: sizeList };
+            indexVariantLabsAndResults(sizeList, out, labsCsqr);
             const sq = entry.LABS_CSQR ?? entry.labs_csqr;
             if (sq != null && Number.isFinite(Number(sq))) {
               labsCsqr[skus[i]] = Number(sq);
             }
-            // Do NOT use first size's labs_csqr; client matches by dimensions (SKU suffix).
           }
           const pu = pickProductUrlFromEntry(entry);
           if (pu && !productUrlBySku[skus[i]]) productUrlBySku[skus[i]] = pu;

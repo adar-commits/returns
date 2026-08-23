@@ -161,6 +161,21 @@ function returnReasonCell(it: ReturnRequestItem, row: ListRow): string {
   return "—";
 }
 
+function returnValueIls(row: ListRow): number {
+  const payload = row.webhook_payload;
+  const fromRoot = Number(payload?.return_value);
+  if (payload?.return_value != null && Number.isFinite(fromRoot) && fromRoot >= 0) return fromRoot;
+  const details = payload?.items_detail as Array<{ action_type?: string; paid_price?: number }> | undefined;
+  if (details?.length) {
+    return details
+      .filter((d) => d.action_type === "return")
+      .reduce((sum, d) => sum + (Number(d.paid_price) || 0), 0);
+  }
+  return (row.items || [])
+    .filter((it) => it.action === "return")
+    .reduce((sum, it) => sum + (Number(it.price) || 0), 0);
+}
+
 function returnCreditOnly(it: ReturnRequestItem): { text: string; kind: DiffKind } {
   const paid = it.price != null ? Number(it.price) : null;
   if (paid != null && paid > 0) return { text: formatIls(paid), kind: "refund" };
@@ -344,6 +359,12 @@ function RequestCardLink({ row, animIndex }: { row: ListRow; animIndex: number }
             <span className={`${styles.typePill} ${typePillClass(row.type)}`}>
               {RETURN_TYPE_HE[row.type] || row.type}
             </span>
+          </dd>
+        </div>
+        <div className={styles.fieldRow}>
+          <dt className={styles.fieldLabel}>שווי החזרה</dt>
+          <dd className={styles.fieldValue} dir="ltr">
+            {formatIls(returnValueIls(row))}
           </dd>
         </div>
       </dl>

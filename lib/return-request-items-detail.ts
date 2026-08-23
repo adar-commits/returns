@@ -20,6 +20,8 @@ export type WizardItemChoice = {
   return_reason_label?: string;
   reason?: string;
   reason_label?: string;
+  /** Paid ILS counted toward שווי החזרה; 0 for keep / unsure. */
+  return_value?: number;
 };
 
 const ACTION_LABEL_HE: Record<string, string> = {
@@ -88,6 +90,28 @@ export function resolveCancellationReason(
   };
 }
 
+/** Paid price only when the customer actually returns the item — not keep / unsure. */
+export function lineReturnValueIls(choice: WizardItemChoice, orderItems: OrderLine[]): number {
+  if (choice.action !== "return") return 0;
+  const orderItem = orderItems.find((i) => i.sku === choice.sku);
+  const paid = Number(orderItem?.price ?? 0);
+  return Number.isFinite(paid) && paid > 0 ? paid : 0;
+}
+
+export function computeReturnValueIls(choices: WizardItemChoice[], orderItems: OrderLine[]): number {
+  return choices.reduce((sum, c) => sum + lineReturnValueIls(c, orderItems), 0);
+}
+
+export function enrichChoicesWithReturnValues(
+  choices: WizardItemChoice[],
+  orderItems: OrderLine[]
+): WizardItemChoice[] {
+  return choices.map((c) => ({
+    ...c,
+    return_value: lineReturnValueIls(c, orderItems),
+  }));
+}
+
 /** Landbot reads wizard.choices[] return_reason / return_reason_label / reason / reason_label. */
 export function enrichChoicesWithCancellationReasons(
   choices: WizardItemChoice[],
@@ -148,6 +172,7 @@ export function buildItemsDetailFromChoices(
       return_reason_label: cancellation?.return_reason_label ?? null,
       reason: cancellation?.return_reason ?? null,
       reason_label: cancellation?.return_reason_label ?? null,
+      return_value: lineReturnValueIls(c, orderItems),
     };
   });
 }

@@ -551,6 +551,16 @@ export default function RequestDetailClient({ returnId }: { returnId: string }) 
               </p>
               <p className={styles.summaryTotalsRow}>דמי משלוח: {formatIlsDetailed(Number(row.shipping_fee))}</p>
               <p className={styles.summaryTotalsStrong}>סה״כ לתשלום: {formatIlsDetailed(totalChargeDue)}</p>
+              <p className={styles.summaryTotalsRow}>
+                שווי החזרה:{" "}
+                {formatIlsDetailed(
+                  row.webhook_payload?.return_value != null
+                    ? Number(row.webhook_payload.return_value)
+                    : (itemsDetail || [])
+                        .filter((d) => d.action_type === "return")
+                        .reduce((sum, d) => sum + (Number(d.paid_price) || 0), 0)
+                )}
+              </p>
               <p className={styles.summaryTotalsRow}>זיכוי צפוי (מוצרים): {formatIlsDetailed(Number(row.amount_refund))}</p>
               {row.replacement_order_id ? (
                 <p className={styles.summaryTotalsRow}>

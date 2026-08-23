@@ -21,8 +21,10 @@ import {
 import {
   buildItemsDetailFromChoices,
   choicesForPayload,
+  computeReturnValueIls,
   customerReturnReasons,
   enrichChoicesWithCancellationReasons,
+  enrichChoicesWithReturnValues,
   resolveRequestIntent,
   shippingMethodLabelHe,
   type WizardItemChoice,
@@ -192,8 +194,12 @@ export async function POST(request: Request) {
     const confirmUrl = `${baseUrl}/confirm-return?token=${confirm_token}`;
 
     const returnReasons = customerReturnReasons(settings?.return_reasons);
-    const enrichedChoices = enrichChoicesWithCancellationReasons(wizardChoices, returnReasons);
+    const enrichedChoices = enrichChoicesWithReturnValues(
+      enrichChoicesWithCancellationReasons(wizardChoices, returnReasons),
+      orderItems
+    );
     const itemsDetail = buildItemsDetailFromChoices(enrichedChoices, orderItems, returnReasons);
+    const returnValue = computeReturnValueIls(enrichedChoices, orderItems);
 
     const shippingMethod = wizard.shipping?.type === "branch" ? "branch" : wizard.shipping?.type === "callback" ? "callback" : "courier";
     const requestIntent = resolveRequestIntent(wizardChoices, hasReturn, hasReplace);
@@ -241,7 +247,9 @@ export async function POST(request: Request) {
       coupon_code: trimmedCoupon || null,
       cust_id: custId,
       customer_address: resolvedCustomerAddress,
-      wizard: { ...wizard, choices: enrichedChoices },
+      return_value: returnValue,
+      return_value_ils: returnValue,
+      wizard: { ...wizard, choices: enrichedChoices, return_value: returnValue },
       customer: {
         cust_id: custId,
         phone: resolvedCustomerAddress?.phone || session.phone,
@@ -275,6 +283,8 @@ export async function POST(request: Request) {
         amount_refund: amountRefund,
         amount_to_pay: amountToPay,
         shipping_fee: shippingFee,
+        return_value: returnValue,
+        return_value_ils: returnValue,
         net_pay: totalToPay,
         net_refund: netRefund,
         coupon_code: trimmedCoupon || null,

@@ -22,8 +22,6 @@ export type WizardItemChoice = {
   reason_label?: string;
 };
 
-const CANCELLATION_REASON_ACTIONS = new Set(["return", "refund", "replace"]);
-
 const ACTION_LABEL_HE: Record<string, string> = {
   return: "החזרת מוצר",
   replace: "החלפת מידה",
@@ -52,16 +50,21 @@ export function resolveCancellationReason(
   choice: WizardItemChoice,
   returnReasons: string[]
 ): { return_reason: string; return_reason_label: string } | null {
-  if (!CANCELLATION_REASON_ACTIONS.has(choice.action)) return null;
+  if (choice.action === "keep" || choice.action === "unsure") {
+    const label = ACTION_LABEL_HE[choice.action];
+    return { return_reason: label, return_reason_label: label };
+  }
 
   if (choice.action === "replace") {
     const existing =
       [choice.return_reason_label, choice.return_reason, choice.reason_label, choice.reason]
         .map((v) => (v != null ? String(v).trim() : ""))
         .find(Boolean);
-    const label = existing || "החלפת מידה";
+    const label = existing || ACTION_LABEL_HE.replace;
     return { return_reason: choice.return_reason?.trim() || "replace", return_reason_label: label };
   }
+
+  if (choice.action !== "return" && String(choice.action) !== "refund") return null;
 
   const idx =
     choice.reason_id != null && String(choice.reason_id).trim() !== ""

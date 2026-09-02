@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /** Digits only; must start with 05 (Israeli mobile). No + or other chars. Reject leading 97. */
 function normalizePhoneInput(value: string): string {
@@ -21,12 +21,20 @@ function isPhoneValid(phone: string): boolean {
   return digits.startsWith("05") && digits.length >= 10 && digits.length <= 11;
 }
 
-export default function PhoneForm() {
+function PhoneFormInner() {
+  const searchParams = useSearchParams();
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("phone");
+    if (!fromUrl) return;
+    const normalized = normalizePhoneInput(fromUrl);
+    if (normalized) setPhone(normalized);
+  }, [searchParams]);
 
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -81,5 +89,13 @@ export default function PhoneForm() {
         {loading ? "שולח…" : "שלח קוד"}
       </button>
     </form>
+  );
+}
+
+export default function PhoneForm() {
+  return (
+    <Suspense fallback={null}>
+      <PhoneFormInner />
+    </Suspense>
   );
 }
